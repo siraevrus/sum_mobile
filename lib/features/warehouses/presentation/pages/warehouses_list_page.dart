@@ -1,0 +1,557 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
+import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouse_form_page.dart';
+import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+import 'package:sum_warehouse/shared/models/warehouse_model.dart';
+import 'package:sum_warehouse/shared/models/company_model.dart';
+import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
+
+/// Страница списка складов
+class WarehousesListPage extends ConsumerStatefulWidget {
+  const WarehousesListPage({super.key});
+
+  @override
+  ConsumerState<WarehousesListPage> createState() => _WarehousesListPageState();
+}
+
+class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
+  String? _searchQuery;
+  bool? _isActiveFilter;
+  int? _companyIdFilter;
+  List<CompanyModel> _companies = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanies();
+  }
+
+  Future<void> _loadCompanies() async {
+    try {
+      final dataSource = ref.read(companiesRemoteDataSourceProvider);
+      final companies = await dataSource.getCompanies();
+      if (mounted) {
+        setState(() {
+          _companies = companies;
+        });
+      }
+    } catch (e) {
+      print('Ошибка загрузки компаний: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
+        children: [
+          _buildFilters(),
+          Expanded(child: _buildWarehousesList()),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const WarehouseFormPage(),
+            ),
+          ).then((_) => setState(() {}));
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warehouse,
+            color: Color(0xFF9B59B6),
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'Склады',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2C3E50),
+            ),
+          ),
+          const Spacer(),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const WarehouseFormPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Создать'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilters() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            return Column(
+              children: [
+                _buildSearchField(),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _buildActiveFilter()),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildCompanyFilter()),
+                  ],
+                ),
+              ],
+            );
+          } else {
+            return Row(
+              children: [
+                Expanded(flex: 2, child: _buildSearchField()),
+                const SizedBox(width: 16),
+                Expanded(child: _buildActiveFilter()),
+                const SizedBox(width: 16),
+                Expanded(child: _buildCompanyFilter()),
+              ],
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      onChanged: (value) => setState(() => _searchQuery = value),
+      decoration: InputDecoration(
+        hintText: 'Поиск складов...',
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF007BFF)),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+      ),
+    );
+  }
+
+  Widget _buildActiveFilter() {
+    return DropdownButtonFormField<bool>(
+        isExpanded: true,
+        dropdownColor: Colors.white,
+      value: _isActiveFilter,
+      onChanged: (value) => setState(() {
+        _isActiveFilter = value;
+      }),
+      decoration: InputDecoration(
+        labelText: 'Статус',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+      ),
+      items: const [
+        DropdownMenuItem(value: null, child: Text('Все')),
+        DropdownMenuItem(value: true, child: Text('Активные')),
+        DropdownMenuItem(value: false, child: Text('Неактивные')),
+      ],
+    );
+  }
+
+  Widget _buildCompanyFilter() {
+    return DropdownButtonFormField<int>(
+        isExpanded: true,
+        dropdownColor: Colors.white,
+      value: _companyIdFilter,
+      onChanged: (value) => setState(() => _companyIdFilter = value),
+      decoration: InputDecoration(
+        labelText: 'Компания',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+      ),
+      items: [
+        const DropdownMenuItem(value: null, child: Text('Все')),
+        ..._companies.map((company) => DropdownMenuItem(
+          value: company.id,
+          child: Text(
+            company.name ?? '',
+            overflow: TextOverflow.ellipsis,
+          ),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildWarehousesList() {
+    final dataSource = ref.watch(warehousesRemoteDataSourceProvider);
+
+    return FutureBuilder(
+      future: dataSource.getWarehouses(
+        search: _searchQuery,
+        isActive: _isActiveFilter,
+        companyId: _companyIdFilter,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const LoadingWidget();
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorState();
+        }
+
+        final warehouses = snapshot.data?.data ?? [];
+        
+        if (warehouses.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: warehouses.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) => _buildWarehouseCard(warehouses[index]),
+        );
+      },
+    );
+  }
+
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) return 4;
+    if (width > 800) return 3;
+    if (width > 600) return 2;
+    return 1;
+  }
+
+  Widget _buildWarehouseCard(WarehouseModel warehouse) {
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => WarehouseFormPage(warehouse: warehouse),
+          ),
+        ).then((_) => setState(() {}));
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      warehouse.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E50),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Троеточие справа вверху
+                  PopupMenuButton<String>(
+                    onSelected: (action) => _handleWarehouseAction(action, warehouse),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Row(
+                          children: [Icon(Icons.visibility, size: 20), SizedBox(width: 8), Text('Просмотр')],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: Colors.red))],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Адрес
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 16, color: Color(0xFF6C757D)),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      warehouse.address,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              // Компания
+              if (warehouse.company != null)
+                Row(
+                  children: [
+                    const Icon(Icons.business, size: 16, color: Color(0xFF6C757D)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        warehouse.company!.name!,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              // Статистика
+              Text('Сотрудники: ${warehouse.actualEmployeesCount}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isActive 
+          ? const Color(0xFF2ECC71).withOpacity(0.1) 
+          : const Color(0xFFE74C3C).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        isActive ? 'Активен' : 'Неактивен',
+        style: TextStyle(
+          color: isActive ? const Color(0xFF2ECC71) : const Color(0xFFE74C3C),
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primary),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Color(0xFF6C757D),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleWarehouseAction(String action, WarehouseModel warehouse) {
+    switch (action) {
+      case 'view':
+        // TODO: Просмотр деталей склада
+        break;
+      case 'edit':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => WarehouseFormPage(warehouse: warehouse),
+          ),
+        ).then((deleted) {
+          if (deleted == true) {
+            // Если склад был удален, обновляем список
+            setState(() {});
+          }
+        });
+        break;
+      case 'activate':
+      case 'deactivate':
+        // TODO: Активировать/деактивировать склад
+        break;
+      case 'delete':
+        _showDeleteConfirmDialog(warehouse);
+        break;
+    }
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.warehouse,
+            size: 64,
+            color: Color(0xFFBDC3C7),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Склады не найдены',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6C757D),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Создайте первый склад или измените фильтры поиска',
+            style: TextStyle(color: Color(0xFF6C757D)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Ошибка загрузки складов',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () => setState(() {}),
+            child: const Text('Повторить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Показать диалог подтверждения удаления
+  void _showDeleteConfirmDialog(WarehouseModel warehouse) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Подтвердите удаление'),
+        content: Text(
+          'Вы уверены, что хотите удалить склад "${warehouse.name}"?\n\n'
+          'Это действие нельзя будет отменить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deleteWarehouse(warehouse);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Удалить', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Удалить склад
+  Future<void> _deleteWarehouse(WarehouseModel warehouse) async {
+    try {
+      final dataSource = ref.read(warehousesRemoteDataSourceProvider);
+      await dataSource.deleteWarehouse(warehouse.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Склад "${warehouse.name}" успешно удален'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Обновляем список
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка удаления: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
