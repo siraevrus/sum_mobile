@@ -134,11 +134,11 @@ class ModernSidebar extends StatelessWidget {
                     section: 'companies',
                     isSelected: selectedSection == 'companies',
                   ),
-                // Склады - только админ
+                //  Склад - только админ
                 if (_hasAccess(['admin']))
                   _buildMenuItem(
                     icon: Icons.warehouse,
-                    title: 'Склады',
+                    title: 'Склад',
                     section: 'warehouses',
                     isSelected: selectedSection == 'warehouses',
                   ),
@@ -150,11 +150,19 @@ class ModernSidebar extends StatelessWidget {
                     section: 'employees',
                     isSelected: selectedSection == 'employees',
                   ),
-                // Товары - админ и оператор (скрываем для роли sales)
+                // Производители - только админ
+                if (_hasAccess(['admin']))
+                  _buildMenuItem(
+                    icon: Icons.factory,
+                    title: 'Производители',
+                    section: 'producers',
+                    isSelected: selectedSection == 'producers',
+                  ),
+                // Поступление товаров - админ и оператор (скрываем для роли sales)
                 if (_hasAccess(['admin', 'operator']))
                   _buildMenuItem(
                     icon: Icons.inventory,
-                    title: 'Товары',
+                    title: 'Поступление товаров',
                     section: 'products',
                     isSelected: selectedSection == 'products',
                   ),
@@ -174,11 +182,11 @@ class ModernSidebar extends StatelessWidget {
                     section: 'requests',
                     isSelected: selectedSection == 'requests',
                   ),
-                // Остатки - админ, оператор, работник склада, менеджер по продажам
+                // Остатки на складе - админ, оператор, работник склада, менеджер по продажам
                 if (_hasAccess(['admin', 'operator', 'warehouse_worker', 'sales_manager']))
                   _buildMenuItem(
                     icon: Icons.storage,
-                    title: 'Остатки',
+                    title: 'Остатки на складе',
                     section: 'inventory',
                     isSelected: selectedSection == 'inventory',
                   ),
@@ -274,7 +282,10 @@ class ModernSidebar extends StatelessWidget {
 
   bool _hasAccess(List<String> allowedRoles) {
     final userRole = _getRoleCode(currentUser.role);
-    return allowedRoles.contains(userRole);
+    print('🔍 DEBUG: Проверка доступа - Роль пользователя: $userRole, Разрешенные роли: $allowedRoles');
+    final hasAccess = allowedRoles.contains(userRole);
+    print('🔍 DEBUG: Результат проверки доступа: $hasAccess');
+    return hasAccess;
   }
 
   String _getRoleCode(UserRole role) {

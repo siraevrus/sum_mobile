@@ -66,6 +66,7 @@ class _GoodsInTransitListPageApiState extends ConsumerState<GoodsInTransitListPa
                 ),
               ),
               data: (receipts) {
+                // Список уже отсортирован в провайдере по дате создания
                 final filteredReceipts = _searchQuery.isEmpty
                   ? receipts
                   : receipts.where((r) => (r.product?.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase())).toList();

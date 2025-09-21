@@ -82,7 +82,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           ),
           const SizedBox(width: 12),
           const Text(
-            'Склады',
+            'Остатки на складе',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
@@ -229,14 +229,8 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
   }
 
   Widget _buildWarehousesList() {
-    final dataSource = ref.watch(warehousesRemoteDataSourceProvider);
-
     return FutureBuilder(
-      future: dataSource.getWarehouses(
-        search: _searchQuery,
-        isActive: _isActiveFilter,
-        companyId: _companyIdFilter,
-      ),
+      future: _loadWarehousesFiltered(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const LoadingWidget();
@@ -246,7 +240,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           return _buildErrorState();
         }
 
-        final warehouses = snapshot.data?.data ?? [];
+        final warehouses = snapshot.data ?? <WarehouseModel>[];
         
         if (warehouses.isEmpty) {
           return _buildEmptyState();
@@ -260,6 +254,41 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         );
       },
     );
+  }
+
+  Future<List<WarehouseModel>> _loadWarehousesFiltered() async {
+    final dataSource = ref.read(warehousesRemoteDataSourceProvider);
+    try {
+      List<WarehouseModel> items;
+      if (_companyIdFilter != null) {
+        // Используем фильтр по компании в общем методе
+        final resp = await dataSource.getWarehouses(companyId: _companyIdFilter!);
+        items = resp.data;
+      } else {
+        // Общий список `/warehouses` (спека возвращает массив)
+        final resp = await dataSource.getWarehouses();
+        items = resp.data;
+      }
+
+      // Клиентская фильтрация по is_active (если поле присутствует в модели)
+      if (_isActiveFilter != null) {
+        items = items.where((w) => w.isActive == _isActiveFilter).toList();
+      }
+
+      // Клиентский поиск по названию/адресу
+      final query = (_searchQuery ?? '').trim().toLowerCase();
+      if (query.isNotEmpty) {
+        items = items.where((w) {
+          final name = w.name.toLowerCase();
+          final address = (w.address).toLowerCase();
+          return name.contains(query) || address.contains(query);
+        }).toList();
+      }
+
+      return items;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   int _getCrossAxisCount(BuildContext context) {
@@ -454,7 +483,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           ),
           SizedBox(height: 16),
           Text(
-            'Склады не найдены',
+            'Остатки не найдены',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,

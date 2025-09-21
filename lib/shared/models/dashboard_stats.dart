@@ -29,6 +29,8 @@ class DashboardStats with _$DashboardStats {
     @Default(0.0) double monthlySales,
     /// Товары в пути
     @Default(0) int goodsInTransit,
+    /// Активные склады
+    @Default(0) int warehousesActive,
     /// Последнее обновление
     DateTime? lastUpdated,
   }) = _DashboardStats;

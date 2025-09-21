@@ -87,7 +87,13 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
   Future<CompanyModel> getCompanyById(int id) async {
     try {
       final response = await _dio.get('/companies/$id');
-      final company = CompanyModel.fromJson(response.data as Map<String, dynamic>);
+      final raw = response.data;
+      // API часто возвращает { success: true, data: { ...company } }
+      final Map<String, dynamic> json =
+          raw is Map<String, dynamic>
+              ? (raw['data'] is Map<String, dynamic> ? raw['data'] as Map<String, dynamic> : raw)
+              : <String, dynamic>{};
+      final company = CompanyModel.fromJson(json);
       
       // Проверяем, что компания не архивирована
       if (company.isArchived) {
@@ -111,8 +117,15 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
   @override
   Future<CompanyModel> createCompany(CompanyFormModel company) async {
     try {
-      final response = await _dio.post('/companies', data: company.toJson());
-      return CompanyModel.fromJson(response.data as Map<String, dynamic>);
+      // Отправляем поля согласно спецификации (postal_address, phone_fax, general_director, ...)
+      final payload = company.toCreateRequest().toJson();
+      final response = await _dio.post('/companies', data: payload);
+      final raw = response.data;
+      final Map<String, dynamic> json =
+          raw is Map<String, dynamic>
+              ? (raw['data'] is Map<String, dynamic> ? raw['data'] as Map<String, dynamic> : raw)
+              : <String, dynamic>{};
+      return CompanyModel.fromJson(json);
     } on DioException catch (e) {
       // Мок создания
       return _getMockCompanies().first.copyWith(
@@ -129,15 +142,22 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
   @override
   Future<CompanyModel> updateCompany(int id, CompanyFormModel company) async {
     try {
-      final response = await _dio.put('/companies/$id', data: company.toJson());
+      // Отправляем поля согласно спецификации (postal_address, phone_fax, general_director, ...)
+      final payload = company.toUpdateRequest().toJson();
+      final response = await _dio.put('/companies/$id', data: payload);
       // Defensive parsing: sometimes API may return partial/empty body.
       final data = response.data;
       // Log response for debugging
       try {
         print('🔵 companies.updateCompany response.data: $data');
       } catch (_) {}
-      if (data is Map<String, dynamic> && data['id'] != null) {
-        return CompanyModel.fromJson(data);
+      if (data is Map<String, dynamic>) {
+        if (data['data'] is Map<String, dynamic>) {
+          return CompanyModel.fromJson(data['data'] as Map<String, dynamic>);
+        }
+        if (data['id'] != null) {
+          return CompanyModel.fromJson(data);
+        }
       }
 
       // Fallback: fetch full company from server

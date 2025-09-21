@@ -50,7 +50,7 @@ class DashboardStatsCards extends ConsumerWidget {
         children: [
           Expanded(
             child: _StatsCard(
-              title: 'Товары',
+              title: 'Поступление товаров',
               value: _formatNumber(stats.totalProducts),
               subtitle: stats.lowStockProducts > 0 
                   ? '${stats.lowStockProducts} мало остатков'
@@ -67,7 +67,7 @@ class DashboardStatsCards extends ConsumerWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _StatsCard(
-              title: 'Склады',
+              title: 'Остатки на складе',
               value: '5', // Статичное значение как в логах
               subtitle: '5 активных',
               icon: Icons.warehouse_outlined,

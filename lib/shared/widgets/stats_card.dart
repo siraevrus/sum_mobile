@@ -257,7 +257,7 @@ class WarehouseStatsCard extends StatelessWidget {
                 children: [
                   _buildMetric(
                     context, 
-                    'Товары',
+                    'Поступление товаров',
                     totalProducts.toString(),
                     Icons.inventory,
                   ),

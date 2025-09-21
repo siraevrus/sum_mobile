@@ -223,7 +223,10 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
               _buildCompanyDropdown(),
               const SizedBox(height: 16),
               
-              if (_selectedRole == UserRole.warehouseWorker || _selectedRole == UserRole.manager)
+              if (_selectedRole == UserRole.warehouseWorker ||
+                  _selectedRole == UserRole.manager ||
+                  _selectedRole == UserRole.salesManager ||
+                  _selectedRole == UserRole.operator)
                 _buildWarehouseDropdown(),
               const SizedBox(height: 24),
               
@@ -386,7 +389,11 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
         return DropdownButtonFormField<int>(
         dropdownColor: Colors.white,
           value: _selectedCompanyId,
-          onChanged: (value) => setState(() => _selectedCompanyId = value),
+          onChanged: (value) => setState(() {
+            _selectedCompanyId = value;
+            // Сбрасываем выбранный склад при изменении компании
+            _selectedWarehouseId = null;
+          }),
           decoration: InputDecoration(
             labelText: 'Компания',
             border: OutlineInputBorder(
@@ -408,8 +415,28 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
   }
   
   Widget _buildWarehouseDropdown() {
+    if (_selectedCompanyId == null) {
+      return DropdownButtonFormField<int>(
+        dropdownColor: Colors.white,
+        value: null,
+        onChanged: null, // Отключаем выбор
+        decoration: InputDecoration(
+          labelText: 'Склад',
+          hintText: 'Сначала выберите компанию',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          filled: true,
+          fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+        ),
+        items: const [
+          DropdownMenuItem(value: null, child: Text('Сначала выберите компанию')),
+        ],
+      );
+    }
+
     return FutureBuilder<List<WarehouseModel>>(
-      future: ref.read(warehousesRemoteDataSourceProvider).getWarehouses().then((resp) => resp.data),
+      future: ref.read(warehousesRemoteDataSourceProvider).getWarehouses(companyId: _selectedCompanyId).then((resp) => resp.data),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -477,6 +504,10 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           phone: _phoneController.text.isEmpty ? null : _phoneController.text,
           role: _selectedRole,
           isBlocked: _isBlocked,
+          companyId: _selectedCompanyId,
+          warehouseId: (_selectedRole == UserRole.warehouseWorker || _selectedRole == UserRole.manager)
+              ? _selectedWarehouseId
+              : null,
         );
         
         await dataSource.updateUser(widget.user!.id, updateRequest);
@@ -491,6 +522,10 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           password: _passwordController.text,
           role: _selectedRole,
           isBlocked: _isBlocked,
+          companyId: _selectedCompanyId,
+          warehouseId: (_selectedRole == UserRole.warehouseWorker || _selectedRole == UserRole.manager)
+              ? _selectedWarehouseId
+              : null,
         );
         
         await dataSource.createUser(createRequest);

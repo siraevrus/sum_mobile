@@ -15,6 +15,7 @@ import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/goods_in_transit/presentation/pages/goods_in_transit_list_page_api.dart';
 import 'package:sum_warehouse/features/reception/presentation/pages/reception_list_page.dart';
+import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
 class ResponsiveDashboardPage extends ConsumerWidget {
@@ -263,12 +264,12 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       title: 'Компании',
                       section: 'companies',
                     ),
-                  // Склады - только админ
+                  // Остатки на складе - только админ
                   if (_hasAccess(user, ['admin']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.warehouse,
-                      title: 'Склады',
+                      title: 'Склад',
                       section: 'warehouses',
                     ),
                   // Сотрудники - только админ
@@ -284,15 +285,15 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.storage,
-                      title: 'Остатки',
+                      title: 'Остатки на складе',
                       section: 'inventory',
                     ),
-                  // Товары - админ и оператор (скрываем для роли sales)
+                  // Поступление товаров - админ и оператор (скрываем для роли sales)
                   if (_hasAccess(user, ['admin', 'operator']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.inventory,
-                      title: 'Товары',
+                      title: 'Поступление товаров',
                       section: 'products',
                     ),
                   // Товары в пути - админ, оператор, работник склада, менеджер по продажам
@@ -415,19 +416,21 @@ class ResponsiveDashboardPage extends ConsumerWidget {
       case 'dashboard':
         return 'Инфопанель';
       case 'products':
-        return 'Товары';
+        return 'Поступление товаров';
       case 'warehouses':
-        return 'Склады';
+        return 'Склад';
       case 'sales':
         return 'Реализация';
       case 'requests':
         return 'Запросы';
       case 'employees':
         return 'Сотрудники';
+      case 'producers':
+        return 'Производители';
       case 'companies':
         return 'Компании';
       case 'inventory':
-        return 'Остатки';
+        return 'Остатки на складе';
       case 'goods_in_transit':
         return 'Товары в пути';
       case 'reception':
@@ -453,6 +456,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const RequestsListPage();
       case 'employees':
         return const EmployeesListPage();
+      case 'producers':
+        return const ProducersListPage();
       case 'companies':
         return const CompaniesListPage();
       case 'inventory':

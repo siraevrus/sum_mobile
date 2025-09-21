@@ -129,6 +129,7 @@ class _GoodsInTransitListPageState extends ConsumerState<GoodsInTransitListPage>
           );
         }
 
+        // Список уже отсортирован в провайдере по дате создания
         return ListView.separated(
           padding: const EdgeInsets.all(16.0),
           itemCount: receipts.length,

@@ -35,7 +35,31 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   @override
   Future<DashboardStats> getDashboardStats() async {
     try {
-      // Собираем статистику из разных эндпоинтов согласно API спецификации
+      // Пытаемся получить агрегаты единым запросом
+      try {
+        print('🔵 Dashboard: Получение агрегатов через /dashboard/summary ...');
+        final resp = await _dio.get('/dashboard/summary');
+        final data = resp.data as Map<String, dynamic>;
+        return DashboardStats(
+          totalProducts: (data['products_total'] ?? 0) as int,
+          lowStockProducts: 0,
+          totalCompanies: (data['companies_active'] ?? 0) as int,
+          activeCompanies: (data['companies_active'] ?? 0) as int,
+          totalEmployees: (data['employees_active'] ?? 0) as int,
+          activeEmployees: (data['employees_active'] ?? 0) as int,
+          todayRequests: (data['requests_pending'] ?? 0) as int,
+          completedTodayRequests: 0,
+          todaySales: 0,
+          monthlySales: 0,
+          goodsInTransit: (data['products_in_transit'] ?? 0) as int,
+          warehousesActive: (data['warehouses_active'] ?? 0) as int,
+          lastUpdated: DateTime.now(),
+        );
+      } catch (_) {
+        print('ℹ️ /dashboard/summary недоступен, используем существующие эндпоинты');
+      }
+
+      // Собираем статистику из разных эндпоинтов согласно текущей API
       print('🔵 Dashboard: Получение статистики товаров...');
       final productsResponse = await _dio.get('/products/stats');
       print('📥 Products response: ${productsResponse.data}');
@@ -58,20 +82,36 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       print('🔵 Dashboard: Получение товаров в пути...');
       Map<String, dynamic> goodsInTransitData;
       try {
-        final goodsInTransitResponse = await _dio.get('/products', queryParameters: {
-          'status': 'in_transit',
+        // Используем алиас из спеки `/products-in-transit`
+        final goodsInTransitResponse = await _dio.get('/products-in-transit', queryParameters: {
+          'page': 1,
           'per_page': 10,
         });
-        print('📥 Goods in transit response: ${goodsInTransitResponse.data}');
-        goodsInTransitData = goodsInTransitResponse.data as Map<String, dynamic>;
+        print('📥 Products-in-transit response: ${goodsInTransitResponse.data}');
+        final data = goodsInTransitResponse.data;
+        if (data is Map<String, dynamic>) {
+          goodsInTransitData = data;
+        } else if (data is List) {
+          goodsInTransitData = { 'data': data, 'meta': { 'total': data.length } };
+        } else {
+          goodsInTransitData = {'data': [], 'meta': {'total': 0}};
+        }
       } catch (e) {
-        print('⚠️ Ошибка получения товаров в пути: $e, используем данные товаров со статусом "in_transit"');
-        // Fallback: получить товары со статусом "in_transit"
+        print('⚠️ Ошибка `/products-in-transit`: $e, пытаемся через /receipts со статусом');
         try {
-          final productsInTransitResponse = await _dio.get('/products', queryParameters: {
+          final receiptsResp = await _dio.get('/receipts', queryParameters: {
             'status': 'in_transit',
+            'page': 1,
+            'per_page': 10,
           });
-          goodsInTransitData = productsInTransitResponse.data as Map<String, dynamic>;
+          final data = receiptsResp.data;
+          if (data is Map<String, dynamic>) {
+            goodsInTransitData = data;
+          } else if (data is List) {
+            goodsInTransitData = { 'data': data, 'meta': { 'total': data.length } };
+          } else {
+            goodsInTransitData = {'data': [], 'meta': {'total': 0}};
+          }
         } catch (e2) {
           print('⚠️ Fallback тоже не сработал: $e2, используем 0');
           goodsInTransitData = {'data': [], 'meta': {'total': 0}};

@@ -140,8 +140,8 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
       ),
       items: const [
         DropdownMenuItem(value: null, child: Text('Все')),
-        DropdownMenuItem(value: 'pending', child: Text('Ожидает рассмотрения')),
-        DropdownMenuItem(value: 'completed', child: Text('Одобрен')),
+        DropdownMenuItem(value: 'pending', child: Text('Ожидает')),
+        DropdownMenuItem(value: 'approved', child: Text('Одобрен')),
       ],
     );
   }
@@ -308,25 +308,6 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
     );
   }
 
-  Widget _buildPriorityChip(models.RequestPriority priority) {
-    final color = _getPriorityColor(priority);
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        priority.displayName,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
 
   Widget _buildStatusChip(String status) {
     final color = _getStatusColor(status);
@@ -360,17 +341,10 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
       if (request.status == 'pending') ...[
         IconButton(
           onPressed: () {
-            // TODO: Обработать запрос
+            _approveRequest(request);
           },
           icon: const Icon(Icons.check, color: Colors.green, size: 18),
-          tooltip: 'Обработать',
-        ),
-        IconButton(
-          onPressed: () {
-            // TODO: Отклонить запрос
-          },
-          icon: const Icon(Icons.close, color: Colors.red, size: 18),
-          tooltip: 'Отклонить',
+          tooltip: 'Одобрить',
         ),
       ],
       IconButton(
@@ -446,29 +420,21 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'completed':
-        return const Color(0xFF2ECC71);
-      case 'in_progress':
-        return const Color(0xFF3498DB);
+      case 'approved':
+        return const Color(0xFF2ECC71); // Зеленый
       case 'pending':
-        return const Color(0xFFF39C12);
-      case 'rejected':
-        return const Color(0xFFE74C3C);
+        return const Color(0xFFF39C12); // Оранжевый
       default:
-        return const Color(0xFF6C757D);
+        return const Color(0xFF6C757D); // Серый
     }
   }
 
   String _getStatusDisplayName(String status) {
     switch (status) {
-      case 'completed':
-        return 'Выполнен';
-      case 'in_progress':
-        return 'В работе';
+      case 'approved':
+        return 'Одобрен';
       case 'pending':
         return 'Ожидает';
-      case 'rejected':
-        return 'Отклонен';
       default:
         return status;
     }
@@ -477,19 +443,6 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
   /// Конвертировать RequestModel в RequestEntity для формы
 
 
-  /// Конвертировать RequestPriority из модели в entity
-  RequestPriority _convertPriorityFromModel(models.RequestPriority modelPriority) {
-    switch (modelPriority) {
-      case models.RequestPriority.low:
-        return RequestPriority.low;
-      case models.RequestPriority.normal:
-        return RequestPriority.normal;
-      case models.RequestPriority.high:
-        return RequestPriority.high;
-      case models.RequestPriority.urgent:
-        return RequestPriority.urgent;
-    }
-  }
 
   /// Конвертировать RequestStatus из строки в enum
   RequestStatus _convertStatusFromModel(String status) {
@@ -508,17 +461,31 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
     }
   }
 
-  /// Получить цвет приоритета
-  Color _getPriorityColor(models.RequestPriority priority) {
-    switch (priority) {
-      case models.RequestPriority.low:
-        return const Color(0xFF3182CE); // Синий
-      case models.RequestPriority.normal:
-        return const Color(0xFF38A169); // Зеленый
-      case models.RequestPriority.high:
-        return const Color(0xFFD69E2E); // Желтый
-      case models.RequestPriority.urgent:
-        return const Color(0xFFE53E3E); // Красный
+  /// Одобрить запрос
+  Future<void> _approveRequest(models.RequestModel request) async {
+    try {
+      final dataSource = ref.read(requestsRemoteDataSourceProvider);
+      await dataSource.processRequest(request.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Запрос одобрен'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {}); // Обновляем список
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
+
 }

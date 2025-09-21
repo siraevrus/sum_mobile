@@ -159,7 +159,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           loading: () => const LoadingWidget(message: 'Загружаем статистику...'),
           error: (error, stack) => AppErrorWidget(
             message: 'Не удалось загрузить статистику',
-            onRetry: () => ref.invalidate(dashboardStatsProvider),
+            // Исправлено: инвалидируем тот же провайдер без кэширования
+            onRetry: () => ref.invalidate(dashboardStatsNoCachingProvider),
           ),
           data: (stats) => GridView.count(
             shrinkWrap: true,
@@ -170,7 +171,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             mainAxisSpacing: 16,
             children: [
               MetricCard(
-                title: 'Товары',
+                title: 'Поступление товаров',
                 value: _formatNumber(stats.totalProducts),
                 subtitle: stats.lowStockProducts > 0 
                     ? '${stats.lowStockProducts} мало остатков'
@@ -179,9 +180,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 iconColor: stats.lowStockProducts > 0 ? AppColors.warning : AppColors.success,
               ),
               MetricCard(
-                title: 'Склады',
-                value: '5', // Статичное значение как на фронте
-                subtitle: '5 активных',
+                title: 'Остатки на складе',
+                value: _formatNumber(stats.warehousesActive),
+                subtitle: 'Активных складов',
                 icon: Icons.warehouse,
                 iconColor: AppColors.warning,
               ),
@@ -255,7 +256,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Склады',
+          'Остатки на складе',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -351,7 +352,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         mainAxisSpacing: 16,
         children: [
           MetricCard(
-            title: 'Товары',
+            title: 'Поступление товаров',
             value: _formatNumber(stats.totalProducts),
             subtitle: stats.lowStockProducts > 0 
                 ? '${stats.lowStockProducts} мало остатков'

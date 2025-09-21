@@ -128,3 +128,14 @@ class UpdateRequestRequest with _$UpdateRequestRequest {
   factory UpdateRequestRequest.fromJson(Map<String, dynamic> json) =>
       _$UpdateRequestRequestFromJson(json);
 }
+
+/// Запрос одобрения запроса
+@freezed
+class ApproveRequestRequest with _$ApproveRequestRequest {
+  const factory ApproveRequestRequest({
+    String? notes,
+  }) = _ApproveRequestRequest;
+
+  factory ApproveRequestRequest.fromJson(Map<String, dynamic> json) =>
+      _$ApproveRequestRequestFromJson(json);
+}

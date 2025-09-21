@@ -76,9 +76,9 @@ class ModernDashboardPage extends ConsumerWidget {
       case 'dashboard':
         return 'Инфопанель';
       case 'products':
-        return 'Товары';
+        return 'Поступление товаров';
       case 'warehouses':
-        return 'Склады';
+        return 'Остатки на складе';
       case 'sales':
         return 'Продажи';
       case 'requests':

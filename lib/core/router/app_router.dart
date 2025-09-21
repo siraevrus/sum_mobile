@@ -142,6 +142,11 @@ GoRouter router(RouterRef ref) {
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'companies'),
       ),
       GoRoute(
+        path: '/producers',
+        name: 'producers',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'producers'),
+      ),
+      GoRoute(
         path: '/inventory',
         name: 'inventory',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'inventory'),

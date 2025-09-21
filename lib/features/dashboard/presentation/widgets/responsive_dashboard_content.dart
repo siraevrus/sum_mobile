@@ -117,7 +117,7 @@ class MobileStatsCards extends ConsumerWidget {
             children: [
               Expanded(
                 child: _MobileStatsCard(
-                  title: 'Товары',
+                  title: 'Поступление товаров',
                   value: _formatNumber(stats.totalProducts),
                   subtitle: stats.lowStockProducts > 0 
                       ? '${stats.lowStockProducts} мало остатков'
@@ -134,7 +134,7 @@ class MobileStatsCards extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _MobileStatsCard(
-                  title: 'Склады',
+                  title: 'Остатки на складе',
                   value: '5', // Статичное значение как в API
                   subtitle: '5 активных',
                   icon: Icons.warehouse_outlined,

@@ -30,7 +30,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
   final _quantityController = TextEditingController();
   
   bool _isLoading = false;
-  shared_models.RequestPriority _selectedPriority = shared_models.RequestPriority.normal;
   String _selectedStatusCode = 'pending';
   int? _selectedWarehouseId;
   int? _selectedTemplateId;
@@ -38,11 +37,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
   // Данные из API
   List<WarehouseModel> _warehouses = [];
   List<ProductTemplateModel> _productTemplates = [];
-  List<TemplateAttributeModel> _templateAttributes = [];
-  
-  // Динамические контроллеры для атрибутов
-  Map<String, TextEditingController> _attributeControllers = {};
-  Map<String, String?> _attributeValues = {};
   
   bool get _isEditing => widget.request != null;
   
@@ -58,7 +52,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _quantityController.dispose();
-    _attributeControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
   }
   
@@ -68,7 +61,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
       _titleController.text = request.title;
       _descriptionController.text = request.description ?? '';
       _quantityController.text = request.quantity.toString();
-      _selectedPriority = request.priority;
       _selectedStatusCode = request.status;
       // Безопасно получаем ID из вложенных объектов
       _selectedWarehouseId = request.warehouse?.id;
@@ -98,11 +90,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
       final templatesResponse = await templatesDataSource.getProductTemplates(perPage: 100);
       _productTemplates = templatesResponse.data;
       
-      // Если редактируем, загружаем атрибуты шаблона
-      if (_isEditing && _selectedTemplateId != null) {
-        await _loadTemplateAttributes(_selectedTemplateId!);
-        await _loadRequestAttributes();
-      }
       
       setState(() {});
     } catch (e) {
@@ -120,52 +107,7 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
     }
   }
   
-  Future<void> _loadTemplateAttributes(int templateId) async {
-    try {
-      final templatesDataSource = ref.read(productTemplateRemoteDataSourceProvider);
-      _templateAttributes = await templatesDataSource.getTemplateAttributes(templateId);
-      
-      // Создаем контроллеры для каждого атрибута
-      _attributeControllers.clear();
-      _attributeValues.clear();
-      
-      for (final attribute in _templateAttributes) {
-        _attributeControllers[attribute.variable] = TextEditingController();
-        _attributeValues[attribute.variable] = attribute.defaultValue;
-        if (attribute.defaultValue != null) {
-          _attributeControllers[attribute.variable]!.text = attribute.defaultValue!;
-        }
-      }
-      
-      setState(() {});
-    } catch (e) {
-      print('Ошибка загрузки атрибутов шаблона: $e');
-    }
-  }
   
-  Future<void> _loadRequestAttributes() async {
-    if (!_isEditing || widget.request == null) return;
-    
-    try {
-      // Проверяем что ID запроса валиден
-      final requestId = widget.request!.id;
-      if (requestId == null) {
-        print('ID запроса равен null, пропускаем загрузку атрибутов');
-        return;
-      }
-      
-      // Получаем полную информацию о запросе включая атрибуты
-      final dataSource = ref.read(requestsRemoteDataSourceProvider);
-      final fullRequest = await dataSource.getRequest(requestId);
-      
-      // TODO: Нужно получить атрибуты запроса из API
-      // Пока заглушка - атрибуты не хранятся в RequestEntity
-      print('Загружены данные запроса: ${fullRequest.title}');
-      
-    } catch (e) {
-      print('Ошибка загрузки атрибутов запроса: $e');
-    }
-  }
 
   Widget _buildSectionTitle(String title) {
     return Text(
@@ -206,10 +148,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
                   children: [
                     _buildBasicInfoSection(),
                     const SizedBox(height: 24),
-                    if (_templateAttributes.isNotEmpty) ...[
-                      _buildProductCharacteristicsSection(),
-                      const SizedBox(height: 24),
-                    ],
                     _buildBottomButtons(),
                   ],
                 ),
@@ -258,122 +196,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
     );
   }
   
-  Widget _buildProductCharacteristicsSection() {
-    if (_templateAttributes.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Характеристики товара'),
-        const SizedBox(height: 16),
-        ..._templateAttributes.map((attribute) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildAttributeField(attribute),
-            )),
-      ],
-    );
-  }
-  
-  Widget _buildAttributeField(TemplateAttributeModel attribute) {
-    switch (attribute.attributeType) {
-      case AttributeType.text:
-      case AttributeType.number:
-        return _buildTextField(
-          controller: _attributeControllers[attribute.variable]!,
-          label: '${attribute.name}${attribute.unit != null ? ' (${attribute.unit})' : ''}',
-          isRequired: attribute.isRequired,
-          keyboardType: attribute.attributeType == AttributeType.number 
-            ? TextInputType.number 
-            : TextInputType.text,
-          helperText: attribute.name,
-        );
-      case AttributeType.select:
-        return _buildSelectField(attribute);
-      case AttributeType.boolean:
-        return _buildBooleanField(attribute);
-      default:
-        return _buildTextField(
-          controller: _attributeControllers[attribute.variable]!,
-          label: attribute.name,
-          isRequired: attribute.isRequired,
-        );
-    }
-  }
-  
-  Widget _buildSelectField(TemplateAttributeModel attribute) {
-    // Попробуем получить опции из разных источников
-    List<String> options = [];
-    
-    if (attribute.selectOptions != null && attribute.selectOptions!.isNotEmpty) {
-      options = attribute.selectOptions!;
-    } else if (attribute.options != null) {
-      // Парсим options в зависимости от типа
-      if (attribute.options is List) {
-        options = (attribute.options as List).map((e) => e.toString()).toList();
-      } else if (attribute.options is String) {
-        options = (attribute.options as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      }
-    } else if (attribute.value != null) {
-      // Если value содержит опции
-      if (attribute.value is List) {
-        options = (attribute.value as List).map((e) => e.toString()).toList();
-      } else if (attribute.value is String) {
-        options = (attribute.value as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      }
-    }
-    
-    // Если опций нет, используем дефолтные
-    if (options.isEmpty) {
-      options = ['Опция 1', 'Опция 2', 'Опция 3'];
-    }
-    
-    final currentValue = _attributeValues[attribute.variable];
-    
-    return DropdownButtonFormField<String>(
-
-      value: options.contains(currentValue) ? currentValue : null,
-      decoration: InputDecoration(
-        labelText: '${attribute.name}${attribute.isRequired ? ' *' : ''}',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-        hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
-      ),
-      items: options.map((option) => DropdownMenuItem(
-        value: option,
-        child: Text(option),
-      )).toList(),
-      onChanged: (value) {
-        setState(() {
-          _attributeValues[attribute.variable] = value;
-        });
-      },
-      validator: attribute.isRequired ? (value) {
-        if (value == null || value.isEmpty) {
-          return '${attribute.name} обязательно для заполнения';
-        }
-        return null;
-      } : null,
-    );
-  }
-  
-  Widget _buildBooleanField(TemplateAttributeModel attribute) {
-    final currentValue = _attributeValues[attribute.variable] == 'true';
-    
-    return CheckboxListTile(
-      title: Text(attribute.name),
-      subtitle: attribute.isRequired ? const Text('*', style: TextStyle(color: Colors.red)) : null,
-      value: currentValue,
-      onChanged: (value) {
-        setState(() {
-          _attributeValues[attribute.variable] = value.toString();
-        });
-      },
-      controlAffinity: ListTileControlAffinity.leading,
-    );
-  }
   
   Widget _buildSection({required String title, required List<Widget> children}) {
     return Container(
@@ -492,15 +314,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         setState(() {
           _selectedTemplateId = templateId;
         });
-        if (templateId != null) {
-          _loadTemplateAttributes(templateId);
-        } else {
-          setState(() {
-            _templateAttributes.clear();
-            _attributeControllers.clear();
-            _attributeValues.clear();
-          });
-        }
       },
       validator: (value) {
         if (value == null) {
@@ -583,19 +396,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
     try {
       final dataSource = ref.read(requestsRemoteDataSourceProvider);
       
-      // Собираем значения атрибутов
-      final attributes = <String, dynamic>{};
-      for (final entry in _attributeControllers.entries) {
-        final value = entry.value.text.trim();
-        if (value.isNotEmpty) {
-          attributes[entry.key] = value;
-        }
-      }
-      for (final entry in _attributeValues.entries) {
-        if (entry.value != null && entry.value!.isNotEmpty) {
-          attributes[entry.key] = entry.value;
-        }
-      }
       
       if (_isEditing) {
         // Обновление существующего запроса
@@ -603,10 +403,8 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
           warehouseId: _selectedWarehouseId!,
           productTemplateId: _selectedTemplateId!,
           title: _titleController.text,
-          quantity: double.parse(_quantityController.text),
-          status: _selectedStatusCode,
+          quantity: int.parse(_quantityController.text).toDouble(),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
-          attributes: attributes,
         );
         
         await dataSource.updateRequest(widget.request!.id, updateRequest);
@@ -616,11 +414,9 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
           warehouseId: _selectedWarehouseId!,
           productTemplateId: _selectedTemplateId!,
           title: _titleController.text,
-          quantity: double.parse(_quantityController.text),
-          priority: _selectedPriority,
-          status: _selectedStatusCode,
+          quantity: int.parse(_quantityController.text).toDouble(),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
-          attributes: attributes,
+          priority: shared_models.RequestPriority.normal,
         );
         
         await dataSource.createRequest(createRequest);

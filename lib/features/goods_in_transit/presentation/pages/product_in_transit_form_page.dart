@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/goods_in_transit/presentation/providers/products_in_transit_provider.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/shared/models/producer_model.dart';
 import 'package:sum_warehouse/features/goods_in_transit/data/datasources/products_in_transit_remote_datasource.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
@@ -62,6 +64,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   // Выбранные значения
   int? _selectedWarehouseId;
   int? _selectedProductTemplateId;
+  int? _selectedProducerId;
   String? _selectedProductTemplateName;
   DateTime? _shippingDate;
   DateTime? _expectedArrivalDate;
@@ -157,6 +160,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _producerController.text = product.producer ?? '';
       _shippingLocationController.text = product.shippingLocation ?? '';
       _notesController.text = product.notes ?? '';
+      
+      // Производитель будет загружен из выпадающего списка
+      _selectedProducerId = null;
       
       _selectedWarehouseId = product.warehouseId;
       _selectedProductTemplateId = product.productTemplateId;
@@ -272,7 +278,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           'description': _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           'quantity': double.parse(_quantityController.text),
           'transport_number': _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
-          'producer': _producerController.text.trim().isEmpty ? null : _producerController.text.trim(),
+          'producer_id': _selectedProducerId,
           'shipping_location': _shippingLocationController.text.trim().isEmpty ? null : _shippingLocationController.text.trim(),
           'shipping_date': _shippingDate?.toIso8601String(),
           'expected_arrival_date': _expectedArrivalDate?.toIso8601String(),
@@ -318,7 +324,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
               'description': product.description,
               'quantity': product.quantity,
               'transport_number': _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
-              'producer': product.producer,
+              'producer_id': _selectedProducerId,
               'shipping_location': _shippingLocationController.text.trim().isEmpty ? null : _shippingLocationController.text.trim(),
               'shipping_date': _shippingDate?.toIso8601String(),
               'expected_arrival_date': _expectedArrivalDate?.toIso8601String(),
@@ -494,11 +500,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
               )),
           const SizedBox(height: 8),
         ],
-        _buildTextField(
-          controller: _producerController,
-          label: 'Производитель',
-          isRequired: false,
-        ),
+        _buildProducerDropdown(),
         const SizedBox(height: 16),
         _buildTextField(
           controller: _quantityController,
@@ -674,6 +676,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _quantityController.clear();
       _descriptionController.clear();
       _selectedProductTemplateId = null;
+      _selectedProducerId = null;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -691,6 +694,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _quantityController.clear();
       _descriptionController.clear();
       _selectedProductTemplateId = null;
+      _selectedProducerId = null;
     });
   }
 
@@ -1043,6 +1047,45 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             }
           },
           validator: (value) => value == null ? 'Выберите шаблон товара' : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildProducerDropdown() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final producersAsync = ref.watch(producersProvider);
+        
+        return producersAsync.when(
+          loading: () => const CircularProgressIndicator(),
+          error: (error, stack) => Text('Ошибка загрузки производителей: $error'),
+          data: (producers) {
+            return DropdownButtonFormField<int>(
+              value: _selectedProducerId,
+              decoration: const InputDecoration(
+                labelText: 'Производитель',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<int>(
+                  value: null,
+                  child: Text('Не выбран'),
+                ),
+                ...producers.map((producer) {
+                  return DropdownMenuItem<int>(
+                    value: producer.id,
+                    child: Text(producer.name),
+                  );
+                }).toList(),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedProducerId = value;
+                });
+              },
+            );
+          },
         );
       },
     );

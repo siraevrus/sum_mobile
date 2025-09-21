@@ -233,7 +233,7 @@ class DashboardPage extends ConsumerWidget {
         actions.addAll([
           _ActionTile(
             icon: Icons.inventory,
-            title: 'Товары',
+            title: 'Поступление товаров',
             subtitle: 'Просмотр и управление товарами',
             onTap: () {
               Navigator.of(context).push(
