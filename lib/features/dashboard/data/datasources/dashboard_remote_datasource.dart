@@ -24,6 +24,13 @@ abstract class DashboardRemoteDataSource {
   
   /// Получить недавние активности
   Future<List<RecentActivity>> getRecentActivities({int limit = 20});
+  
+  /// Получить данные о выручке
+  Future<RevenueData> getRevenueData({
+    required String period,
+    String? dateFrom,
+    String? dateTo,
+  });
 }
 
 /// Реализация remote data source для дашборда
@@ -35,168 +42,25 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   @override
   Future<DashboardStats> getDashboardStats() async {
     try {
-      // Пытаемся получить агрегаты единым запросом
-      try {
-        print('🔵 Dashboard: Получение агрегатов через /dashboard/summary ...');
-        final resp = await _dio.get('/dashboard/summary');
-        final data = resp.data as Map<String, dynamic>;
-        return DashboardStats(
-          totalProducts: (data['products_total'] ?? 0) as int,
-          lowStockProducts: 0,
-          totalCompanies: (data['companies_active'] ?? 0) as int,
-          activeCompanies: (data['companies_active'] ?? 0) as int,
-          totalEmployees: (data['employees_active'] ?? 0) as int,
-          activeEmployees: (data['employees_active'] ?? 0) as int,
-          todayRequests: (data['requests_pending'] ?? 0) as int,
-          completedTodayRequests: 0,
-          todaySales: 0,
-          monthlySales: 0,
-          goodsInTransit: (data['products_in_transit'] ?? 0) as int,
-          warehousesActive: (data['warehouses_active'] ?? 0) as int,
-          lastUpdated: DateTime.now(),
-        );
-      } catch (_) {
-        print('ℹ️ /dashboard/summary недоступен, используем существующие эндпоинты');
-      }
-
-      // Собираем статистику из разных эндпоинтов согласно текущей API
-      print('🔵 Dashboard: Получение статистики товаров...');
-      final productsResponse = await _dio.get('/products/stats');
-      print('📥 Products response: ${productsResponse.data}');
+      print('🔵 Dashboard: Получение агрегатов через /dashboard/summary ...');
+      final resp = await _dio.get('/dashboard/summary');
+      final data = resp.data as Map<String, dynamic>;
       
-      print('🔵 Dashboard: Получение статистики продаж...');
-      final salesResponse = await _dio.get('/sales/stats');
-      print('📥 Sales response: ${salesResponse.data}');
+      print('📊 Dashboard API Response: $data');
       
-      print('🔵 Dashboard: Получение списка компаний...');
-      final companiesResponse = await _dio.get('/companies', queryParameters: {
-        'page': 1,
-        'per_page': 15,
-      });
-      print('📥 Companies response: ${companiesResponse.data}');
-      
-      print('🔵 Dashboard: Получение списка пользователей...');
-      final usersResponse = await _dio.get('/users');
-      print('📥 Users response: ${usersResponse.data}');
-      
-      print('🔵 Dashboard: Получение товаров в пути...');
-      Map<String, dynamic> goodsInTransitData;
-      try {
-        // Используем алиас из спеки `/products-in-transit`
-        final goodsInTransitResponse = await _dio.get('/products-in-transit', queryParameters: {
-          'page': 1,
-          'per_page': 10,
-        });
-        print('📥 Products-in-transit response: ${goodsInTransitResponse.data}');
-        final data = goodsInTransitResponse.data;
-        if (data is Map<String, dynamic>) {
-          goodsInTransitData = data;
-        } else if (data is List) {
-          goodsInTransitData = { 'data': data, 'meta': { 'total': data.length } };
-        } else {
-          goodsInTransitData = {'data': [], 'meta': {'total': 0}};
-        }
-      } catch (e) {
-        print('⚠️ Ошибка `/products-in-transit`: $e, пытаемся через /receipts со статусом');
-        try {
-          final receiptsResp = await _dio.get('/receipts', queryParameters: {
-            'status': 'in_transit',
-            'page': 1,
-            'per_page': 10,
-          });
-          final data = receiptsResp.data;
-          if (data is Map<String, dynamic>) {
-            goodsInTransitData = data;
-          } else if (data is List) {
-            goodsInTransitData = { 'data': data, 'meta': { 'total': data.length } };
-          } else {
-            goodsInTransitData = {'data': [], 'meta': {'total': 0}};
-          }
-        } catch (e2) {
-          print('⚠️ Fallback тоже не сработал: $e2, используем 0');
-          goodsInTransitData = {'data': [], 'meta': {'total': 0}};
-        }
-      }
-      
-      print('🔵 Dashboard: Получение запросов...');
-      final requestsResponse = await _dio.get('/requests', queryParameters: {
-        'page': 1,
-        'per_page': 15,
-      });
-      print('📥 Requests response: ${requestsResponse.data}');
-      
-      // Парсим данные товаров
-      final productsData = productsResponse.data is Map<String, dynamic> && productsResponse.data['success'] == true
-          ? productsResponse.data['data']
-          : productsResponse.data;
+      // Парсим последние продажи
+      final latestSalesList = (data['latest_sales'] as List<dynamic>? ?? [])
+          .map((saleJson) => LatestSale.fromJson(saleJson as Map<String, dynamic>))
+          .toList();
           
-      // Парсим данные продаж  
-      final salesData = salesResponse.data is Map<String, dynamic> && salesResponse.data['success'] == true
-          ? salesResponse.data['data'] 
-          : salesResponse.data;
-      
-      // Парсим данные компаний (с пагинацией)
-      final companiesData = companiesResponse.data as Map<String, dynamic>;
-      final totalCompanies = companiesData['pagination']?['total'] ?? 
-          companiesData['meta']?['total'] ?? 0;
-      final companiesItems = companiesData['data'] as List<dynamic>? ?? [];
-      final activeCompanies = companiesItems.where((company) => 
-        company['is_active'] == true || company['is_archived'] != true
-      ).length;
-      
-      print('📈 Companies: total=$totalCompanies, active=$activeCompanies');
-          
-      // Парсим данные пользователей
-      final usersData = usersResponse.data is Map<String, dynamic> && usersResponse.data['data'] != null
-          ? usersResponse.data['data'] as List<dynamic>
-          : usersResponse.data as List<dynamic>;
-          
-      // Парсим товары в пути (данные уже получены выше с обработкой ошибок)
-      final goodsInTransitCount = goodsInTransitData['pagination']?['total'] ?? 
-          goodsInTransitData['meta']?['total'] ?? 
-          (goodsInTransitData['data'] as List<dynamic>?)?.length ?? 0;
-      
-      print('🚛 Goods in transit: count=$goodsInTransitCount');
-      
-      // Парсим запросы (с пагинацией)
-      final requestsData = requestsResponse.data as Map<String, dynamic>;
-      final totalRequests = requestsData['pagination']?['total'] ?? 
-          requestsData['meta']?['total'] ?? 0;
-      
-      print('📝 Requests: total=$totalRequests');
-      
-      // Подсчитываем активных пользователей
-      final totalEmployees = usersData.length;
-      final activeEmployees = usersData.where((user) => 
-        user['is_blocked'] != true
-      ).length;
-      
-      // Получаем average_sale и округляем до целого числа
-      final averageSaleValue = salesData['average_sale'];
-      final averageSaleRounded = averageSaleValue is String 
-          ? double.tryParse(averageSaleValue)?.round() ?? 0
-          : (averageSaleValue as num?)?.round() ?? 0;
-      
-      print('📊 Dashboard Stats:');
-      print('  - Товары: ${productsData['total_products']}');
-      print('  - Компании: $totalCompanies (активных: $activeCompanies)');
-      print('  - Сотрудники: $totalEmployees (активных: $activeEmployees)');
-      print('  - Продажи (average_sale): $averageSaleRounded ₽');
-      print('  - Товары в пути: $goodsInTransitCount');
-      print('  - Запросы: $totalRequests');
-      
-      // Формируем общую статистику из доступных данных
       return DashboardStats(
-        totalProducts: productsData['total_products'] ?? 0,
-        lowStockProducts: productsData['low_stock'] ?? 0,
-        totalCompanies: totalCompanies,
-        activeCompanies: activeCompanies,
-        totalEmployees: totalEmployees,
-        activeEmployees: activeEmployees,
-        todaySales: averageSaleRounded.toDouble(), // Используем average_sale как целое число
-        monthlySales: (salesData['month_revenue'] ?? 0.0).toDouble(),
-        goodsInTransit: goodsInTransitCount,
-        todayRequests: totalRequests, // Добавляем запросы
+        companiesActive: (data['companies_active'] ?? 0) as int,
+        employeesActive: (data['employees_active'] ?? 0) as int,
+        warehousesActive: (data['warehouses_active'] ?? 0) as int,
+        productsTotal: (data['products_total'] ?? 0) as int,
+        productsInTransit: (data['products_in_transit'] ?? 0) as int,
+        requestsPending: (data['requests_pending'] ?? 0) as int,
+        latestSales: latestSalesList,
         lastUpdated: DateTime.now(),
       );
     } on DioException catch (e) {
@@ -324,6 +188,146 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     }
   }
 
+  @override
+  Future<RevenueData> getRevenueData({
+    required String period,
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    try {
+      print('🔵 Dashboard: Получение данных о выручке через /dashboard/revenue API...');
+      
+      // Определяем даты для запроса
+      String calculatedDateFrom;
+      String calculatedDateTo;
+      
+      if (period == 'custom' && dateFrom != null && dateTo != null) {
+        calculatedDateFrom = dateFrom;
+        calculatedDateTo = dateTo;
+      } else {
+        final now = DateTime.now();
+        switch (period) {
+          case 'day':
+            calculatedDateFrom = now.toIso8601String().split('T')[0];
+            calculatedDateTo = now.toIso8601String().split('T')[0];
+            break;
+          case 'week':
+            final weekStart = now.subtract(Duration(days: now.weekday - 1));
+            calculatedDateFrom = weekStart.toIso8601String().split('T')[0];
+            calculatedDateTo = now.toIso8601String().split('T')[0];
+            break;
+          case 'month':
+            final monthStart = DateTime(now.year, now.month, 1);
+            calculatedDateFrom = monthStart.toIso8601String().split('T')[0];
+            calculatedDateTo = now.toIso8601String().split('T')[0];
+            break;
+          default:
+            calculatedDateFrom = now.toIso8601String().split('T')[0];
+            calculatedDateTo = now.toIso8601String().split('T')[0];
+        }
+      }
+      
+      print('📅 Период: $period, с $calculatedDateFrom по $calculatedDateTo');
+      
+      // Используем правильный эндпоинт для выручки
+      final queryParams = <String, dynamic>{
+        'period': period,
+        'date_from': calculatedDateFrom,
+        'date_to': calculatedDateTo,
+      };
+      
+      final response = await _dio.get('/dashboard/revenue', queryParameters: queryParams);
+      
+      print('📊 Получен ответ от /dashboard/revenue: ${response.statusCode}');
+      print('📄 Данные ответа: ${response.data}');
+      
+      // Парсим ответ от API
+      final data = response.data as Map<String, dynamic>;
+      
+      // Преобразуем в модель RevenueData
+      final Map<String, CurrencyAmount> revenue = {};
+      
+      if (data.containsKey('revenue') && data['revenue'] is Map<String, dynamic>) {
+        final revenueData = data['revenue'] as Map<String, dynamic>;
+        
+        for (final entry in revenueData.entries) {
+          final currency = entry.key;
+          final currencyData = entry.value as Map<String, dynamic>;
+          
+          revenue[currency] = CurrencyAmount(
+            amount: _parseToDouble(currencyData['amount']),
+            formatted: currencyData['formatted']?.toString() ?? 
+                       _formatCurrency(_parseToDouble(currencyData['amount']), currency),
+          );
+        }
+      }
+      
+      // Если нет данных, добавляем пустые значения для основных валют
+      if (revenue.isEmpty) {
+        revenue['RUB'] = const CurrencyAmount(amount: 0.0, formatted: '0 ₽');
+        revenue['USD'] = const CurrencyAmount(amount: 0.0, formatted: '0 \$');
+        revenue['UZS'] = const CurrencyAmount(amount: 0.0, formatted: '0 сўм');
+      }
+      
+      final result = RevenueData(
+        period: period,
+        dateFrom: data['date_from']?.toString() ?? calculatedDateFrom,
+        dateTo: data['date_to']?.toString() ?? calculatedDateTo,
+        revenue: revenue,
+      );
+      
+      print('✅ Данные о выручке успешно получены через /dashboard/revenue API');
+      return result;
+      
+    } on DioException catch (e) {
+      print('🔴 Revenue: Ошибка получения данных о выручке: ${e.response?.statusCode} - ${e.message}');
+      print('🔴 Response data: ${e.response?.data}');
+      
+      // В случае ошибки API, возвращаем пустые данные
+      print('⚠️ Используем пустые данные из-за ошибки API');
+      
+      final emptyRevenue = {
+        'RUB': const CurrencyAmount(amount: 0.0, formatted: '0 ₽'),
+        'USD': const CurrencyAmount(amount: 0.0, formatted: '0 \$'),
+        'UZS': const CurrencyAmount(amount: 0.0, formatted: '0 сўм'),
+      };
+      
+      return RevenueData(
+        period: period,
+        dateFrom: dateFrom ?? DateTime.now().toIso8601String().split('T')[0],
+        dateTo: dateTo ?? DateTime.now().toIso8601String().split('T')[0],
+        revenue: emptyRevenue,
+      );
+    } catch (e) {
+      print('🔴 Revenue: Общая ошибка: $e');
+      throw Exception('Ошибка обработки данных о выручке: $e');
+    }
+  }
+  
+  /// Преобразование в double с обработкой строк
+  double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+  
+  /// Форматирование валюты
+  String _formatCurrency(double amount, String currency) {
+    switch (currency.toUpperCase()) {
+      case 'USD':
+        return '\$${amount.toStringAsFixed(2)}';
+      case 'RUB':
+        return '${amount.toStringAsFixed(2)} ₽';
+      case 'UZS':
+        return '${amount.toStringAsFixed(0)} сўм';
+      default:
+        return '${amount.toStringAsFixed(2)} $currency';
+    }
+  }
 }
 
 /// Provider для remote data source дашборда

@@ -21,7 +21,7 @@ class ProductsInTransitRemoteDataSource {
   ProductsInTransitRemoteDataSource(this._dio);
 
   /// Получить список товаров в пути
-  /// GET /api/products с фильтром по статусу
+  /// GET /api/receipts с фильтром по статусу
   Future<List<ProductInTransitModel>> getProductsInTransit({
     int? page,
     int? perPage,
@@ -36,14 +36,14 @@ class ProductsInTransitRemoteDataSource {
       if (search != null) queryParams['search'] = search;
 
       final response = await _dio.get(
-        '/products',
+        '/receipts',
         queryParameters: queryParams,
       );
 
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
-        final List<dynamic> productsList = data['data'] ?? [];
-        
+        // Поддержка success/data/pagination обертки
+        final List<dynamic> productsList = (data['data'] as List?) ?? <dynamic>[];
         return productsList.map((json) => ProductInTransitModel.fromJson(json as Map<String, dynamic>)).toList();
       }
 
@@ -64,10 +64,10 @@ class ProductsInTransitRemoteDataSource {
   }
 
   /// Получить товар в пути по ID
-  /// GET /api/products/{id}
+  /// GET /api/receipts/{id}
   Future<ProductInTransitModel> getProductInTransitById(int id) async {
     try {
-      final response = await _dio.get('/products/$id');
+      final response = await _dio.get('/receipts/$id');
 
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -98,17 +98,26 @@ class ProductsInTransitRemoteDataSource {
   }
 
   /// Создать новый товар в пути
-  /// POST /api/products
+  /// POST /api/receipts
   Future<ProductInTransitModel> createProductInTransit(Map<String, dynamic> data) async {
     try {
       // Добавляем статус "в пути" для новых товаров
-      final productData = Map<String, dynamic>.from(data);
-      productData['status'] = 'in_transit';
-      
-      final response = await _dio.post('/products', data: productData);
+      final receiptData = Map<String, dynamic>.from(data);
+      receiptData['status'] = 'in_transit';
+      // document_path по спецификации — массив строк, оставляем как есть
+      final response = await _dio.post('/receipts', data: receiptData);
 
       if (response.data is Map<String, dynamic>) {
-        return ProductInTransitModel.fromJson(response.data as Map<String, dynamic>);
+        final map = response.data as Map<String, dynamic>;
+        // Поддерживаем различные форматы ответа
+        if (map.containsKey('product') && map['product'] is Map<String, dynamic>) {
+          return ProductInTransitModel.fromJson(map['product'] as Map<String, dynamic>);
+        }
+        if (map.containsKey('data') && map['data'] is Map<String, dynamic>) {
+          return ProductInTransitModel.fromJson(map['data'] as Map<String, dynamic>);
+        }
+        // Прямой объект
+        return ProductInTransitModel.fromJson(map);
       }
 
       throw Exception('Неожиданный формат ответа API');
@@ -128,10 +137,10 @@ class ProductsInTransitRemoteDataSource {
   }
 
   /// Обновить товар в пути
-  /// PUT /api/products/{id}
+  /// PUT /api/receipts/{id}
   Future<ProductInTransitModel> updateProductInTransit(int id, Map<String, dynamic> data) async {
     try {
-      final response = await _dio.put('/products/$id', data: data);
+      final response = await _dio.put('/receipts/$id', data: data);
 
       if (response.data is Map<String, dynamic>) {
         return ProductInTransitModel.fromJson(response.data as Map<String, dynamic>);
@@ -156,13 +165,14 @@ class ProductsInTransitRemoteDataSource {
   }
 
   /// Принять товар в пути
-  /// PUT /api/products/{id} - обновляем статус на "received"
-  Future<ProductInTransitModel> receiveProductInTransit(int id) async {
+  /// POST /api/receipts/{id}/receive - принимаем товар
+  Future<ProductInTransitModel> receiveProductInTransit(int id, {int? actualQuantity, String? notes}) async {
     try {
-      final response = await _dio.put('/products/$id', data: {
-        'status': 'received',
-        'arrival_date': DateTime.now().toIso8601String(),
-      });
+      final requestData = <String, dynamic>{};
+      if (actualQuantity != null) requestData['actual_quantity'] = actualQuantity;
+      if (notes != null) requestData['notes'] = notes;
+      
+      final response = await _dio.post('/receipts/$id/receive', data: requestData);
 
       if (response.data is Map<String, dynamic>) {
         return ProductInTransitModel.fromJson(response.data as Map<String, dynamic>);

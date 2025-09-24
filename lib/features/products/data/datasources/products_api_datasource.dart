@@ -154,13 +154,26 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
     try {
       final response = await _dio.get('/products/popular');
       
-      // API возвращает {success: true, data: [{id, total_sales, total_revenue}]}
-      final responseData = response.data as Map<String, dynamic>;
-      final productsData = responseData['data'] as List;
+      // According to OpenAPI spec, API should return array directly
+      if (response.data is List) {
+        final productsData = response.data as List;
+        return productsData
+            .map((json) => PopularProductModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
       
-      return productsData
-          .map((json) => PopularProductModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      // Fallback: check if wrapped in success/data structure (old format)
+      if (response.data is Map<String, dynamic>) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData.containsKey('data') && responseData['data'] is List) {
+          final productsData = responseData['data'] as List;
+          return productsData
+              .map((json) => PopularProductModel.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      
+      throw Exception('Unexpected API response format for popular products');
     } catch (e) {
       throw _handleError(e);
     }
@@ -173,12 +186,27 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
       
       final response = await _dio.get('/products/export', queryParameters: queryParams);
       
-      final responseData = response.data as Map<String, dynamic>;
-      final productsData = responseData['data'] as List;
+      // According to OpenAPI spec, export endpoint returns binary data (file)
+      // For now, handle as JSON array if that's what API actually returns
+      if (response.data is List) {
+        final productsData = response.data as List;
+        return productsData
+            .map((json) => ProductExportRow.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
       
-      return productsData
-          .map((json) => ProductExportRow.fromJson(json as Map<String, dynamic>))
-          .toList();
+      // Fallback: check if wrapped in data structure
+      if (response.data is Map<String, dynamic>) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData.containsKey('data') && responseData['data'] is List) {
+          final productsData = responseData['data'] as List;
+          return productsData
+              .map((json) => ProductExportRow.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      
+      throw Exception('Unexpected API response format for export products');
     } catch (e) {
       throw _handleError(e);
     }

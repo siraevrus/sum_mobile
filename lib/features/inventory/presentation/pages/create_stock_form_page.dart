@@ -8,6 +8,7 @@ import 'package:sum_warehouse/features/products/domain/entities/product_template
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/product_model.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
 /// Форма для создания нового остатка (товара на складе)
 class CreateStockFormPage extends ConsumerStatefulWidget {
@@ -22,13 +23,13 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _quantityController = TextEditingController();
-  final _producerController = TextEditingController();
   final _transportNumberController = TextEditingController();
   
   bool _isLoading = false;
   bool _isActive = true;
   int? _selectedWarehouseId;
   int? _selectedTemplateId;
+  int? _selectedProducerId;
   DateTime? _arrivalDate;
   
   // Данные из API
@@ -43,6 +44,10 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
   @override
   void initState() {
     super.initState();
+    // Загружаем производителей
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(producersProvider.notifier).loadProducers();
+    });
     _loadData();
   }
 
@@ -51,7 +56,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
     _nameController.dispose();
     _descriptionController.dispose();
     _quantityController.dispose();
-    _producerController.dispose();
     _transportNumberController.dispose();
     _attributeControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
@@ -156,6 +160,53 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Производитель
+                    _buildProducerDropdown(),
+                    const SizedBox(height: 16),
+
+                    // Дата поступления
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _arrivalDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                        );
+                        if (date != null) {
+                          setState(() {
+                            _arrivalDate = date;
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Дата поступления*',
+                          border: const OutlineInputBorder(),
+                          errorText: _arrivalDate == null ? 'Выберите дату поступления' : null,
+                        ),
+                        child: Text(
+                          _arrivalDate != null
+                              ? '${_arrivalDate!.day.toString().padLeft(2, '0')}.${_arrivalDate!.month.toString().padLeft(2, '0')}.${_arrivalDate!.year}'
+                              : 'Выберите дату',
+                          style: TextStyle(
+                            color: _arrivalDate != null ? Colors.black : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Номер транспорта
+                    TextFormField(
+                      controller: _transportNumberController,
+                      decoration: const InputDecoration(
+                        labelText: 'Номер транспорта',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // Шаблон товара
                     DropdownButtonFormField<int>(
         dropdownColor: Colors.white,
@@ -203,17 +254,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Описание
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Описание',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-
                     // Количество
                     TextFormField(
                       controller: _quantityController,
@@ -235,62 +275,14 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Производитель
+                    // Описание
                     TextFormField(
-                      controller: _producerController,
+                      controller: _descriptionController,
                       decoration: const InputDecoration(
-                        labelText: 'Производитель*',
+                        labelText: 'Описание',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Введите производителя';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Номер транспорта
-                    TextFormField(
-                      controller: _transportNumberController,
-                      decoration: const InputDecoration(
-                        labelText: 'Номер транспорта',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Дата поступления
-                    InkWell(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _arrivalDate ?? DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
-                        );
-                        if (date != null) {
-                          setState(() {
-                            _arrivalDate = date;
-                          });
-                        }
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Дата поступления*',
-                          border: const OutlineInputBorder(),
-                          errorText: _arrivalDate == null ? 'Выберите дату поступления' : null,
-                        ),
-                        child: Text(
-                          _arrivalDate != null
-                              ? '${_arrivalDate!.day.toString().padLeft(2, '0')}.${_arrivalDate!.month.toString().padLeft(2, '0')}.${_arrivalDate!.year}'
-                              : 'Выберите дату',
-                          style: TextStyle(
-                            color: _arrivalDate != null ? Colors.black : Colors.grey[600],
-                          ),
-                        ),
-                      ),
+                      maxLines: 3,
                     ),
                     const SizedBox(height: 16),
 
@@ -458,6 +450,53 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
       },
     );
   }
+  
+  Widget _buildProducerDropdown() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final producersAsync = ref.watch(producersProvider);
+        
+        return producersAsync.when(
+          loading: () => const CircularProgressIndicator(),
+          error: (error, stack) => Text('Ошибка загрузки производителей: $error'),
+          data: (producers) {
+            return DropdownButtonFormField<int>(
+              value: _selectedProducerId,
+              decoration: const InputDecoration(
+                labelText: 'Производитель',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Color(0xFFF5F5F5),
+              ),
+              items: [
+                const DropdownMenuItem<int>(
+                  value: null,
+                  child: Text('Не выбран'),
+                ),
+                ...producers.map((producer) {
+                  return DropdownMenuItem<int>(
+                    value: producer.id,
+                    child: Text(producer.name),
+                  );
+                }).toList(),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedProducerId = value;
+                });
+              },
+              validator: (value) {
+                if (value == null) {
+                  return 'Выберите производителя';
+                }
+                return null;
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
@@ -497,7 +536,7 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         quantity: double.parse(_quantityController.text),
-        producer: _producerController.text.trim(),
+        producerId: _selectedProducerId,
         transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
         arrivalDate: _arrivalDate!,
         isActive: _isActive,

@@ -56,7 +56,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   final _descriptionController = TextEditingController();
   final _quantityController = TextEditingController();
   final _transportNumberController = TextEditingController();
-  final _producerController = TextEditingController();
   final _shippingLocationController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -85,6 +84,11 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   @override
   void initState() {
     super.initState();
+    // Загружаем производителей
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(producersProvider.notifier).loadProducers();
+    });
+    
     if (widget.isEditing && widget.productId != null) {
       _loadProductData();
     }
@@ -96,7 +100,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     _descriptionController.dispose();
     _quantityController.dispose();
     _transportNumberController.dispose();
-    _producerController.dispose();
     _shippingLocationController.dispose();
     _notesController.dispose();
     _attributeControllers.values.forEach((controller) => controller.dispose());
@@ -157,7 +160,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _descriptionController.text = product.description ?? '';
       _quantityController.text = product.quantity.toString();
       _transportNumberController.text = product.transportNumber ?? '';
-      _producerController.text = product.producer ?? '';
       _shippingLocationController.text = product.shippingLocation ?? '';
       _notesController.text = product.notes ?? '';
       
@@ -301,12 +303,25 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         
         // Добавляем текущий товар если он заполнен
         if (_selectedProductTemplateId != null && _nameController.text.trim().isNotEmpty) {
+          // Получаем имя производителя из выбранного ID
+          String? currentProducerName;
+          if (_selectedProducerId != null) {
+            final producersAsync = ref.read(producersProvider);
+            producersAsync.whenData((producers) {
+              final producer = producers.firstWhere(
+                (p) => p.id == _selectedProducerId,
+                orElse: () => producers.first,
+              );
+              currentProducerName = producer.name;
+            });
+          }
+          
           allProducts.add(ProductItem(
             productTemplateId: _selectedProductTemplateId,
             name: _nameController.text.trim(),
             description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
             quantity: double.tryParse(_quantityController.text) ?? 0.0,
-            producer: _producerController.text.trim().isEmpty ? null : _producerController.text.trim(),
+            producer: currentProducerName,
           ));
         }
 
@@ -660,19 +675,31 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     }
 
     // Создаем товар и добавляем в список
+    // Получаем имя производителя из выбранного ID
+    String? producerName;
+    if (_selectedProducerId != null) {
+      final producersAsync = ref.read(producersProvider);
+      producersAsync.whenData((producers) {
+        final producer = producers.firstWhere(
+          (p) => p.id == _selectedProducerId,
+          orElse: () => producers.first,
+        );
+        producerName = producer.name;
+      });
+    }
+    
     final product = ProductItem(
       productTemplateId: _selectedProductTemplateId,
       name: effectiveName,
       description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
       quantity: double.tryParse(_quantityController.text) ?? 0.0,
-      producer: _producerController.text.trim().isEmpty ? null : _producerController.text.trim(),
+      producer: producerName,
     );
 
     setState(() {
       _productItems.add(product);
       // Очищаем поля для следующего товара
       _nameController.clear();
-      _producerController.clear();
       _quantityController.clear();
       _descriptionController.clear();
       _selectedProductTemplateId = null;
@@ -690,7 +717,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   void _removeCurrentProduct() {
     setState(() {
       _nameController.clear();
-      _producerController.clear();
       _quantityController.clear();
       _descriptionController.clear();
       _selectedProductTemplateId = null;

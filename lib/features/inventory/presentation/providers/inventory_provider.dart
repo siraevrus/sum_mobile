@@ -1,74 +1,64 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/features/inventory/data/datasources/inventory_remote_datasource.dart';
-import 'package:sum_warehouse/features/inventory/domain/entities/inventory_entity.dart';
+import 'package:sum_warehouse/shared/models/stock_model.dart';
 
 part 'inventory_provider.g.dart';
 
-/// Provider для получения списка остатков с кешированием
+/// Provider для получения списка остатков с кешированием (новое API)
 @riverpod
-class InventoryList extends _$InventoryList {
+class StocksList extends _$StocksList {
   @override
-  Future<List<InventoryEntity>> build() async {
-    return await _fetchInventory();
+  Future<List<StockModel>> build() async {
+    return await _fetchStocks();
   }
 
-  Future<List<InventoryEntity>> _fetchInventory({
+  Future<List<StockModel>> _fetchStocks({
     int? warehouseId,
-    String? status,
-    bool? needsRestock,
-    String? search,
+    bool? lowStock,
+    int page = 1,
+    int perPage = 15,
   }) async {
     final datasource = ref.read(inventoryRemoteDataSourceProvider);
     
-    return await datasource.getInventoryList(
+    return await datasource.getStocks(
       warehouseId: warehouseId,
-      status: status,
-      needsRestock: needsRestock,
-      search: search,
+      lowStock: lowStock,
+      page: page,
+      perPage: perPage,
     );
   }
 
-  /// Обновить список с фильтрами
-  Future<void> updateFilters({
+  /// Обновить список остатков
+  Future<void> refresh({
     int? warehouseId,
-    String? status,
-    bool? needsRestock,
-    String? search,
+    bool? lowStock,
+    int page = 1,
+    int perPage = 15,
   }) async {
     state = const AsyncValue.loading();
-    try {
-      final inventory = await _fetchInventory(
-        warehouseId: warehouseId,
-        status: status,
-        needsRestock: needsRestock,
-        search: search,
-      );
-      state = AsyncValue.data(inventory);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-
-  /// Обновить данные
-  Future<void> refresh() async {
-    ref.invalidateSelf();
+    state = await AsyncValue.guard(() => _fetchStocks(
+      warehouseId: warehouseId,
+      lowStock: lowStock,
+      page: page,
+      perPage: perPage,
+    ));
   }
 }
 
-/// Provider для получения истории движений товара
-final movementHistoryProvider = FutureProvider.family<List<StockMovementEntity>, int>((ref, productId) async {
-  final datasource = ref.read(inventoryRemoteDataSourceProvider);
-  
-  return await datasource.getMovementHistory(productId);
-});
+/// Provider для получения конкретного остатка
+@riverpod
+class StockDetails extends _$StockDetails {
+  @override
+  Future<StockModel> build(String stockId) async {
+    final datasource = ref.read(inventoryRemoteDataSourceProvider);
+    return await datasource.getStockById(stockId);
+  }
+}
 
 /// Provider для создания движения товара
-final stockMovementNotifierProvider = AsyncNotifierProvider<StockMovementNotifier, void>(() {
-  return StockMovementNotifier();
-});
-
-class StockMovementNotifier extends AsyncNotifier<void> {
+@riverpod
+class StockMovementNotifier extends _$StockMovementNotifier {
   @override
   Future<void> build() async {
     // Инициализация
@@ -76,8 +66,8 @@ class StockMovementNotifier extends AsyncNotifier<void> {
   
   /// Создать движение товара
   Future<void> createStockMovement({
-    required int inventoryId,
-    required MovementType type,
+    required String stockId,
+    required String type,
     required double quantity,
     String? reason,
     String? documentNumber,
@@ -88,9 +78,9 @@ class StockMovementNotifier extends AsyncNotifier<void> {
     try {
       final datasource = ref.read(inventoryRemoteDataSourceProvider);
       
-      await datasource.createStockMovementByInventory(
-        inventoryId: inventoryId,
-        type: type.code,
+      await datasource.createStockMovement(
+        stockId: stockId,
+        type: type,
         quantity: quantity,
         reason: reason,
         documentNumber: documentNumber,
@@ -100,7 +90,35 @@ class StockMovementNotifier extends AsyncNotifier<void> {
       state = const AsyncData(null);
       
       // Обновляем список остатков
-      ref.invalidate(inventoryListProvider);
+      ref.invalidate(stocksListProvider);
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+    }
+  }
+  
+  /// Корректировать остатки
+  Future<void> adjustStock({
+    required String stockId,
+    required double newQuantity,
+    required String reason,
+    String? notes,
+  }) async {
+    state = const AsyncLoading();
+    
+    try {
+      final datasource = ref.read(inventoryRemoteDataSourceProvider);
+      
+      await datasource.adjustStock(
+        stockId: stockId,
+        newQuantity: newQuantity,
+        reason: reason,
+        notes: notes,
+      );
+      
+      state = const AsyncData(null);
+      
+      // Обновляем список остатков
+      ref.invalidate(stocksListProvider);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
     }

@@ -22,13 +22,18 @@ abstract class SalesRemoteDataSource {
     String? dateTo,
   });
 
-  // getSale метод удален - API не поддерживает GET /sales/{id}
+  /// Get single sale by ID (exists in OpenAPI spec)
+  Future<SaleModel> getSale(int id);
+  
   Future<SaleModel> createSale(CreateSaleRequest request);
   Future<SaleModel> updateSale(int id, UpdateSaleRequest request);
   Future<void> deleteSale(int id);
   Future<void> processSale(int id);
   Future<void> cancelSale(int id);
   Future<SalesStatsResponse> getSalesStats();
+  
+  /// Export sales (NOT DEFINED in OpenAPI specification)
+  /// TODO: Add /sales/export endpoint to OpenAPI spec
   Future<List<Map<String, dynamic>>> exportSales({
     String? search,
     int? warehouseId,
@@ -115,6 +120,27 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
         links: const PaginationLinks(first: null, last: null, prev: null, next: null),
         meta: const PaginationMeta(currentPage: 1, lastPage: 1, perPage: 15, total: 3),
       );
+    }
+  }
+
+  @override
+  Future<SaleModel> getSale(int id) async {
+    try {
+      final response = await _dio.get('/sales/$id');
+      
+      final responseData = response.data;
+      if (responseData is Map<String, dynamic>) {
+        // Check if wrapped in data structure
+        if (responseData.containsKey('data')) {
+          return SaleModel.fromJson(responseData['data'] as Map<String, dynamic>);
+        } else {
+          return SaleModel.fromJson(responseData);
+        }
+      }
+      
+      throw Exception('Unexpected response format for getSale');
+    } catch (e) {
+      throw _handleError(e);
     }
   }
 

@@ -9,6 +9,7 @@ import 'package:sum_warehouse/features/products/data/datasources/products_api_da
 import 'package:sum_warehouse/shared/models/product_model.dart';
 import 'package:sum_warehouse/features/products/presentation/providers/products_provider.dart';
 import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
 /// Экран создания/редактирования товара
 class ProductFormPage extends ConsumerStatefulWidget {
@@ -28,7 +29,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   final _nameController = TextEditingController();
   final _quantityController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _producerController = TextEditingController();
   final _transportNumberController = TextEditingController();
   
   bool _isActive = true;
@@ -37,6 +37,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   
   ProductTemplateEntity? _selectedTemplate;
   int? _selectedWarehouseId;
+  int? _selectedProducerId;
   Map<String, TextEditingController> _attributeControllers = {};
   Map<String, dynamic> _attributeValues = {};
   double? _calculatedValue;
@@ -46,6 +47,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   @override
   void initState() {
     super.initState();
+    // Загружаем производителей
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(producersProvider.notifier).loadProducers();
+    });
     _initializeForm();
   }
   
@@ -54,7 +59,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     _nameController.dispose();
     _quantityController.dispose();
     _descriptionController.dispose();
-    _producerController.dispose();
     _transportNumberController.dispose();
     _attributeControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
@@ -66,13 +70,15 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       _nameController.text = product.name;
       _quantityController.text = product.quantity.toString();
       _descriptionController.text = product.description ?? '';
-      _producerController.text = product.producer ?? '';
       _transportNumberController.text = product.transportNumber ?? '';
       _selectedWarehouseId = product.warehouseId;
       _arrivalDate = product.arrivalDate;
       _isActive = product.isActive;
       _attributeValues = Map.from(product.attributes);
       _calculatedValue = product.calculatedValue;
+      
+      // Производитель будет загружен из выпадающего списка
+      _selectedProducerId = null;
       
       // Загружаем атрибуты шаблона, если есть productTemplateId
       if (product.productTemplateId != null) {
@@ -200,6 +206,107 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
             children: [
               // Основная информация
               _buildSectionTitle('Основная информация'),
+              const SizedBox(height: 16),
+              
+              // Склад
+              Consumer(
+                builder: (context, ref, child) {
+                  final warehousesAsync = ref.watch(allWarehousesProvider);
+                  return warehousesAsync.when(
+                    loading: () => DropdownButtonFormField<int>(
+        dropdownColor: Colors.white,
+                      value: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Склад * (загрузка...)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text('Загрузка складов...'),
+                        ),
+                      ],
+                      onChanged: null,
+                    ),
+                    error: (error, stack) => DropdownButtonFormField<int>(
+        dropdownColor: Colors.white,
+                      value: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Склад * (ошибка)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text('Ошибка загрузки складов'),
+                        ),
+                      ],
+                      onChanged: null,
+                    ),
+                    data: (warehouses) => DropdownButtonFormField<int>(
+        dropdownColor: Colors.white,
+                      value: _selectedWarehouseId,
+                      decoration: const InputDecoration(
+                        labelText: 'Склад *',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: warehouses.isEmpty
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('Нет доступных складов'),
+                            ),
+                          ]
+                        : warehouses.map((warehouse) => DropdownMenuItem(
+                            value: warehouse.id,
+                            child: Text(warehouse.name),
+                          )).toList(),
+                      onChanged: (warehouseId) {
+                        setState(() {
+                          _selectedWarehouseId = warehouseId;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null && warehouses.isNotEmpty) {
+                          return 'Выберите склад';
+                        }
+                        return null;
+                      },
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Производитель
+              _buildProducerDropdown(),
+              const SizedBox(height: 16),
+              
+              // Дата поступления
+              InkWell(
+                onTap: () => _selectDate(context, true),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Дата поступления*',
+                    border: const OutlineInputBorder(),
+                    errorText: _arrivalDate == null ? 'Выберите дату поступления' : null,
+                    suffixIcon: const Icon(Icons.calendar_today),
+                  ),
+                  child: Text(
+                    _arrivalDate != null 
+                        ? _formatDate(_arrivalDate!)
+                        : 'Не указана',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Номер транспортного средства
+              _buildTextField(
+                controller: _transportNumberController,
+                label: 'Номер транспортного средства',
+                hint: 'Введите номер',
+              ),
               const SizedBox(height: 16),
               
               // Шаблон товара
@@ -362,83 +469,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                 },
               ),
               const SizedBox(height: 16),
-              // Склад
-              Consumer(
-                builder: (context, ref, child) {
-                  final warehousesAsync = ref.watch(allWarehousesProvider);
-                  return warehousesAsync.when(
-                    loading: () => DropdownButtonFormField<int>(
-        dropdownColor: Colors.white,
-                      value: null,
-                      decoration: const InputDecoration(
-                        labelText: 'Склад * (загрузка...)',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text('Загрузка складов...'),
-                        ),
-                      ],
-                      onChanged: null,
-                    ),
-                    error: (error, stack) => DropdownButtonFormField<int>(
-        dropdownColor: Colors.white,
-                      value: null,
-                      decoration: const InputDecoration(
-                        labelText: 'Склад * (ошибка)',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text('Ошибка загрузки складов'),
-                        ),
-                      ],
-                      onChanged: null,
-                    ),
-                    data: (warehouses) => DropdownButtonFormField<int>(
-        dropdownColor: Colors.white,
-                      value: _selectedWarehouseId,
-                      decoration: const InputDecoration(
-                        labelText: 'Склад *',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: warehouses.isEmpty
-                        ? [
-                            const DropdownMenuItem(
-                              value: null,
-                              child: Text('Нет доступных складов'),
-                            ),
-                          ]
-                        : warehouses.map((warehouse) => DropdownMenuItem(
-                            value: warehouse.id,
-                            child: Text(warehouse.name),
-                          )).toList(),
-                      onChanged: (warehouseId) {
-                        setState(() {
-                          _selectedWarehouseId = warehouseId;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null && warehouses.isNotEmpty) {
-                          return 'Выберите склад';
-                        }
-                        return null;
-                      },
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
               
-              _buildTextField(
-                controller: _producerController,
-                label: 'Производитель',
-                hint: 'Название производителя',
-              ),
-              const SizedBox(height: 16),
-              
+              // Описание
               _buildTextField(
                 controller: _descriptionController,
                 label: 'Описание',
@@ -481,35 +513,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                 }),
               ],
               
-              // Даты
-              _buildSectionTitle('Дополнительная информация'),
-              const SizedBox(height: 16),
-              
-              // Дата поступления
-              InkWell(
-                onTap: () => _selectDate(context, true),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Дата поступления',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(
-                    _arrivalDate != null 
-                        ? _formatDate(_arrivalDate!)
-                        : 'Не указана',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Номер транспортного средства
-              _buildTextField(
-                controller: _transportNumberController,
-                label: 'Номер транспортного средства',
-                hint: 'Введите номер',
-              ),
-              const SizedBox(height: 24),
               const SizedBox(height: 32),
               
               // Кнопки действий
@@ -561,30 +564,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     );
   }
   
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    String? hint,
-    bool isRequired = false,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: isRequired ? '$label *' : label,
-        hintText: hint,
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-      ),
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
-    );
-  }
-  
   Widget _buildAttributeField(TemplateAttributeEntity attribute) {
     switch (attribute.type) {
       case AttributeType.number:
@@ -613,6 +592,30 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     }
   }
   
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    bool isRequired = false,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+      ),
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      validator: validator,
+    );
+  }
+
   Widget _buildNumberField(TemplateAttributeEntity attribute) {
     return TextFormField(
       controller: _attributeControllers[attribute.variable]!,
@@ -635,7 +638,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         return null;
       } : null,
       onChanged: (value) {
-        _attributeValues[attribute.variable] = value;
+        setState(() {
+          _attributeValues[attribute.variable] = value;
+        });
         if (attribute.isInFormula) {
           _calculateFormula();
         }
@@ -746,6 +751,47 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     );
   }
   
+  Widget _buildProducerDropdown() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final producersAsync = ref.watch(producersProvider);
+        
+        return producersAsync.when(
+          loading: () => const CircularProgressIndicator(),
+          error: (error, stack) => Text('Ошибка загрузки производителей: $error'),
+          data: (producers) {
+            return DropdownButtonFormField<int>(
+              value: _selectedProducerId,
+              decoration: const InputDecoration(
+                labelText: 'Производитель',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Color(0xFFF5F5F5),
+              ),
+              items: [
+                const DropdownMenuItem<int>(
+                  value: null,
+                  child: Text('Не выбран'),
+                ),
+                ...producers.map((producer) {
+                  return DropdownMenuItem<int>(
+                    value: producer.id,
+                    child: Text(producer.name),
+                  );
+                }).toList(),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedProducerId = value;
+                });
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+  
   void _selectDate(BuildContext context, bool isArrival) async {
     final date = await showDatePicker(
       context: context,
@@ -807,7 +853,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           attributes: _attributeValues,
-          producer: _producerController.text.trim().isEmpty ? null : _producerController.text.trim(),
+          producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
           arrivalDate: _arrivalDate,
           isActive: _isActive,
@@ -850,7 +896,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           attributes: _attributeValues,
-          producer: _producerController.text.trim().isEmpty ? null : _producerController.text.trim(),
+          producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
           arrivalDate: _arrivalDate,
           isActive: _isActive,
@@ -1018,19 +1064,43 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       return widget.product!.name;
     }
     
-    // Формируем название из шаблона и характеристик
+    // Формируем название по новым правилам:
+    // Шаблон: "<Имя шаблона>: {формульные значения через ' x '}{, обычные значения через ','}"
     String name = _selectedTemplate!.name;
     
-    if (_attributeValues.isNotEmpty) {
-      final attributeParts = <String>[];
-      for (final entry in _attributeValues.entries) {
-        final value = entry.value;
-        if (value != null && value.toString().isNotEmpty) {
-          attributeParts.add(value.toString());
+    if (_attributeValues.isNotEmpty && _selectedTemplate!.attributes.isNotEmpty) {
+      // Разделяем атрибуты на две группы
+      final formulaAttributes = <String>[];
+      final regularAttributes = <String>[];
+      
+      // Собираем значения для каждой группы
+      for (final attribute in _selectedTemplate!.attributes) {
+        final value = _attributeValues[attribute.variable];
+        
+        // Пропускаем пустые значения и текстовые поля
+        if (value == null || value.toString().isEmpty || attribute.type == AttributeType.text) {
+          continue;
+        }
+        
+        // Добавляем в соответствующую группу
+        if (attribute.isInFormula) {
+          formulaAttributes.add(value.toString());
+        } else if (attribute.type == AttributeType.number || attribute.type == AttributeType.select) {
+          regularAttributes.add(value.toString());
         }
       }
-      if (attributeParts.isNotEmpty) {
-        name += ' (${attributeParts.join(', ')})';
+      
+      // Формируем строку по шаблону
+      final parts = <String>[];
+      if (formulaAttributes.isNotEmpty) {
+        parts.add(formulaAttributes.join(' x '));
+      }
+      if (regularAttributes.isNotEmpty) {
+        parts.add(regularAttributes.join(', '));
+      }
+      
+      if (parts.isNotEmpty) {
+        name += ': ' + parts.join(', ');
       }
     }
     

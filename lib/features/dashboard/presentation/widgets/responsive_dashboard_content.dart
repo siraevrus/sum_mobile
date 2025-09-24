@@ -6,6 +6,8 @@ import 'package:sum_warehouse/features/dashboard/presentation/widgets/popular_pr
 import 'package:sum_warehouse/features/dashboard/presentation/providers/admin_stats_provider.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
+import 'package:sum_warehouse/features/dashboard/presentation/widgets/latest_sales_table.dart';
+import 'package:sum_warehouse/features/dashboard/presentation/widgets/revenue_dashboard.dart';
 
 /// Адаптивное содержимое дашборда
 class ResponsiveDashboardContent extends StatelessWidget {
@@ -42,8 +44,25 @@ class ResponsiveDashboardContent extends StatelessWidget {
           const MobileStatsCards(),
           const SizedBox(height: 20),
           
-          // Популярные товары
-          PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
+          // Последние продажи
+          Consumer(
+            builder: (context, ref, child) {
+              final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
+              return dashboardStats.when(
+                loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
+                error: (error, stack) => const SizedBox.shrink(),
+                data: (stats) => MobileLatestSalesCard(latestSales: stats.latestSales),
+              );
+            },
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Дашборд выручки
+          const RevenueDashboard(),
+          
+          // Популярные товары - скрыто
+          // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
         ],
       ),
     );
@@ -59,9 +78,26 @@ class ResponsiveDashboardContent extends StatelessWidget {
           // Карточки со статистикой
           const DashboardStatsCards(),
           const SizedBox(height: 24),
+                  
+          // Последние продажи
+          Consumer(
+            builder: (context, ref, child) {
+              final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
+              return dashboardStats.when(
+                loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
+                error: (error, stack) => const SizedBox.shrink(),
+                data: (stats) => LatestSalesTable(latestSales: stats.latestSales),
+              );
+            },
+          ),
           
-          // Популярные товары
-          PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
+          const SizedBox(height: 24),
+          
+          // Дашборд выручки
+          const RevenueDashboard(),
+          
+          // Популярные товары - скрыто
+          // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
         ],
       ),
     );
@@ -112,82 +148,14 @@ class MobileStatsCards extends ConsumerWidget {
       ),
       data: (stats) => Column(
         children: [
-          // Первая строка с двумя карточками
-          Row(
-            children: [
-              Expanded(
-                child: _MobileStatsCard(
-                  title: 'Поступление товаров',
-                  value: _formatNumber(stats.totalProducts),
-                  subtitle: stats.lowStockProducts > 0 
-                      ? '${stats.lowStockProducts} мало остатков'
-                      : 'Все в наличии',
-                  icon: Icons.inventory_2_outlined,
-                  iconColor: stats.lowStockProducts > 0 
-                      ? const Color(0xFFE74C3C)
-                      : const Color(0xFF3498DB),
-                  backgroundColor: stats.lowStockProducts > 0
-                      ? const Color(0xFFFDEBEB)
-                      : const Color(0xFFEBF3FD),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MobileStatsCard(
-                  title: 'Остатки на складе',
-                  value: '5', // Статичное значение как в API
-                  subtitle: '5 активных',
-                  icon: Icons.warehouse_outlined,
-                  iconColor: const Color(0xFF2ECC71),
-                  backgroundColor: const Color(0xFFE8F5E8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Вторая строка с двумя карточками
-          Row(
-            children: [
-              Expanded(
-                child: _MobileStatsCard(
-                  title: 'Продажи',
-                  value: '₽${stats.todaySales.round()}', // Используем average_sale как целое число
-                  subtitle: 'За этот месяц',
-                  icon: Icons.trending_up_outlined,
-                  iconColor: const Color(0xFF2ECC71),
-                  backgroundColor: const Color(0xFFE8F5E8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MobileStatsCard(
-                  title: 'Сотрудники',
-                  value: _formatNumber(stats.totalEmployees),
-                  subtitle: (stats.totalEmployees - stats.activeEmployees) > 0
-                      ? '${stats.totalEmployees - stats.activeEmployees} заблокированы'
-                      : 'Все активны',
-                  icon: Icons.people_outlined,
-                  iconColor: (stats.totalEmployees - stats.activeEmployees) > 0
-                      ? const Color(0xFFF39C12)
-                      : const Color(0xFF3498DB),
-                  backgroundColor: (stats.totalEmployees - stats.activeEmployees) > 0
-                      ? const Color(0xFFFEF5E7)
-                      : const Color(0xFFEBF3FD),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Третья строка с двумя карточками
+          // Первая строка: Компании и Сотрудники
           Row(
             children: [
               Expanded(
                 child: _MobileStatsCard(
                   title: 'Компании',
-                  value: _formatNumber(stats.totalCompanies), // Используем реальные данные
-                  subtitle: 'Активные компании',
+                  value: _formatNumber(stats.companiesActive),
+                  subtitle: 'Активные',
                   icon: Icons.business_outlined,
                   iconColor: AppColors.primary,
                   backgroundColor: const Color(0xFFF4ECFF),
@@ -196,34 +164,70 @@ class MobileStatsCards extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _MobileStatsCard(
-                  title: 'Запросы',
-                  value: _formatNumber(stats.todayRequests), // Используем реальные данные
-                  subtitle: 'Ожидают рассмотрения',
-                  icon: Icons.assignment_outlined,
-                  iconColor: AppColors.primary,
-                  backgroundColor: const Color(0xFFFDF2E9),
+                  title: 'Сотрудники',
+                  value: _formatNumber(stats.employeesActive),
+                  subtitle: 'Активные',
+                  icon: Icons.people_outlined,
+                  iconColor: const Color(0xFF3498DB),
+                  backgroundColor: const Color(0xFFEBF3FD),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           
-          // Четвертая строка с одной карточкой
+          // Вторая строка: Склады и Товары
           Row(
             children: [
               Expanded(
                 child: _MobileStatsCard(
-                  title: 'В пути',
-                  value: _formatNumber(stats.goodsInTransit), // Используем реальные данные
-                  subtitle: 'Товары в доставке',
+                  title: 'Склады',
+                  value: _formatNumber(stats.warehousesActive),
+                  subtitle: 'Активные',
+                  icon: Icons.warehouse_outlined,
+                  iconColor: const Color(0xFF2ECC71),
+                  backgroundColor: const Color(0xFFE8F5E8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MobileStatsCard(
+                  title: 'Товары',
+                  value: _formatNumber(stats.productsTotal),
+                  subtitle: 'Всего',
+                  icon: Icons.inventory_2_outlined,
+                  iconColor: const Color(0xFF8E44AD),
+                  backgroundColor: const Color(0xFFF4ECFF),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Третья строка: Товары в пути и Запросы
+          Row(
+            children: [
+              Expanded(
+                child: _MobileStatsCard(
+                  title: 'Товары в пути',
+                  value: _formatNumber(stats.productsInTransit),
+                  subtitle: 'В доставке',
                   icon: Icons.local_shipping_outlined,
                   iconColor: const Color(0xFF16A085),
                   backgroundColor: const Color(0xFFE8F6F3),
                 ),
               ),
               const SizedBox(width: 12),
-              // Пустая половина для симметрии
-              const Expanded(child: SizedBox()),
+              Expanded(
+                child: _MobileStatsCard(
+                  title: 'Запросы',
+                  value: _formatNumber(stats.requestsPending),
+                  subtitle: 'Ожидают',
+                  icon: Icons.assignment_outlined,
+                  iconColor: const Color(0xFFF39C12),
+                  backgroundColor: const Color(0xFFFEF5E7),
+                ),
+              ),
             ],
           ),
         ],

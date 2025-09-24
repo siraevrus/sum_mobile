@@ -7,30 +7,20 @@ part 'dashboard_stats.g.dart';
 @freezed
 class DashboardStats with _$DashboardStats {
   const factory DashboardStats({
-    /// Общее количество товаров
-    @Default(0) int totalProducts,
-    /// Товары с низким остатком
-    @Default(0) int lowStockProducts,
-    /// Общее количество компаний
-    @Default(0) int totalCompanies,
     /// Активные компании
-    @Default(0) int activeCompanies,
-    /// Общее количество сотрудников
-    @Default(0) int totalEmployees,
+    @JsonKey(name: 'companies_active') @Default(0) int companiesActive,
     /// Активные сотрудники
-    @Default(0) int activeEmployees,
-    /// Запросы за сегодня
-    @Default(0) int todayRequests,
-    /// Выполненные запросы за сегодня
-    @Default(0) int completedTodayRequests,
-    /// Продажи за сегодня (в рублях)
-    @Default(0.0) double todaySales,
-    /// Продажи за месяц (в рублях)
-    @Default(0.0) double monthlySales,
-    /// Товары в пути
-    @Default(0) int goodsInTransit,
+    @JsonKey(name: 'employees_active') @Default(0) int employeesActive,
     /// Активные склады
-    @Default(0) int warehousesActive,
+    @JsonKey(name: 'warehouses_active') @Default(0) int warehousesActive,
+    /// Общее количество товаров
+    @JsonKey(name: 'products_total') @Default(0) int productsTotal,
+    /// Товары в пути
+    @JsonKey(name: 'products_in_transit') @Default(0) int productsInTransit,
+    /// Ожидающие запросы
+    @JsonKey(name: 'requests_pending') @Default(0) int requestsPending,
+    /// Последние продажи
+    @JsonKey(name: 'latest_sales') @Default([]) List<LatestSale> latestSales,
     /// Последнее обновление
     DateTime? lastUpdated,
   }) = _DashboardStats;
@@ -96,4 +86,57 @@ class RecentActivity with _$RecentActivity {
   }) = _RecentActivity;
 
   factory RecentActivity.fromJson(Map<String, dynamic> json) => _$RecentActivityFromJson(json);
+}
+
+/// Модель последних продаж
+@freezed
+class LatestSale with _$LatestSale {
+  const factory LatestSale({
+    required int id,
+    @JsonKey(name: 'product_name') required String productName,
+    @JsonKey(name: 'client_name') String? clientName,
+    required int quantity,
+    @JsonKey(name: 'total_amount') required String totalAmount,
+    @JsonKey(name: 'sale_date') required DateTime saleDate,
+  }) = _LatestSale;
+
+  factory LatestSale.fromJson(Map<String, dynamic> json) => _$LatestSaleFromJson(json);
+}
+
+/// Модель суммы в валюте
+@freezed
+class CurrencyAmount with _$CurrencyAmount {
+  const factory CurrencyAmount({
+    required double amount,
+    required String formatted,
+  }) = _CurrencyAmount;
+
+  factory CurrencyAmount.fromJson(Map<String, dynamic> json) => _$CurrencyAmountFromJson(json);
+}
+
+/// Модель выручки по валютам
+@freezed
+class RevenueData with _$RevenueData {
+  const factory RevenueData({
+    required String period,
+    @JsonKey(name: 'date_from') required String dateFrom,
+    @JsonKey(name: 'date_to') required String dateTo,
+    required Map<String, CurrencyAmount> revenue,
+  }) = _RevenueData;
+
+  factory RevenueData.fromJson(Map<String, dynamic> json) {
+    final revenueMap = <String, CurrencyAmount>{};
+    final revenueJson = json['revenue'] as Map<String, dynamic>;
+    
+    for (final entry in revenueJson.entries) {
+      revenueMap[entry.key] = CurrencyAmount.fromJson(entry.value as Map<String, dynamic>);
+    }
+    
+    return RevenueData(
+      period: json['period'] as String,
+      dateFrom: json['date_from'] as String,
+      dateTo: json['date_to'] as String,
+      revenue: revenueMap,
+    );
+  }
 }

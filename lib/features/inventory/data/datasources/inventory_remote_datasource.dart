@@ -1,73 +1,40 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
-import 'package:sum_warehouse/shared/models/api_response_model.dart';
 import 'package:sum_warehouse/shared/models/stock_model.dart';
-import 'package:sum_warehouse/features/inventory/domain/entities/inventory_entity.dart';
-import 'package:sum_warehouse/features/inventory/domain/entities/inventory_entity.dart' as entity;
 
 part 'inventory_remote_datasource.g.dart';
 
-/// Абстрактный интерфейс для remote data source остатков
+/// Абстрактный интерфейс для remote data source остатков (новое API)
 abstract class InventoryRemoteDataSource {
-  /// Получить остатки товаров на складе
-  Future<List<InventoryEntity>> getInventoryByWarehouse(int warehouseId);
-  
-  /// Получить остатки конкретного товара
-  Future<InventoryEntity> getInventoryByProduct(int productId);
-  
-  /// Получить все остатки с фильтрацией
-  Future<List<InventoryEntity>> getAllInventory({
+  /// Получить остатки товаров (новый API /stocks)
+  Future<List<StockModel>> getStocks({
     int? warehouseId,
-    entity.StockStatus? status,
-    bool? needsRestock,
-    String? search,
+    bool? lowStock,
+    int page = 1,
+    int perPage = 15,
   });
   
-  /// Получить агрегированные остатки (новое API)
-  Future<List<StockModel>> getStocks();
+  /// Получить конкретный остаток по ID
+  Future<StockModel> getStockById(String stockId);
   
-  /// Создать движение товара
+  /// Создать движение товара (НЕ РЕАЛИЗОВАНО в OpenAPI спецификации)
+  /// TODO: Добавить endpoint /stock-movements в OpenAPI перед использованием
   Future<void> createStockMovement({
-    required int productId,
-    required int warehouseId,
-    required MovementType type,
-    required double quantity,
-    String? reason,
-    String? documentNumber,
-    String? notes,
-  });
-  
-  /// Корректировка остатков
-  Future<void> adjustStock({
-    required int productId,
-    required int warehouseId,
-    required double newQuantity,
-    required String reason,
-    String? notes,
-  });
-  
-  /// Получить историю движений
-  Future<List<StockMovementEntity>> getMovementHistory(int productId);
-  
-  /// Получить список остатков с фильтрацией
-  Future<List<InventoryEntity>> getInventoryList({
-    int? warehouseId,
-    String? status,
-    bool? needsRestock,
-    String? search,
-  });
-  
-  /// Обновить остатки
-  Future<void> updateInventory(int inventoryId, double quantity);
-  
-  /// Создать движение товара (по inventory ID)
-  Future<void> createStockMovementByInventory({
-    required int inventoryId,
+    required String stockId,
     required String type,
     required double quantity,
     String? reason,
     String? documentNumber,
+    String? notes,
+  });
+  
+  /// Корректировка остатков (НЕ РЕАЛИЗОВАНО в OpenAPI спецификации)
+  /// TODO: Добавить endpoint /stocks/{id}/adjust в OpenAPI перед использованием
+  Future<void> adjustStock({
+    required String stockId,
+    required double newQuantity,
+    required String reason,
     String? notes,
   });
 }
@@ -84,338 +51,30 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   InventoryRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<List<InventoryEntity>> getInventoryByWarehouse(int warehouseId) async {
-    try {
-      final response = await _dio.get('/warehouses/$warehouseId/products');
-      print('🟢 Inventory API response for warehouse $warehouseId: ${response.data}');
-      
-      if (response.data is List) {
-        return (response.data as List)
-            .map((item) => _convertProductToInventory(item, warehouseId))
-            .toList();
-      }
-      
-      return [];
-    } on DioException catch (e) {
-      print('⚠️ API /warehouses/$warehouseId/products не работает: ${e.response?.statusCode} - ${e.message}');
-      return _getMockInventoryForWarehouse(warehouseId);
-    } catch (e) {
-      print('⚠️ Ошибка парсинга остатков склада: $e');
-      return _getMockInventoryForWarehouse(warehouseId);
-    }
-  }
-
-  @override
-  Future<InventoryEntity> getInventoryByProduct(int productId) async {
-    try {
-      final response = await _dio.get('/products/$productId');
-      print('🟢 Product API response for $productId: ${response.data}');
-      
-      return _convertProductToInventory(response.data, 1); // Default warehouse
-    } on DioException catch (e) {
-      print('⚠️ API /products/$productId не работает: ${e.response?.statusCode} - ${e.message}');
-      throw Exception('Товар не найден');
-    }
-  }
-
-  @override
-  Future<List<InventoryEntity>> getAllInventory({
+  Future<List<StockModel>> getStocks({
     int? warehouseId,
-    entity.StockStatus? status,
-    bool? needsRestock,
-    String? search,
+    bool? lowStock,
+    int page = 1,
+    int perPage = 15,
   }) async {
-    if (warehouseId != null) {
-      return getInventoryByWarehouse(warehouseId);
-    }
-    
-    // Если не указан склад, получаем товары со всех складов
     try {
-      final Map<String, dynamic> queryParams = {};
-      if (search != null) queryParams['search'] = search;
-      if (status != null) {
-        switch (status) {
-          case entity.StockStatus.inStock:
-            queryParams['in_stock'] = true;
-            break;
-          case entity.StockStatus.lowStock:
-            queryParams['low_stock'] = true;
-            break;
-          case entity.StockStatus.outOfStock:
-            queryParams['in_stock'] = false;
-            break;
-        }
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'per_page': perPage,
+      };
+      
+      if (warehouseId != null) {
+        queryParams['warehouse_id'] = warehouseId;
       }
       
-      final response = await _dio.get('/products', queryParameters: queryParams);
-      print('🟢 Products API response: ${response.data}');
-      
-      if (response.data is Map && response.data['data'] is List) {
-        return (response.data['data'] as List)
-            .map((item) => _convertProductToInventory(item, item['warehouse_id'] ?? 1))
-            .toList();
+      if (lowStock != null) {
+        queryParams['low_stock'] = lowStock;
       }
       
-      return [];
-    } on DioException catch (e) {
-      print('⚠️ API /products не работает: ${e.response?.statusCode} - ${e.message}');
-      return _getMockInventory();
-    }
-  }
-
-  @override
-  Future<void> createStockMovement({
-    required int productId,
-    required int warehouseId,
-    required MovementType type,
-    required double quantity,
-    String? reason,
-    String? documentNumber,
-    String? notes,
-  }) async {
-    // TODO: Реализовать когда будет API для движений
-    print('🟡 Создание движения товара: product=$productId, type=$type, quantity=$quantity');
-    await Future.delayed(const Duration(seconds: 1)); // Имитация API вызова
-    throw Exception('API для движений товаров еще не реализовано');
-  }
-
-  @override
-  Future<void> adjustStock({
-    required int productId,
-    required int warehouseId,
-    required double newQuantity,
-    required String reason,
-    String? notes,
-  }) async {
-    // TODO: Реализовать когда будет API для корректировок
-    print('🟡 Корректировка остатков: product=$productId, newQuantity=$newQuantity, reason=$reason');
-    await Future.delayed(const Duration(seconds: 1)); // Имитация API вызова
-    throw Exception('API для корректировки остатков еще не реализовано');
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getMovementHistory(int productId) async {
-    // TODO: Реализовать когда будет API для истории движений
-    print('🟡 Получение истории движений для товара $productId');
-    await Future.delayed(const Duration(seconds: 1)); // Имитация API вызова
-    return _getMockMovements(productId);
-  }
-
-  /// Конвертировать данные товара в остатки
-  InventoryEntity _convertProductToInventory(Map<String, dynamic> productData, int warehouseId) {
-    final quantity = _parseDouble(productData['quantity']) ?? 0.0;
-    final reservedQuantity = 0.0; // TODO: получать из API
-    
-    return InventoryEntity(
-      id: productData['id'] ?? 0,
-      warehouseId: warehouseId,
-      productId: productData['id'] ?? 0,
-      quantity: quantity,
-      reservedQuantity: reservedQuantity,
-      availableQuantity: quantity - reservedQuantity,
-      minStockLevel: 10.0, // TODO: получать из API
-      maxStockLevel: 100.0, // TODO: получать из API
-      lastMovementDate: _parseDateTime(productData['updated_at']),
-      lastUpdated: _parseDateTime(productData['updated_at']),
-      product: ProductEntity(
-        id: productData['id'] ?? 0,
-        name: productData['name'] ?? 'Неизвестный товар',
-        productTemplateId: productData['product_template_id'] ?? 0,
-        unit: productData['unit'] ?? 'шт',
-        producer: productData['producer'],
-      ),
-      warehouse: WarehouseEntity(
-        id: warehouseId,
-        name: 'Склад №$warehouseId',
-        address: 'Адрес склада',
-        companyId: 1,
-      ),
-    );
-  }
-
-  /// Парсер double из API
-  double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
-
-  /// Парсер DateTime из API
-  DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is String) return DateTime.tryParse(value);
-    return null;
-  }
-
-  /// Моковые данные для остатков склада
-  List<InventoryEntity> _getMockInventoryForWarehouse(int warehouseId) {
-    return _getMockInventory().where((item) => item.warehouseId == warehouseId).toList();
-  }
-
-  /// Моковые данные остатков
-  List<InventoryEntity> _getMockInventory() {
-    return [
-      const InventoryEntity(
-        id: 1,
-        warehouseId: 1,
-        productId: 1,
-        quantity: 150,
-        reservedQuantity: 20,
-        availableQuantity: 130,
-        minStockLevel: 50,
-        maxStockLevel: 200,
-        product: ProductEntity(
-          id: 1,
-          name: 'Кирпич красный',
-          productTemplateId: 1,
-          unit: 'шт',
-          producer: 'ООО "СтройМатериалы"',
-        ),
-        warehouse: WarehouseEntity(
-          id: 1,
-          name: 'Основной склад',
-          address: 'ул. Складская, 1',
-          companyId: 1,
-        ),
-      ),
-      const InventoryEntity(
-        id: 2,
-        warehouseId: 1,
-        productId: 2,
-        quantity: 8,
-        reservedQuantity: 2,
-        availableQuantity: 6,
-        minStockLevel: 10,
-        maxStockLevel: 50,
-        product: ProductEntity(
-          id: 2,
-          name: 'Цемент М400',
-          productTemplateId: 2,
-          unit: 'мешок',
-          producer: 'Цементный завод',
-        ),
-        warehouse: WarehouseEntity(
-          id: 1,
-          name: 'Основной склад',
-          address: 'ул. Складская, 1',
-          companyId: 1,
-        ),
-      ),
-      const InventoryEntity(
-        id: 3,
-        warehouseId: 2,
-        productId: 3,
-        quantity: 0,
-        reservedQuantity: 0,
-        availableQuantity: 0,
-        minStockLevel: 5,
-        maxStockLevel: 25,
-        product: ProductEntity(
-          id: 3,
-          name: 'Песок речной',
-          productTemplateId: 3,
-          unit: 'м³',
-          producer: 'Карьер "Речной"',
-        ),
-        warehouse: WarehouseEntity(
-          id: 2,
-          name: 'Склад №2',
-          address: 'ул. Промышленная, 15',
-          companyId: 1,
-        ),
-      ),
-    ];
-  }
-
-  @override
-  Future<List<InventoryEntity>> getInventoryList({
-    int? warehouseId,
-    String? status,
-    bool? needsRestock,
-    String? search,
-  }) async {
-    return getAllInventory(
-      warehouseId: warehouseId,
-      status: status != null ? entity.StockStatus.values.firstWhere(
-        (s) => s.code == status,
-        orElse: () => entity.StockStatus.inStock,
-      ) : null,
-      needsRestock: needsRestock,
-      search: search,
-    );
-  }
-
-  @override
-  Future<void> updateInventory(int inventoryId, double quantity) async {
-    // TODO: Реализовать когда будет API для обновления остатков
-    print('🟡 Обновление остатков: inventory=$inventoryId, quantity=$quantity');
-    await Future.delayed(const Duration(seconds: 1)); // Имитация API вызова
-    throw Exception('API для обновления остатков еще не реализовано');
-  }
-
-  @override
-  Future<void> createStockMovementByInventory({
-    required int inventoryId,
-    required String type,
-    required double quantity,
-    String? reason,
-    String? documentNumber,
-    String? notes,
-  }) async {
-    // TODO: Реализовать когда будет API для движений
-    print('🟡 Создание движения товара: inventory=$inventoryId, type=$type, quantity=$quantity');
-    await Future.delayed(const Duration(seconds: 1)); // Имитация API вызова
-    throw Exception('API для движений товаров еще не реализовано');
-  }
-
-  /// Моковые данные движений
-  List<StockMovementEntity> _getMockMovements(int productId) {
-    return [
-      StockMovementEntity(
-        id: 1,
-        inventoryId: productId,
-        userId: 1,
-        type: MovementType.incoming,
-        quantity: 100,
-        previousQuantity: 50,
-        newQuantity: 150,
-        reason: 'Поступление товара',
-        documentNumber: 'ПР-001',
-        notes: 'Поставка от поставщика',
-        createdAt: DateTime.now().subtract(const Duration(days: 7)),
-        user: const UserEntity(
-          id: 1,
-          name: 'Иван Петров',
-          email: 'ivan@company.com',
-        ),
-      ),
-      StockMovementEntity(
-        id: 2,
-        inventoryId: productId,
-        userId: 2,
-        type: MovementType.outgoing,
-        quantity: -20,
-        previousQuantity: 150,
-        newQuantity: 130,
-        reason: 'Продажа',
-        documentNumber: 'РАС-002',
-        notes: 'Продажа клиенту',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        user: const UserEntity(
-          id: 2,
-          name: 'Мария Сидорова',
-          email: 'maria@company.com',
-        ),
-      ),
-    ];
-  }
-
-  @override
-  Future<List<StockModel>> getStocks() async {
-    try {
-      final response = await _dio.get('/stocks');
+      print('🔵 Запрос к /stocks с параметрами: $queryParams');
+      final response = await _dio.get('/stocks', queryParameters: queryParams);
+      
+      print('📥 Stocks API response: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -428,11 +87,101 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       }
       
       return [];
+    } on DioException catch (e) {
+      print('⚠️ API /stocks не работает: ${e.response?.statusCode} - ${e.message}');
+      // Возвращаем mock данные для тестирования
+      return _getMockStocks();
     } catch (e) {
-      print('Error fetching stocks: $e');
-      // Возвращаем моковые данные если API недоступно
+      print('⚠️ Ошибка парсинга stocks: $e');
       return _getMockStocks();
     }
+  }
+
+  @override
+  Future<StockModel> getStockById(String stockId) async {
+    try {
+      print('🔵 Запрос к /stocks/$stockId');
+      final response = await _dio.get('/stocks/$stockId');
+      
+      print('📥 Stock by ID response: ${response.data}');
+      
+      return StockModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('⚠️ API /stocks/$stockId не работает: ${e.response?.statusCode} - ${e.message}');
+      // Возвращаем первый mock остаток
+      final mockStocks = _getMockStocks();
+      if (mockStocks.isNotEmpty) {
+        return mockStocks.first;
+      }
+      throw Exception('Остаток не найден');
+    }
+  }
+
+  @override
+  Future<void> createStockMovement({
+    required String stockId,
+    required String type,
+    required double quantity,
+    String? reason,
+    String? documentNumber,
+    String? notes,
+  }) async {
+    // TODO: Endpoint /stock-movements is not defined in OpenAPI specification
+    // This functionality needs to be added to the API before it can be used
+    throw Exception('Функция движения товаров еще не реализована в API. Обратитесь к администратору.');
+    
+    /*
+    // Original implementation that uses non-existent endpoint:
+    try {
+      final body = {
+        'stock_id': stockId,
+        'type': type,
+        'quantity': quantity,
+        if (reason != null) 'reason': reason,
+        if (documentNumber != null) 'document_number': documentNumber,
+        if (notes != null) 'notes': notes,
+      };
+      
+      print('🔵 Создание движения: $body');
+      await _dio.post('/stock-movements', data: body);
+      
+      print('✅ Движение создано успешно');
+    } on DioException catch (e) {
+      print('⚠️ API /stock-movements не работает: ${e.response?.statusCode} - ${e.message}');
+      throw Exception('API для движений товаров еще не реализовано');
+    }
+    */
+  }
+
+  @override
+  Future<void> adjustStock({
+    required String stockId,
+    required double newQuantity,
+    required String reason,
+    String? notes,
+  }) async {
+    // TODO: Endpoint /stocks/{id}/adjust is not defined in OpenAPI specification
+    // This functionality needs to be added to the API before it can be used
+    throw Exception('Функция корректировки остатков еще не реализована в API. Обратитесь к администратору.');
+    
+    /*
+    // Original implementation that uses non-existent endpoint:
+    try {
+      final body = {
+        'new_quantity': newQuantity,
+        'reason': reason,
+        if (notes != null) 'notes': notes,
+      };
+      
+      print('🔵 Корректировка остатков: stock=$stockId, body=$body');
+      await _dio.patch('/stocks/$stockId/adjust', data: body);
+      
+      print('✅ Остатки откорректированы успешно');
+    } on DioException catch (e) {
+      print('⚠️ API /stocks/$stockId/adjust не работает: ${e.response?.statusCode} - ${e.message}');
+      throw Exception('API для корректировки остатков еще не реализовано');
+    }
+    */
   }
 
   /// Мок данные для остатков 
@@ -442,8 +191,8 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         id: '1',
         productTemplateId: 23,
         warehouseId: 12,
-        producer: 'выфаыва',
-        name: 'Пиломатериалы: 55, 55, 55, Ель',
+        producer: 'ООО "СтройМатериалы"',
+        name: 'Пиломатериалы: 55x55x55, Ель',
         availableQuantity: 14.0,
         availableVolume: 2329.25,
         itemsCount: 1,
@@ -454,10 +203,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       ),
       StockModel(
         id: '2',
-        productTemplateId: 23,
+        productTemplateId: 24,
         warehouseId: 12,
-        producer: 'галала',
-        name: 'арматура: 11, 22',
+        producer: 'Металлургический завод',
+        name: 'Арматура: 11x22мм',
         availableQuantity: 22.0,
         availableVolume: 53.24,
         itemsCount: 1,
@@ -468,10 +217,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       ),
       StockModel(
         id: '3',
-        productTemplateId: 23,
+        productTemplateId: 25,
         warehouseId: 12,
-        producer: 'Люкс',
-        name: 'арматура: 11, 1',
+        producer: 'Люкс Строй',
+        name: 'Арматура: 11x11мм',
         availableQuantity: 13.0,
         availableVolume: 1.43,
         itemsCount: 1,
@@ -482,10 +231,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       ),
       StockModel(
         id: '4',
-        productTemplateId: 24,
+        productTemplateId: 26,
         warehouseId: 12,
-        producer: 'Супер',
-        name: 'Пиломатериалы: 22, 22, 22, Ель',
+        producer: 'Супер Строй',
+        name: 'Пиломатериалы: 22x22x22, Ель',
         availableQuantity: 10.0,
         availableVolume: 106.48,
         itemsCount: 1,
@@ -496,10 +245,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       ),
       StockModel(
         id: '5',
-        productTemplateId: 23,
+        productTemplateId: 27,
         warehouseId: 12,
-        producer: 'Пушкин',
-        name: 'арматура: 22, 22',
+        producer: 'Пушкин Металл',
+        name: 'Арматура: 22x22мм',
         availableQuantity: 131.0,
         availableVolume: 687.28,
         itemsCount: 2,

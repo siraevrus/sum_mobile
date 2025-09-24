@@ -166,7 +166,7 @@ class UsersRemoteDataSourceImpl implements UsersRemoteDataSource {
   @override
   Future<UserManagementModel> getUserProfile() async {
     try {
-      final response = await _dio.get('/users/profile');
+      final response = await _dio.get('/auth/profile');
       return UserManagementModel.fromJson(response.data);
     } catch (e) {
       throw _handleError(e);
@@ -176,7 +176,7 @@ class UsersRemoteDataSourceImpl implements UsersRemoteDataSource {
   @override
   Future<UserManagementModel> updateUserProfile(UpdateUserRequest request) async {
     try {
-      final response = await _dio.put('/users/profile', data: request.toJson());
+      final response = await _dio.put('/auth/profile', data: request.toJson());
       
       final responseData = response.data as Map<String, dynamic>;
       if (responseData.containsKey('user')) {

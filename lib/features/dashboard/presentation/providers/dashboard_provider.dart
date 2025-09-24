@@ -34,7 +34,7 @@ Future<models.DashboardStats> dashboardStatsNoCaching(DashboardStatsNoCachingRef
   print('🚀 Прямой вызов API без кэширования...');
   final dataSource = ref.read(dashboardRemoteDataSourceProvider);
   final stats = await dataSource.getDashboardStats();
-  print('✅ Получена статистика: Продажи=${stats.todaySales}, Компании=${stats.totalCompanies}, В пути=${stats.goodsInTransit}');
+  print('✅ Получена статистика: Компании=${stats.companiesActive}, Сотрудники=${stats.employeesActive}, Склады=${stats.warehousesActive}, Товары=${stats.productsTotal}, В пути=${stats.productsInTransit}, Запросы=${stats.requestsPending}');
   return stats;
 }
 
@@ -118,5 +118,40 @@ class RecentActivities extends _$RecentActivities {
   Future<void> refresh({int limit = 20}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _loadRecentActivities(limit));
+  }
+}
+
+/// Provider для данных о выручке
+@riverpod
+class RevenueData extends _$RevenueData {
+  @override
+  FutureOr<models.RevenueData> build({
+    String period = 'day',
+    String? dateFrom,
+    String? dateTo,
+  }) {
+    return _loadRevenueData(period, dateFrom, dateTo);
+  }
+  
+  Future<models.RevenueData> _loadRevenueData(
+    String period,
+    String? dateFrom,
+    String? dateTo,
+  ) async {
+    final dataSource = ref.read(dashboardRemoteDataSourceProvider);
+    return await dataSource.getRevenueData(
+      period: period,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+    );
+  }
+  
+  Future<void> refresh({
+    String period = 'day',
+    String? dateFrom,
+    String? dateTo,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _loadRevenueData(period, dateFrom, dateTo));
   }
 }

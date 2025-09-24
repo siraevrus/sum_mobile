@@ -50,65 +50,9 @@ class DashboardStatsCards extends ConsumerWidget {
         children: [
           Expanded(
             child: _StatsCard(
-              title: 'Поступление товаров',
-              value: _formatNumber(stats.totalProducts),
-              subtitle: stats.lowStockProducts > 0 
-                  ? '${stats.lowStockProducts} мало остатков'
-                  : 'Все в наличии',
-              icon: Icons.inventory_2_outlined,
-              iconColor: stats.lowStockProducts > 0 
-                  ? const Color(0xFFE74C3C)
-                  : const Color(0xFF3498DB),
-              backgroundColor: stats.lowStockProducts > 0
-                  ? const Color(0xFFFDEBEB)
-                  : const Color(0xFFEBF3FD),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _StatsCard(
-              title: 'Остатки на складе',
-              value: '5', // Статичное значение как в логах
-              subtitle: '5 активных',
-              icon: Icons.warehouse_outlined,
-              iconColor: const Color(0xFF2ECC71),
-              backgroundColor: const Color(0xFFE8F5E8),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _StatsCard(
-              title: 'Продажи',
-              value: '₽${stats.todaySales.round()}', // Используем average_sale как целое число
-              subtitle: 'За этот месяц',
-              icon: Icons.trending_up_outlined,
-              iconColor: const Color(0xFF2ECC71),
-              backgroundColor: const Color(0xFFE8F5E8),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _StatsCard(
-              title: 'Сотрудники',
-              value: _formatNumber(stats.totalEmployees),
-              subtitle: stats.activeEmployees > 0
-                  ? '${stats.totalEmployees - stats.activeEmployees} заблокированы'
-                  : 'Все активны',
-              icon: Icons.people_outlined,
-              iconColor: (stats.totalEmployees - stats.activeEmployees) > 0
-                  ? const Color(0xFFF39C12)
-                  : const Color(0xFF3498DB),
-              backgroundColor: (stats.totalEmployees - stats.activeEmployees) > 0
-                  ? const Color(0xFFFEF5E7)
-                  : const Color(0xFFEBF3FD),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _StatsCard(
               title: 'Компании',
-              value: _formatNumber(stats.totalCompanies), // Используем реальные данные
-              subtitle: 'Активные компании',
+              value: _formatNumber(stats.companiesActive),
+              subtitle: 'Активные',
               icon: Icons.business_outlined,
               iconColor: AppColors.primary,
               backgroundColor: const Color(0xFFF4ECFF),
@@ -117,23 +61,56 @@ class DashboardStatsCards extends ConsumerWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _StatsCard(
-              title: 'Запросы',
-              value: _formatNumber(stats.todayRequests), // Используем реальные данные
-              subtitle: 'Ожидают рассмотрения',
-              icon: Icons.assignment_outlined,
-              iconColor: AppColors.primary,
-              backgroundColor: const Color(0xFFFDF2E9),
+              title: 'Сотрудники',
+              value: _formatNumber(stats.employeesActive),
+              subtitle: 'Активные',
+              icon: Icons.people_outlined,
+              iconColor: const Color(0xFF3498DB),
+              backgroundColor: const Color(0xFFEBF3FD),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: _StatsCard(
-              title: 'В пути',
-              value: _formatNumber(stats.goodsInTransit), // Используем реальные данные
-              subtitle: 'Товары в доставке',
+              title: 'Склады',
+              value: _formatNumber(stats.warehousesActive),
+              subtitle: 'Активные',
+              icon: Icons.warehouse_outlined,
+              iconColor: const Color(0xFF2ECC71),
+              backgroundColor: const Color(0xFFE8F5E8),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _StatsCard(
+              title: 'Товары',
+              value: _formatNumber(stats.productsTotal),
+              subtitle: 'Всего товаров',
+              icon: Icons.inventory_2_outlined,
+              iconColor: const Color(0xFF8E44AD),
+              backgroundColor: const Color(0xFFF4ECFF),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _StatsCard(
+              title: 'Товары в пути',
+              value: _formatNumber(stats.productsInTransit),
+              subtitle: 'В доставке',
               icon: Icons.local_shipping_outlined,
               iconColor: const Color(0xFF16A085),
               backgroundColor: const Color(0xFFE8F6F3),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _StatsCard(
+              title: 'Запросы',
+              value: _formatNumber(stats.requestsPending),
+              subtitle: 'Ожидают рассмотрения',
+              icon: Icons.assignment_outlined,
+              iconColor: const Color(0xFFF39C12),
+              backgroundColor: const Color(0xFFFEF5E7),
             ),
           ),
         ],
