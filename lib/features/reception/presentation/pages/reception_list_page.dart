@@ -89,38 +89,50 @@ class _ReceptionListPageState extends ConsumerState<ReceptionListPage> {
 
     return receiptsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Ошибка загрузки приемок:\n$error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+      error: (error, stack) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Ошибка загрузки приемок:\n$error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.read(receiptsProvider.notifier).refresh(),
+                  child: const Text('Повторить'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.read(receiptsProvider.notifier).refresh(),
-              child: const Text('Повторить'),
-            ),
-          ],
+          ),
         ),
       ),
       data: (receipts) {
         if (receipts.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.inbox, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'Нет приемок',
-                  style: TextStyle(color: Colors.grey, fontSize: 18),
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'Нет приемок',
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         }

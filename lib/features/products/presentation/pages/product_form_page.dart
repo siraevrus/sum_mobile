@@ -11,13 +11,15 @@ import 'package:sum_warehouse/features/products/presentation/providers/products_
 import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
-/// Экран создания/редактирования товара
+/// Экран создания/редактирования/просмотра товара
 class ProductFormPage extends ConsumerStatefulWidget {
   final ProductEntity? product;
+  final bool isViewMode;
   
   const ProductFormPage({
     super.key,
     this.product,
+    this.isViewMode = false,
   });
 
   @override
@@ -29,6 +31,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   final _nameController = TextEditingController();
   final _quantityController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _notesController = TextEditingController();
   final _transportNumberController = TextEditingController();
   
   bool _isActive = true;
@@ -42,7 +45,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   Map<String, dynamic> _attributeValues = {};
   double? _calculatedValue;
   
-  bool get _isEditing => widget.product != null;
+  bool get _isEditing => widget.product != null && !widget.isViewMode;
+  bool get _isViewing => widget.product != null && widget.isViewMode;
   
   @override
   void initState() {
@@ -59,17 +63,19 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     _nameController.dispose();
     _quantityController.dispose();
     _descriptionController.dispose();
+    _notesController.dispose();
     _transportNumberController.dispose();
     _attributeControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
   }
   
   void _initializeForm() {
-    if (_isEditing) {
+    if (_isEditing || _isViewing) {
       final product = widget.product!;
       _nameController.text = product.name;
       _quantityController.text = product.quantity.toString();
       _descriptionController.text = product.description ?? '';
+      _notesController.text = product.notes ?? '';
       _transportNumberController.text = product.transportNumber ?? '';
       _selectedWarehouseId = product.warehouseId;
       _arrivalDate = product.arrivalDate;
@@ -77,8 +83,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       _attributeValues = Map.from(product.attributes);
       _calculatedValue = product.calculatedValue;
       
-      // Производитель будет загружен из выпадающего списка
-      _selectedProducerId = null;
+      // Производитель - пытаемся найти ID по имени
+      if (product.producer != null && product.producer!.isNotEmpty) {
+        _loadProducerIdByName(product.producer!);
+      }
       
       // Загружаем атрибуты шаблона, если есть productTemplateId
       if (product.productTemplateId != null) {
@@ -173,8 +181,237 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     }
   }
 
+  /// Найти ID производителя по имени
+  Future<void> _loadProducerIdByName(String producerName) async {
+    try {
+      final producersAsync = ref.read(producersProvider);
+      final producers = producersAsync.asData?.value ?? [];
+      
+      // Находим производителя по имени
+      final producer = producers.firstWhere(
+        (p) => p.name == producerName,
+        orElse: () => throw Exception('Производитель не найден'),
+      );
+      
+      if (mounted) {
+        setState(() {
+          _selectedProducerId = producer.id;
+        });
+      }
+    } catch (e) {
+      print('⚠️ Ошибка загрузки производителя: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isViewing) {
+      return _buildViewMode();
+    }
+    
+    return _buildEditMode();
+  }
+  
+  Widget _buildViewMode() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Просмотр товара'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => ProductFormPage(
+                    product: widget.product,
+                    isViewMode: false,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Наименование
+            _buildViewField('Наименование', widget.product!.name),
+            const SizedBox(height: 16),
+            
+            // Количество
+            _buildViewField('Количество', '${widget.product!.quantity} ${_selectedTemplate?.unit ?? ''}'),
+            const SizedBox(height: 24),
+            
+            // Блок "Основная информация"
+            _buildSectionTitle('Основная информация'),
+            const SizedBox(height: 16),
+            
+            // Склад
+            Consumer(
+              builder: (context, ref, child) {
+                final warehousesAsync = ref.watch(allWarehousesProvider);
+                return warehousesAsync.when(
+                  loading: () => _buildViewField('Склад', 'Загрузка...'),
+                  error: (error, stack) => _buildViewField('Склад', 'Ошибка загрузки'),
+                  data: (warehouses) {
+                    final warehouse = warehouses.firstWhere(
+                      (w) => w.id == widget.product!.warehouseId,
+                      orElse: () => throw Exception('Склад не найден'),
+                    );
+                    return _buildViewField('Склад', warehouse.name);
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            
+            // Производитель
+            _buildViewField('Производитель', _getProducerDisplayName()),
+            const SizedBox(height: 12),
+            
+            // Дата поступления
+            _buildViewField('Дата поступления', 
+              widget.product!.arrivalDate != null 
+                ? _formatDate(widget.product!.arrivalDate!) 
+                : 'Не указана'),
+            const SizedBox(height: 12),
+            
+            // Номер транспортного средства
+            _buildViewField('Номер транспортного средства', 
+              widget.product!.transportNumber ?? 'Не указан'),
+            const SizedBox(height: 24),
+            
+            // Блок "Характеристики"
+            if (_selectedTemplate != null && _selectedTemplate!.attributes.isNotEmpty) ...[
+              _buildSectionTitle('Характеристики'),
+              const SizedBox(height: 16),
+              
+              ..._selectedTemplate!.attributes.map((attribute) {
+                final value = _attributeValues[attribute.variable];
+                String displayValue = 'Не указано';
+                
+                if (value != null) {
+                  if (attribute.type == AttributeType.boolean) {
+                    displayValue = (value as bool) ? 'Да' : 'Нет';
+                  } else if (attribute.type == AttributeType.date && value is DateTime) {
+                    displayValue = _formatDate(value);
+                  } else {
+                    displayValue = value.toString();
+                    if (attribute.unit != null && attribute.unit!.isNotEmpty) {
+                      displayValue += ' ${attribute.unit}';
+                    }
+                  }
+                }
+                
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildViewField(attribute.name, displayValue),
+                );
+              }),
+              
+              if (_calculatedValue != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calculate, color: AppColors.info, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Расчёт по формуле: ${_calculatedValue!.toStringAsFixed(3)} ${_selectedTemplate!.unit}',
+                        style: TextStyle(
+                          color: AppColors.info,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+            ],
+            
+            // Блок "Заметки"
+            if (widget.product!.notes != null && widget.product!.notes!.isNotEmpty) ...[
+              _buildSectionTitle('Заметки'),
+              const SizedBox(height: 16),
+              _buildViewField('Заметки', widget.product!.notes!),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildViewField(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _getProducerDisplayName() {
+    final product = widget.product!;
+    
+    // Проверяем producer_id и ищем в списке производителей
+    if (_selectedProducerId != null) {
+      final producersAsync = ref.read(producersProvider);
+      if (producersAsync.hasValue) {
+        final producers = producersAsync.asData?.value ?? [];
+        try {
+          final producer = producers.firstWhere((p) => p.id == _selectedProducerId);
+          return producer.name;
+        } catch (e) {
+          // Производитель не найден в списке
+        }
+      }
+    }
+    
+    // Фолбэк к строковому полю producer
+    if (product.producer != null && product.producer!.isNotEmpty) {
+      return product.producer!;
+    }
+    
+    return 'Не указан';
+  }
+  
+  Widget _buildEditMode() {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редактировать товар' : 'Новый товар'),
@@ -186,14 +423,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
               icon: const Icon(Icons.delete),
               onPressed: _deleteProduct,
             ),
-          if (!_isEditing && _selectedTemplate?.formula != null)
-            TextButton(
-              onPressed: _calculateFormula,
-              child: const Text(
-                'Расчет',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
         ],
       ),
       
@@ -204,7 +433,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Основная информация
+              // Блок "Основная информация"
               _buildSectionTitle('Основная информация'),
               const SizedBox(height: 16),
               
@@ -301,122 +530,134 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
               ),
               const SizedBox(height: 16),
               
-              // Номер транспортного средства
+              // Номер транспорта
               _buildTextField(
                 controller: _transportNumberController,
-                label: 'Номер транспортного средства',
+                label: 'Номер транспорта',
                 hint: 'Введите номер',
+              ),
+              const SizedBox(height: 24),
+              
+              // Блок "Товар"
+              _buildSectionTitle('Товар'),
+              const SizedBox(height: 16),
+              
+              // Шаблон товара (редактируемый как при создании, так и при редактировании)
+              Consumer(
+                builder: (context, ref, child) {
+                  final templatesAsync = ref.watch(allProductTemplatesProvider);
+                  
+                  return templatesAsync.when(
+                    loading: () => DropdownButtonFormField<ProductTemplateEntity>(
+        dropdownColor: Colors.white,
+                      value: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Шаблон товара * (загрузка...)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text('Загрузка шаблонов...'),
+                        ),
+                      ],
+                      onChanged: null,
+                    ),
+                    error: (error, stack) => DropdownButtonFormField<ProductTemplateEntity>(
+        dropdownColor: Colors.white,
+                      value: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Шаблон товара * (ошибка)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text('Ошибка загрузки шаблонов'),
+                        ),
+                      ],
+                      onChanged: null,
+                    ),
+                    data: (templates) => DropdownButtonFormField<int?>(
+        dropdownColor: Colors.white,
+                      value: _selectedTemplate?.id,
+                      decoration: const InputDecoration(
+                        labelText: 'Шаблон товара *',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: templates.isEmpty
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('Нет доступных шаблонов'),
+                            ),
+                          ]
+                        : templates.map((template) => DropdownMenuItem(
+                            value: template.id, // Используем ID вместо объекта
+                            child: Text(template.name),
+                          )).toList(),
+                      onChanged: (templateId) {
+                        if (templateId != null) {
+                          final template = templates.firstWhere((t) => t.id == templateId);
+                          setState(() {
+                            _selectedTemplate = _convertTemplateModelToEntity(template);
+                            _attributeValues.clear();
+                            _calculatedValue = null;
+                          });
+                          
+                          // Загружаем атрибуты для выбранного шаблона
+                          _loadTemplateAttributes(templateId);
+                        } else {
+                          setState(() {
+                            _selectedTemplate = null;
+                            _attributeValues.clear();
+                            _calculatedValue = null;
+                          });
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null && templates.isNotEmpty) {
+                          return 'Выберите шаблон товара';
+                        }
+                        return null;
+                      },
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               
-              // Шаблон товара
-              if (!_isEditing) ...[
-                Consumer(
-                  builder: (context, ref, child) {
-                    final templatesAsync = ref.watch(allProductTemplatesProvider);
-                    
-                    return templatesAsync.when(
-                      loading: () => DropdownButtonFormField<ProductTemplateEntity>(
-        dropdownColor: Colors.white,
-                        value: null,
-                        decoration: const InputDecoration(
-                          labelText: 'Шаблон товара * (загрузка...)',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: null,
-                            child: Text('Загрузка шаблонов...'),
-                          ),
-                        ],
-                        onChanged: null,
-                      ),
-                      error: (error, stack) => DropdownButtonFormField<ProductTemplateEntity>(
-        dropdownColor: Colors.white,
-                        value: null,
-                        decoration: const InputDecoration(
-                          labelText: 'Шаблон товара * (ошибка)',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: null,
-                            child: Text('Ошибка загрузки шаблонов'),
-                          ),
-                        ],
-                        onChanged: null,
-                      ),
-                      data: (templates) => DropdownButtonFormField<int?>(
-        dropdownColor: Colors.white,
-                        value: _selectedTemplate?.id,
-                        decoration: const InputDecoration(
-                          labelText: 'Шаблон товара *',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: templates.isEmpty
-                          ? [
-                              const DropdownMenuItem(
-                                value: null,
-                                child: Text('Нет доступных шаблонов'),
-                              ),
-                            ]
-                          : templates.map((template) => DropdownMenuItem(
-                              value: template.id, // Используем ID вместо объекта
-                              child: Text(template.name),
-                            )).toList(),
-                        onChanged: (templateId) {
-                          if (templateId != null) {
-                            final template = templates.firstWhere((t) => t.id == templateId);
-                            setState(() {
-                              _selectedTemplate = _convertTemplateModelToEntity(template);
-                              _attributeValues.clear();
-                              _calculatedValue = null;
-                            });
-                            
-                            // Загружаем атрибуты для выбранного шаблона
-                            _loadTemplateAttributes(templateId);
-                          } else {
-                            setState(() {
-                              _selectedTemplate = null;
-                              _attributeValues.clear();
-                              _calculatedValue = null;
-                            });
-                          }
-                        },
-                        validator: (value) {
-                          if (value == null && templates.isNotEmpty) {
-                            return 'Выберите шаблон товара';
-                          }
-                          return null;
-                        },
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.category, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Шаблон: ${_selectedTemplate?.name ?? "Неизвестен"}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+              // Количество
+              _buildTextField(
+                controller: _quantityController,
+                label: 'Количество',
+                hint: '0',
+                isRequired: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Количество обязательно';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Некорректное число';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              
+              // Блок "Дополнительное поле"
+              _buildSectionTitle('Дополнительное поле'),
+              const SizedBox(height: 16),
+              
+              // Заметки (переименованное поле "Описание")
+              _buildTextField(
+                controller: _notesController,
+                label: 'Заметки',
+                hint: 'Дополнительные заметки к товару',
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
               
               // Нередактируемое поле наименования
               Container(
@@ -448,34 +689,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Количество
-              _buildTextField(
-                controller: _quantityController,
-                label: 'Количество',
-                hint: '0',
-                isRequired: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Количество обязательно';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Некорректное число';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Описание
-              _buildTextField(
-                controller: _descriptionController,
-                label: 'Описание',
-                hint: 'Дополнительное описание товара',
-                maxLines: 3,
               ),
               const SizedBox(height: 24),
               
@@ -847,11 +1060,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       if (_isEditing) {
         // Обновление товара
         final request = UpdateProductRequest(
-          productTemplateId: _selectedTemplate?.id ?? widget.product!.productTemplateId,
+          productTemplateId: _selectedTemplate?.id,
           warehouseId: _selectedWarehouseId ?? widget.product!.warehouseId,
           name: null, // Имя генерируется автоматически на сервере
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
           attributes: _attributeValues,
           producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
@@ -895,6 +1109,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           name: null, // Имя генерируется автоматически на сервере
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+          notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
           attributes: _attributeValues,
           producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),

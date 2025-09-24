@@ -237,20 +237,35 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         }
 
         if (snapshot.hasError) {
-          return _buildErrorState();
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {});
+            },
+            child: _buildErrorState(),
+          );
         }
 
         final warehouses = snapshot.data ?? <WarehouseModel>[];
         
         if (warehouses.isEmpty) {
-          return _buildEmptyState();
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {});
+            },
+            child: _buildEmptyState(),
+          );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16.0),
-          itemCount: warehouses.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _buildWarehouseCard(warehouses[index]),
+        return RefreshIndicator(
+          onRefresh: () async {
+            setState(() {});
+          },
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: warehouses.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) => _buildWarehouseCard(warehouses[index]),
+          ),
         );
       },
     );
@@ -472,58 +487,70 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.warehouse,
-            size: 64,
-            color: Color(0xFFBDC3C7),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.warehouse,
+                size: 64,
+                color: Color(0xFFBDC3C7),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Остатки не найдены',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Создайте первый склад или измените фильтры поиска',
+                style: TextStyle(color: Color(0xFF6C757D)),
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          Text(
-            'Остатки не найдены',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF6C757D),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Создайте первый склад или измените фильтры поиска',
-            style: TextStyle(color: Color(0xFF6C757D)),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ошибка загрузки складов',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => setState(() {}),
+                child: const Text('Повторить'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка загрузки складов',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: const Text('Повторить'),
-          ),
-        ],
+        ),
       ),
     );
   }

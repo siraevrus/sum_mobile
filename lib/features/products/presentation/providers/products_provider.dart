@@ -123,7 +123,9 @@ class Products extends _$Products {
         products: response,
         filters: filters,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка загрузки товаров: $e');
+      print('🔴 Stack trace: $stackTrace');
       state = ProductsError('Ошибка загрузки товаров: $e');
     }
   }

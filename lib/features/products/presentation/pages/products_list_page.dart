@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:sum_warehouse/features/products/presentation/providers/products_provider.dart';
 import 'package:sum_warehouse/features/products/data/datasources/products_api_datasource.dart';
 import 'package:sum_warehouse/shared/models/product_model.dart';
 import 'package:sum_warehouse/features/products/presentation/pages/product_form_page.dart';
 import 'package:sum_warehouse/features/products/domain/entities/product_entity.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
 /// Страница списка товаров
 class ProductsListPage extends ConsumerStatefulWidget {
@@ -29,6 +30,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsProvider);
+    // Загружаем производителей для отображения имен
+    ref.watch(producersProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -156,7 +159,14 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _handleProductAction('edit', product),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductFormPage(
+              product: _convertToEntity(product),
+              isViewMode: true,
+            ),
+          ),
+        ).then((_) => ref.read(productsProvider.notifier).loadProducts()),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -179,6 +189,16 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                   PopupMenuButton<String>(
                     onSelected: (action) => _handleProductAction(action, product),
                     itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility, size: 20),
+                            SizedBox(width: 8),
+                            Text('Просмотр'),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(
                         value: 'edit',
                         child: Row(
@@ -222,7 +242,31 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       ),
                     ),
                     TextSpan(
-                      text: product.producer ?? 'Не указан',
+                      text: _getProducerName(product),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1A1A1A),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Склад: значение (в одну строку, значение — жирное)
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Склад: ',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6C757D),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    TextSpan(
+                      text: _getWarehouseName(product),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF1A1A1A),
@@ -265,10 +309,23 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
   void _handleProductAction(String action, ProductModel product) {
     switch (action) {
+      case 'view':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductFormPage(
+              product: _convertToEntity(product),
+              isViewMode: true,
+            ),
+          ),
+        ).then((_) => ref.read(productsProvider.notifier).loadProducts());
+        break;
       case 'edit':
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => ProductFormPage(product: _convertToEntity(product)),
+            builder: (context) => ProductFormPage(
+              product: _convertToEntity(product),
+              isViewMode: false,
+            ),
           ),
         ).then((_) => ref.read(productsProvider.notifier).loadProducts());
         break;
@@ -342,7 +399,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       creatorId: model.creator?.id ?? 0,
       quantity: model.quantity,
       description: model.description,
-      producer: model.producer,
+      notes: model.notes,
+      producer: _getProducerName(model),
       attributes: model.attributes ?? {},
       calculatedValue: model.calculatedVolume,
       transportNumber: model.transportNumber,
@@ -351,6 +409,45 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
     );
+  }
+
+  /// Получить имя производителя
+  String _getProducerName(ProductModel product) {
+    // 1. Проверяем связанный объект producer из API include
+    if (product.producerInfo?.name != null && product.producerInfo!.name!.isNotEmpty) {
+      return product.producerInfo!.name!;
+    }
+    
+    // 2. Проверяем producer_id и пытаемся найти по ID в загруженных producers
+    if (product.producerId != null) {
+      final producersAsync = ref.read(producersProvider);
+      if (producersAsync.hasValue) {
+        final producers = producersAsync.asData?.value ?? [];
+        try {
+          final producer = producers.firstWhere((p) => p.id == product.producerId);
+          return producer.name;
+        } catch (e) {
+          // Производитель не найден в списке
+        }
+      }
+    }
+    
+    // 3. Проверяем поле producer (строка) - fallback
+    if (product.producer != null && product.producer!.isNotEmpty) {
+      return product.producer!;
+    }
+    
+    return 'Не указан';
+  }
+  
+  /// Получить имя склада
+  String _getWarehouseName(ProductModel product) {
+    // Проверяем связанный объект warehouse из API include
+    if (product.warehouse?.name != null && product.warehouse!.name!.isNotEmpty) {
+      return product.warehouse!.name!;
+    }
+    
+    return 'Не указан';
   }
 }
 

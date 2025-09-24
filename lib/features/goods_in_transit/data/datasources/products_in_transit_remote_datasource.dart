@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
-import 'package:sum_warehouse/features/reception/data/models/receipt_model.dart';
 import 'package:sum_warehouse/features/goods_in_transit/data/models/product_in_transit_model.dart';
 
 part 'products_in_transit_remote_datasource.g.dart';
@@ -21,34 +20,49 @@ class ProductsInTransitRemoteDataSource {
   ProductsInTransitRemoteDataSource(this._dio);
 
   /// Получить список товаров в пути
-  /// GET /api/receipts с фильтром по статусу
+  /// GET /api/receipts (алиас: GET /api/products-in-transit)
   Future<List<ProductInTransitModel>> getProductsInTransit({
     int? page,
     int? perPage,
     String? search,
+    int? warehouseId,
+    String? sort,
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'status': 'in_transit', // Фильтр по статусу "в пути"
+        'sort': sort ?? 'created_at', // По умолчанию сортировка по дате создания
       };
       if (page != null) queryParams['page'] = page;
       if (perPage != null) queryParams['per_page'] = perPage;
       if (search != null) queryParams['search'] = search;
+      if (warehouseId != null) queryParams['warehouse_id'] = warehouseId;
 
+      print('🔵 Запрос на /api/receipts с параметрами: $queryParams');
       final response = await _dio.get(
         '/receipts',
         queryParameters: queryParams,
       );
 
+      print('🔵 Ответ API /api/receipts: ${response.data.toString().substring(0, response.data.toString().length > 500 ? 500 : response.data.toString().length)}...');
+
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
         // Поддержка success/data/pagination обертки
+        if (data.containsKey('success') && data['success'] == true && data.containsKey('data')) {
+          final List<dynamic> productsList = (data['data'] as List?) ?? <dynamic>[];
+          return productsList.map((json) {
+            print('🔵 Парсинг товара в пути: $json');
+            return ProductInTransitModel.fromJson(json as Map<String, dynamic>);
+          }).toList();
+        }
+        // Fallback для других форматов
         final List<dynamic> productsList = (data['data'] as List?) ?? <dynamic>[];
         return productsList.map((json) => ProductInTransitModel.fromJson(json as Map<String, dynamic>)).toList();
       }
 
       throw Exception('Неожиданный формат ответа API');
     } on DioException catch (e) {
+      print('🔴 Ошибка в getProductsInTransit: $e');
       if (e.response?.statusCode == 401) {
         throw Exception('Не авторизован');
       } else if (e.response?.statusCode == 403) {
@@ -59,6 +73,7 @@ class ProductsInTransitRemoteDataSource {
         throw Exception('Ошибка загрузки товаров в пути: ${e.message}');
       }
     } catch (e) {
+      print('🔴 Неожиданная ошибка в getProductsInTransit: $e');
       throw Exception('Неожиданная ошибка: $e');
     }
   }
@@ -101,9 +116,8 @@ class ProductsInTransitRemoteDataSource {
   /// POST /api/receipts
   Future<ProductInTransitModel> createProductInTransit(Map<String, dynamic> data) async {
     try {
-      // Добавляем статус "в пути" для новых товаров
+      // Оставляем данные как есть без принудительного статуса
       final receiptData = Map<String, dynamic>.from(data);
-      receiptData['status'] = 'in_transit';
       // document_path по спецификации — массив строк, оставляем как есть
       final response = await _dio.post('/receipts', data: receiptData);
 

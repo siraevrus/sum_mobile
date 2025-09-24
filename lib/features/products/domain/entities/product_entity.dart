@@ -14,6 +14,7 @@ class ProductEntity with _$ProductEntity {
     required int creatorId,
     required double quantity,
     String? description,
+    String? notes,
     String? producer, // Производитель
     @Default({}) Map<String, dynamic> attributes, // Динамические характеристики
     double? calculatedValue, // Вычисленное значение по формуле (например, объем)

@@ -12,19 +12,37 @@ class ProductsInTransit extends _$ProductsInTransit {
     return await _loadProductsInTransit();
   }
 
-  Future<List<ReceiptEntity>> _loadProductsInTransit() async {
+  Future<List<ReceiptEntity>> _loadProductsInTransit({
+    int? page,
+    int? perPage,
+    String? search,
+    int? warehouseId,
+    String? sort,
+  }) async {
     try {
       final repository = ref.read(productsInTransitRepositoryProvider);
-      return await repository.getProductsInTransit();
+      return await repository.getProductsInTransit(
+        page: page,
+        perPage: perPage,
+        search: search,
+        warehouseId: warehouseId,
+        sort: sort ?? 'created_at', // По умолчанию сортируем по дате создания
+      );
     } catch (e) {
       throw Exception('Ошибка загрузки товаров в пути: $e');
     }
   }
 
   /// Обновить список товаров в пути
-  Future<void> refresh() async {
+  Future<void> refresh({
+    int? warehouseId,
+    String? sort,
+  }) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _loadProductsInTransit());
+    state = await AsyncValue.guard(() => _loadProductsInTransit(
+      warehouseId: warehouseId,
+      sort: sort,
+    ));
   }
 
   /// Принять товар в пути
@@ -40,12 +58,17 @@ class ProductsInTransit extends _$ProductsInTransit {
   }
 
   /// Поиск товаров в пути
-  Future<void> search(String? query) async {
+  Future<void> search(
+    String? query, {
+    int? warehouseId,
+    String? sort,
+  }) async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final repository = ref.read(productsInTransitRepositoryProvider);
-      return await repository.getProductsInTransit(search: query);
-    });
+    state = await AsyncValue.guard(() => _loadProductsInTransit(
+      search: query,
+      warehouseId: warehouseId,
+      sort: sort,
+    ));
   }
 }
 

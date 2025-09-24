@@ -44,14 +44,23 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
   Future<PaginatedResponse<ProductModel>> getProducts([ProductFilters? filters]) async {
     try {
       final queryParams = filters?.toQueryParams() ?? {'page': 1, 'per_page': 15};
+      // Добавляем include для получения связанных объектов
+      queryParams['include'] = 'template,warehouse,creator,producer';
       
+      print('🔵 Запрос на /products с параметрами: $queryParams');
       final response = await _dio.get('/products', queryParameters: queryParams);
+      
+      print('🔵 Ответ API /products: ${response.data.toString().substring(0, response.data.toString().length > 500 ? 500 : response.data.toString().length)}...');
       
       return PaginatedResponse<ProductModel>.fromJson(
         response.data,
-        (json) => ProductModel.fromJson(json as Map<String, dynamic>),
+        (json) {
+          print('🔵 Парсинг товара: $json');
+          return ProductModel.fromJson(json as Map<String, dynamic>);
+        },
       );
     } catch (e) {
+      print('🔴 Ошибка в getProducts: $e');
       throw _handleError(e);
     }
   }
@@ -59,7 +68,9 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
   @override
   Future<ProductModel> getProduct(int id) async {
     try {
-      final response = await _dio.get('/products/$id');
+      final response = await _dio.get('/products/$id', queryParameters: {
+        'include': 'template,warehouse,creator,producer'
+      });
       return ProductModel.fromJson(response.data);
     } catch (e) {
       throw _handleError(e);

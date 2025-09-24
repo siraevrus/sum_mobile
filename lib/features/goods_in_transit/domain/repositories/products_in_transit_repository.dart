@@ -6,6 +6,8 @@ abstract class ProductsInTransitRepository {
     int? page,
     int? perPage,
     String? search,
+    int? warehouseId,
+    String? sort,
   });
 
   Future<ReceiptEntity> getProductInTransitById(int id);

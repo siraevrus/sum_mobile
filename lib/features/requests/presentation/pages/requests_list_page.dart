@@ -149,31 +149,36 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
   Widget _buildRequestsList() {
     final dataSource = ref.watch(requestsRemoteDataSourceProvider);
 
-    return FutureBuilder(
-      future: dataSource.getRequests(
-        status: _statusFilter,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const LoadingWidget();
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorState();
-        }
-
-        final requests = snapshot.data?.data ?? [];
-        
-        if (requests.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: requests.length,
-          itemBuilder: (context, index) => _buildRequestCard(requests[index]),
-        );
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {});
       },
+      child: FutureBuilder(
+        future: dataSource.getRequests(
+          status: _statusFilter,
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingWidget();
+          }
+
+          if (snapshot.hasError) {
+            return _buildErrorState();
+          }
+
+          final requests = snapshot.data?.data ?? [];
+          
+          if (requests.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) => _buildRequestCard(requests[index]),
+          );
+        },
+      ),
     );
   }
 
@@ -362,58 +367,70 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.assignment,
-            size: 64,
-            color: Color(0xFFBDC3C7),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.assignment,
+                size: 64,
+                color: Color(0xFFBDC3C7),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Запросы не найдены',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Создайте первый запрос или измените фильтры',
+                style: TextStyle(color: Color(0xFF6C757D)),
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          Text(
-            'Запросы не найдены',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF6C757D),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Создайте первый запрос или измените фильтры',
-            style: TextStyle(color: Color(0xFF6C757D)),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ошибка загрузки запросов',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => setState(() {}),
+                child: const Text('Повторить'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка загрузки запросов',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: const Text('Повторить'),
-          ),
-        ],
+        ),
       ),
     );
   }

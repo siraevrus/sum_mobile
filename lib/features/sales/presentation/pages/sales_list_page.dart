@@ -202,33 +202,38 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
   Widget _buildSalesList() {
     final dataSource = ref.watch(salesRemoteDataSourceProvider);
 
-    return FutureBuilder(
-      future: dataSource.getSales(
-        search: _searchQuery,
-        paymentStatus: _paymentStatusFilter,
-        deliveryStatus: _deliveryStatusFilter,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const LoadingWidget();
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorState();
-        }
-
-        final sales = snapshot.data?.data ?? [];
-        
-        if (sales.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: sales.length,
-          itemBuilder: (context, index) => _buildSaleCard(sales[index]),
-        );
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {});
       },
+      child: FutureBuilder(
+        future: dataSource.getSales(
+          search: _searchQuery,
+          paymentStatus: _paymentStatusFilter,
+          deliveryStatus: _deliveryStatusFilter,
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingWidget();
+          }
+
+          if (snapshot.hasError) {
+            return _buildErrorState();
+          }
+
+          final sales = snapshot.data?.data ?? [];
+          
+          if (sales.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: sales.length,
+            itemBuilder: (context, index) => _buildSaleCard(sales[index]),
+          );
+        },
+      ),
     );
   }
 
@@ -423,59 +428,71 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.point_of_sale,
-            size: 64,
-            color: Color(0xFFBDC3C7),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.point_of_sale,
+                size: 64,
+                color: Color(0xFFBDC3C7),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Продажи не найдены',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Создайте первую продажу или измените фильтры поиска',
+                style: TextStyle(color: Color(0xFF6C757D)),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          Text(
-            'Продажи не найдены',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF6C757D),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Создайте первую продажу или измените фильтры поиска',
-            style: TextStyle(color: Color(0xFF6C757D)),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ошибка загрузки продаж',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => setState(() {}),
+                child: const Text('Повторить'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка загрузки продаж',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: const Text('Повторить'),
-          ),
-        ],
+        ),
       ),
     );
   }

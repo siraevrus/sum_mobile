@@ -233,19 +233,34 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
         }
 
         if (snapshot.hasError) {
-          return _buildErrorState();
+          return RefreshIndicator(
+            onRefresh: () async {
+              _loadUsers();
+            },
+            child: _buildErrorState(),
+          );
         }
 
         final users = snapshot.data?.data ?? [];
         
         if (users.isEmpty) {
-          return _buildEmptyState();
+          return RefreshIndicator(
+            onRefresh: () async {
+              _loadUsers();
+            },
+            child: _buildEmptyState(),
+          );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: users.length,
-          itemBuilder: (context, index) => _buildUserCard(users[index]),
+        return RefreshIndicator(
+          onRefresh: () async {
+            _loadUsers();
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: users.length,
+            itemBuilder: (context, index) => _buildUserCard(users[index]),
+          ),
         );
       },
     );
@@ -630,59 +645,71 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people,
-            size: 64,
-            color: Color(0xFFBDC3C7),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.people,
+                size: 64,
+                color: Color(0xFFBDC3C7),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Сотрудники не найдены',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Создайте первого сотрудника или измените фильтры поиска',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF6C757D)),
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          Text(
-            'Сотрудники не найдены',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF6C757D),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Создайте первого сотрудника или измените фильтры поиска',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF6C757D)),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Ошибка загрузки сотрудников',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => setState(() {}),
+                child: const Text('Повторить'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка загрузки сотрудников',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: const Text('Повторить'),
-          ),
-        ],
+        ),
       ),
     );
   }

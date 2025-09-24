@@ -4,19 +4,56 @@ import 'package:sum_warehouse/shared/models/user_model.dart';
 part 'product_model.freezed.dart';
 part 'product_model.g.dart';
 
+/// Парсер для количества (может быть строкой или числом)
+double _parseQuantity(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    final parsed = double.tryParse(value);
+    if (parsed != null) return parsed;
+    // Если строка не является числом, возвращаем 0
+    return 0.0;
+  }
+  return 0.0;
+}
+
+/// Парсер для ID полей (может быть строкой или числом)
+int? _parseId(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) {
+    final parsed = int.tryParse(value);
+    return parsed;
+  }
+  return null;
+}
+
+/// Парсер для обязательного ID поля (может быть строкой или числом)
+int _parseRequiredId(dynamic value) {
+  if (value is int) return value;
+  if (value is String) {
+    final parsed = int.tryParse(value);
+    if (parsed != null) return parsed;
+  }
+  throw FormatException('Invalid required ID value: $value');
+}
+
 /// Основная модель товара по API
 @freezed
 class ProductModel with _$ProductModel {
   const factory ProductModel({
-    required int id,
-    @JsonKey(name: 'product_template_id') int? productTemplateId,
-    @JsonKey(name: 'warehouse_id') int? warehouseId,
-    @JsonKey(name: 'created_by') int? createdBy,
+    @JsonKey(fromJson: _parseRequiredId) required int id,
+    @JsonKey(name: 'product_template_id', fromJson: _parseId) int? productTemplateId,
+    @JsonKey(name: 'warehouse_id', fromJson: _parseId) int? warehouseId,
+    @JsonKey(name: 'created_by', fromJson: _parseId) int? createdBy,
     required String name,
     String? description,
-    required double quantity,
+    @JsonKey(fromJson: _parseQuantity) required double quantity,
     @JsonKey(fromJson: _parseAttributes) @Default({}) Map<String, dynamic>? attributes,
+    @JsonKey(name: 'producer_id', fromJson: _parseId) int? producerId,
     String? producer,
+    String? notes,
     @JsonKey(name: 'arrival_date') DateTime? arrivalDate,
     @JsonKey(name: 'is_active') required bool isActive,
     @JsonKey(name: 'calculated_volume', fromJson: _parseNullableStringToDouble) double? calculatedVolume,
@@ -29,6 +66,7 @@ class ProductModel with _$ProductModel {
     ProductTemplateRef? template,
     WarehouseRef? warehouse,
     UserRef? creator,
+    @JsonKey(name: 'producer_info') ProducerRef? producerInfo,
   }) = _ProductModel;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) => 
@@ -72,6 +110,18 @@ class UserRef with _$UserRef {
       _$UserRefFromJson(json);
 }
 
+@freezed
+class ProducerRef with _$ProducerRef {
+  const factory ProducerRef({
+    required int id,
+    String? name,
+    String? region,
+  }) = _ProducerRef;
+
+  factory ProducerRef.fromJson(Map<String, dynamic> json) => 
+      _$ProducerRefFromJson(json);
+}
+
 /// Модель создания товара
 @freezed
 class CreateProductRequest with _$CreateProductRequest {
@@ -81,6 +131,7 @@ class CreateProductRequest with _$CreateProductRequest {
     String? name, // Изменили на nullable, так как генерируется автоматически
     required double quantity,
     String? description,
+    String? notes,
     @Default({}) Map<String, dynamic> attributes,
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'transport_number') String? transportNumber,
@@ -102,6 +153,7 @@ class UpdateProductRequest with _$UpdateProductRequest {
     String? name, // Изменили на nullable, так как генерируется автоматически
     double? quantity,
     String? description,
+    String? notes,
     Map<String, dynamic>? attributes,
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'transport_number') String? transportNumber,

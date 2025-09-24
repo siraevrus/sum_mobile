@@ -23,11 +23,15 @@ class ProductsInTransitRepositoryImpl implements ProductsInTransitRepository {
     int? page,
     int? perPage,
     String? search,
+    int? warehouseId,
+    String? sort,
   }) async {
     final models = await _dataSource.getProductsInTransit(
       page: page,
       perPage: perPage,
       search: search,
+      warehouseId: warehouseId,
+      sort: sort,
     );
     return models.map((model) => model.toReceiptEntity()).toList();
   }

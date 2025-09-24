@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/reception/domain/entities/receipt_entity.dart';
-import 'package:sum_warehouse/features/reception/presentation/providers/receipts_provider.dart';
+import 'package:sum_warehouse/features/goods_in_transit/presentation/providers/products_in_transit_provider.dart';
 
 /// Экран списка товаров в пути
 class GoodsInTransitListPage extends ConsumerStatefulWidget {
@@ -40,7 +40,7 @@ class _GoodsInTransitListPageState extends ConsumerState<GoodsInTransitListPage>
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                await ref.read(goodsInTransitProvider.notifier).refresh();
+                await ref.read(productsInTransitProvider.notifier).refresh();
               },
               child: _buildGoodsInTransitList(),
             ),
@@ -80,7 +80,7 @@ class _GoodsInTransitListPageState extends ConsumerState<GoodsInTransitListPage>
           // Поиск с задержкой
           Future.delayed(const Duration(milliseconds: 500), () {
             if (value == _searchController.text) {
-              ref.read(goodsInTransitProvider.notifier).search(value);
+              ref.read(productsInTransitProvider.notifier).search(value);
             }
           });
         },
@@ -89,42 +89,54 @@ class _GoodsInTransitListPageState extends ConsumerState<GoodsInTransitListPage>
   }
 
   Widget _buildGoodsInTransitList() {
-    final goodsInTransitAsync = ref.watch(goodsInTransitProvider);
+    final goodsInTransitAsync = ref.watch(productsInTransitProvider);
 
     return goodsInTransitAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Ошибка загрузки товаров в пути:\n$error',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+      error: (error, stack) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Ошибка загрузки товаров в пути:\n$error',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.read(productsInTransitProvider.notifier).refresh(),
+                  child: const Text('Повторить'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.read(goodsInTransitProvider.notifier).refresh(),
-              child: const Text('Повторить'),
-            ),
-          ],
+          ),
         ),
       ),
       data: (receipts) {
         if (receipts.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.local_shipping, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'Нет товаров в пути',
-                  style: TextStyle(color: Colors.grey, fontSize: 18),
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.local_shipping, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'Нет товаров в пути',
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         }
