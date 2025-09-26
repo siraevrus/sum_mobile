@@ -1,0 +1,541 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../providers/receipts_provider.dart';
+import '../../domain/entities/receipt_entity.dart';
+
+class ReceiptDetailPage extends ConsumerWidget {
+  final int receiptId;
+
+  const ReceiptDetailPage({
+    super.key,
+    required this.receiptId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final receiptAsync = ref.watch(receiptDetailProvider(receiptId));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Детали приемки'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) => _handleMenuAction(context, ref, value),
+            itemBuilder: (context) => [
+              if (receiptAsync.value?.status == ReceiptStatus.forReceipt)
+                const PopupMenuItem(
+                  value: 'receive',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline),
+                      SizedBox(width: 8),
+                      Text('Принять товар'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Редактировать'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: receiptAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Ошибка загрузки данных',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(receiptDetailProvider(receiptId)),
+                child: const Text('Повторить'),
+              ),
+            ],
+          ),
+        ),
+        data: (receipt) => SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context, receipt),
+              const SizedBox(height: 24),
+              _buildMainInfo(context, receipt),
+              const SizedBox(height: 24),
+              _buildShippingInfo(context, receipt),
+              if (receipt.notes != null && receipt.notes!.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                _buildNotes(context, receipt),
+              ],
+              const SizedBox(height: 24),
+              _buildSystemInfo(context, receipt),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        receipt.name,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildStatusChip(context, receipt.status),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainInfo(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Основная информация',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              context,
+              'Количество',
+              '${receipt.quantity} шт.',
+              Icons.inventory_2_outlined,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              'Шаблон товара ID',
+              receipt.productTemplateId.toString(),
+              Icons.category_outlined,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              'Склад ID',
+              receipt.warehouseId.toString(),
+              Icons.warehouse_outlined,
+            ),
+            if (receipt.producerId != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Производитель ID',
+                receipt.producerId.toString(),
+                Icons.business_outlined,
+              ),
+            ],
+            if (receipt.calculatedVolume != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Рассчитанный объем',
+                '${receipt.calculatedVolume!.toStringAsFixed(2)} м³',
+                Icons.straighten_outlined,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShippingInfo(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Информация о доставке',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (receipt.shippingLocation != null) ...[
+              _buildInfoRow(
+                context,
+                'Место отгрузки',
+                receipt.shippingLocation!,
+                Icons.location_on_outlined,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (receipt.shippingDate != null) ...[
+              _buildInfoRow(
+                context,
+                'Дата отгрузки',
+                DateFormat('dd.MM.yyyy').format(receipt.shippingDate!),
+                Icons.calendar_today_outlined,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (receipt.expectedArrivalDate != null) ...[
+              _buildInfoRow(
+                context,
+                'Ожидаемая дата прибытия',
+                DateFormat('dd.MM.yyyy').format(receipt.expectedArrivalDate!),
+                Icons.schedule_outlined,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (receipt.transportNumber != null) ...[
+              _buildInfoRow(
+                context,
+                'Номер транспорта',
+                receipt.transportNumber!,
+                Icons.local_shipping_outlined,
+              ),
+            ],
+            if (receipt.documentPath != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Документ',
+                receipt.documentPath!,
+                Icons.description_outlined,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotes(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Заметки',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                receipt.notes!,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemInfo(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Системная информация',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              context,
+              'ID',
+              receipt.id.toString(),
+              Icons.tag,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              'Создано',
+              DateFormat('dd.MM.yyyy HH:mm').format(receipt.createdAt),
+              Icons.access_time,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              'Обновлено',
+              DateFormat('dd.MM.yyyy HH:mm').format(receipt.updatedAt),
+              Icons.update,
+            ),
+            if (receipt.createdBy != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Создал пользователь',
+                receipt.createdBy.toString(),
+                Icons.person,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(BuildContext context, ReceiptStatus status) {
+    Color chipColor;
+    String statusText;
+
+    switch (status) {
+      case ReceiptStatus.inTransit:
+        chipColor = Colors.orange;
+        statusText = 'В пути';
+        break;
+      case ReceiptStatus.forReceipt:
+        chipColor = Colors.blue;
+        statusText = 'К приемке';
+        break;
+      case ReceiptStatus.inStock:
+        chipColor = Colors.green;
+        statusText = 'На складе';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: chipColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: chipColor.withOpacity(0.3)),
+      ),
+      child: Text(
+        statusText,
+        style: TextStyle(
+          color: chipColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleMenuAction(BuildContext context, WidgetRef ref, String action) {
+    switch (action) {
+      case 'receive':
+        _showReceiveDialog(context, ref);
+        break;
+      case 'edit':
+        Navigator.pushNamed(context, '/receipts/edit', arguments: receiptId);
+        break;
+    }
+  }
+
+  Future<void> _showReceiveDialog(BuildContext context, WidgetRef ref) async {
+    final receipt = ref.read(receiptDetailProvider(receiptId)).value;
+    if (receipt == null) return;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _ReceiveDialog(receipt: receipt),
+    );
+
+    if (result != null && context.mounted) {
+      try {
+        await ref.read(receiptsNotifierProvider(status: null, warehouseId: null).notifier).receiveProducts(
+              receiptId: receiptId,
+              actualQuantity: result['quantity'] as int?,
+              notes: result['notes'] as String?,
+            );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Товар успешно принят'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          // Refresh the detail view
+          ref.invalidate(receiptDetailProvider(receiptId));
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+}
+
+class _ReceiveDialog extends StatefulWidget {
+  final ReceiptEntity receipt;
+
+  const _ReceiveDialog({required this.receipt});
+
+  @override
+  State<_ReceiveDialog> createState() => _ReceiveDialogState();
+}
+
+class _ReceiveDialogState extends State<_ReceiveDialog> {
+  final _quantityController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController.text = widget.receipt.quantity.toString();
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Принять товар'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _quantityController,
+            decoration: const InputDecoration(
+              labelText: 'Фактическое количество',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _notesController,
+            decoration: const InputDecoration(
+              labelText: 'Заметки (необязательно)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Отмена'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final quantity = int.tryParse(_quantityController.text);
+            Navigator.pop(context, {
+              'quantity': quantity,
+              'notes': _notesController.text.isEmpty 
+                  ? null 
+                  : _notesController.text,
+            });
+          },
+          child: const Text('Принять'),
+        ),
+      ],
+    );
+  }
+}

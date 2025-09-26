@@ -101,13 +101,13 @@ class LatestSalesTable extends StatelessWidget {
                       ),
                       DataCell(
                         Text(
-                          sale.quantity.toString(),
+                          sale.quantity.toStringAsFixed(1),
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
                       DataCell(
                         Text(
-                          '₽${sale.totalAmount}',
+                          '₽${sale.totalAmount.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.green,
@@ -227,7 +227,7 @@ class MobileLatestSalesCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    sale.quantity.toString(),
+                    sale.quantity.toStringAsFixed(1),
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
@@ -246,7 +246,7 @@ class MobileLatestSalesCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '₽${sale.totalAmount}',
+                    '₽${sale.totalAmount.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,

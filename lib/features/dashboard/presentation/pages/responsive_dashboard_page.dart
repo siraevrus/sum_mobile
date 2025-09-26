@@ -13,7 +13,7 @@ import 'package:sum_warehouse/features/users/presentation/pages/employees_list_p
 import 'package:sum_warehouse/features/inventory/presentation/pages/stocks_list_page.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
-import 'package:sum_warehouse/features/goods_in_transit/presentation/pages/goods_in_transit_list_page_api.dart';
+import 'package:sum_warehouse/features/reception/presentation/pages/reception_list_page.dart';
 import 'package:sum_warehouse/features/reception/presentation/pages/reception_list_page.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 
@@ -302,7 +302,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       context,
                       icon: Icons.local_shipping,
                       title: 'Товары В Пути',
-                      section: 'goods_in_transit',
+                      section: 'receipts',
                     ),
                   // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                   if (_hasAccess(user, ['admin', 'warehouse_worker', 'sales_manager']))
@@ -431,7 +431,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Компании';
       case 'inventory':
         return 'Остатки на складе';
-      case 'goods_in_transit':
+      case 'receipts':
         return 'Товары в пути';
       case 'reception':
         return 'Приемка';
@@ -462,8 +462,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const CompaniesListPage();
       case 'inventory':
         return const StocksListPage();
-      case 'goods_in_transit':
-        return const GoodsInTransitListPageApi();
+      case 'receipts':
+        return const ReceptionListPage();
       case 'reception':
         return const ReceptionListPage();
       default:
@@ -497,7 +497,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     final role = _getRoleCode(user.role);
     // Админ видит инфопанель по умолчанию, остальные — первый доступный раздел
     if (role == 'admin') return 'dashboard';
-    // Для sales менеджера убираем 'products' и 'goods_in_transit', открываем 'inventory' если доступен
+    // Для sales менеджера убираем 'products' и 'receipts', открываем 'inventory' если доступен
     if (role == 'sales_manager') {
       if (_hasAccess(user, ['admin', 'operator', 'warehouse_worker', 'sales_manager'])) return 'inventory';
       return 'requests';

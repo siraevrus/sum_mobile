@@ -10,7 +10,7 @@ import 'package:sum_warehouse/features/products/presentation/pages/product_templ
 import 'package:sum_warehouse/features/products/presentation/pages/products_list_page.dart';
 import 'package:sum_warehouse/features/requests/presentation/pages/requests_list_page.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/stocks_list_page.dart';
-import 'package:sum_warehouse/features/goods_in_transit/presentation/pages/goods_in_transit_list_page_api.dart';
+import 'package:sum_warehouse/features/reception/presentation/pages/reception_list_page.dart';
 
 /// Главный экран дашборда
 class DashboardPage extends ConsumerWidget {
@@ -279,7 +279,7 @@ class DashboardPage extends ConsumerWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const GoodsInTransitListPageApi(),
+                  builder: (context) => const ReceptionListPage(),
                 ),
               );
             },

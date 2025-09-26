@@ -157,9 +157,9 @@ GoRouter router(RouterRef ref) {
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'reception'),
       ),
       GoRoute(
-        path: '/goods_in_transit',
-        name: 'goods_in_transit',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'goods_in_transit'),
+        path: '/receipts',
+        name: 'receipts',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'receipts'),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
