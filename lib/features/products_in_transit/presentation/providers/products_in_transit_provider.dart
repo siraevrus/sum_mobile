@@ -14,9 +14,16 @@ class ProductsInTransit extends _$ProductsInTransit {
 
   Future<List<ProductInTransitEntity>> _loadProductsInTransit({String? status, String? search}) async {
     try {
+      print('🔄 Загрузка товаров в пути...');
       final repository = ref.read(productsInTransitRepositoryProvider);
-      return await repository.getProductsInTransit(status: status, search: search);
+      final result = await repository.getProductsInTransit(status: status, search: search);
+      print('✅ Загружено товаров в пути: ${result.length}');
+      if (result.isNotEmpty) {
+        print('📦 Первый товар: ${result.first.name} - ${result.first.producer}');
+      }
+      return result;
     } catch (e) {
+      print('❌ Ошибка загрузки товаров в пути: $e');
       throw Exception('Ошибка загрузки товаров в пути: $e');
     }
   }

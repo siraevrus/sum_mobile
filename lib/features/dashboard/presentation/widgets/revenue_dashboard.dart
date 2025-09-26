@@ -21,9 +21,7 @@ class _RevenueDashboardState extends ConsumerState<RevenueDashboard> {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width >= 768 ? 24 : 16,
-      ),
+      margin: EdgeInsets.zero, // Убираем отступы, они будут управляться родителем
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -206,7 +204,7 @@ class _RevenueDashboardState extends ConsumerState<RevenueDashboard> {
                 Icon(Icons.date_range, size: 16, color: Colors.grey.shade600),
                 const SizedBox(width: 8),
                 Text(
-                  'Период: ${_getPeriodDisplayName(data.period)}',
+                  _getPeriodDisplayName(data.period),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -241,59 +239,86 @@ class _RevenueDashboardState extends ConsumerState<RevenueDashboard> {
               ),
             )
           else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: MaterialStateProperty.all(
-                  Colors.grey.shade50,
-                ),
-                columns: const [
-                  DataColumn(
-                    label: Text(
-                      'Валюта',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+            // Таблица на всю ширину без горизонтального скролла
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  // Заголовок таблицы
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(8),
+                        topRight: Radius.circular(8),
+                      ),
                     ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'Сумма',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    numeric: true,
-                  ),
-                ],
-                rows: data.revenue.entries.map((entry) => DataRow(
-                  cells: [
-                    DataCell(
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getCurrencyColor(entry.key).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          entry.key,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: _getCurrencyColor(entry.key),
+                    child: const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Валюта',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ),
-                    ),
-                    DataCell(
-                      Text(
-                        entry.value.amount.toStringAsFixed(2),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'monospace',
+                        Expanded(
+                          child: Text(
+                            'Сумма',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.right,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  // Строки таблицы
+                  ...data.revenue.entries.map((entry) => Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.shade200),
                       ),
                     ),
-                  ],
-                )).toList(),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getCurrencyColor(entry.key).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: _getCurrencyColor(entry.key),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            entry.value.amount.toStringAsFixed(2),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'monospace',
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ],
               ),
             ),
         ],

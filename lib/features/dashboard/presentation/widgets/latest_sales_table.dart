@@ -15,7 +15,7 @@ class LatestSalesTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: EdgeInsets.zero, // Убираем отступы, они будут управляться родителем
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -144,7 +144,7 @@ class MobileLatestSalesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.zero, // Убираем отступы, они будут управляться родителем
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

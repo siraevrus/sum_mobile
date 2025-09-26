@@ -31,13 +31,20 @@ class ProductsInTransitRemoteDataSource {
       if (status != null) queryParams['status'] = status;
       if (search != null) queryParams['search'] = search;
 
+      print('🌐 Запрос к API: /products-in-transit с параметрами: $queryParams');
+      
       final response = await _dio.get(
         '/products-in-transit',
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
 
+      print('📡 Ответ API: ${response.statusCode}');
+      print('📄 Данные ответа: ${response.data}');
+
       if (response.data is Map<String, dynamic>) {
-        return ProductInTransitResponse.fromJson(response.data as Map<String, dynamic>);
+        final result = ProductInTransitResponse.fromJson(response.data as Map<String, dynamic>);
+        print('🔄 Парсинг успешен, товаров: ${result.data.length}');
+        return result;
       }
 
       throw Exception('Неожиданный формат ответа API');

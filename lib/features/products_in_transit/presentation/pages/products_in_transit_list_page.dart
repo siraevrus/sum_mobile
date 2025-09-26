@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum_warehouse/core/constants/app_constants.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/products_in_transit/data/models/product_in_transit_model.dart';
 import 'package:sum_warehouse/features/products_in_transit/domain/entities/product_in_transit_entity.dart';
@@ -7,6 +8,7 @@ import 'package:sum_warehouse/features/products_in_transit/presentation/provider
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_details_page.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/products/presentation/providers/products_provider.dart';
+import 'package:sum_warehouse/features/auth/data/datasources/auth_local_datasource.dart';
 
 /// Экран списка товаров в пути
 class ProductsInTransitListPage extends ConsumerStatefulWidget {
@@ -27,7 +29,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _shippingLocationController = TextEditingController();
   DateTime? _selectedShippingDate;
-
+  
   @override
   void dispose() {
     _searchController.dispose();
@@ -55,7 +57,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: () => ref.read(productsInTransitProvider.notifier).refresh(),
-            tooltip: 'Обновить список',
+        tooltip: 'Обновить список',
           ),
         ],
       ),
@@ -63,7 +65,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
         children: [
           // Поиск и фильтры
           _buildFilters(),
-
+          
           // Список товаров в пути
           Expanded(
             child: RefreshIndicator(
@@ -88,26 +90,26 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
       child: Column(
         children: [
           TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
+        controller: _searchController,
+        decoration: InputDecoration(
               hintText: 'Поиск товаров в пути...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-              ),
-            ),
-            onChanged: (value) {
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (value == _searchController.text) {
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+        ),
+        onChanged: (value) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (value == _searchController.text) {
                   ref.read(productsInTransitProvider.notifier).searchProductsInTransit(value);
-                }
-              });
-            },
+            }
+          });
+        },
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -150,51 +152,111 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
         child: Container(
           height: MediaQuery.of(context).size.height * 0.7,
           alignment: Alignment.center,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                'Ошибка загрузки товаров в пути:\n$error',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
+          padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Ошибка загрузки товаров в пути',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Детали ошибки:',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red.shade600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'API URL: ${AppConstants.baseUrl}/products-in-transit',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.blue.shade600, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      FutureBuilder<String?>(
+                        future: ref.read(authLocalDataSourceProvider.future).then((ds) => ds.getToken()),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Text(
+                              'Проверка токена...',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            );
+                          }
+                          
+                          final token = snapshot.data;
+                          return Text(
+                            token != null 
+                              ? 'Токен: ${token.substring(0, 20)}...' 
+                              : 'Токен отсутствует - требуется авторизация',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: token != null ? Colors.green.shade600 : Colors.orange.shade600, 
+                              fontSize: 12
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
                 onPressed: () => ref.read(productsInTransitProvider.notifier).refresh(),
-                child: const Text('Повторить'),
-              ),
-            ],
+                  child: const Text('Повторить'),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       data: (productsInTransit) {
+        print('🎯 Отображение списка товаров в пути: ${productsInTransit.length}');
+        
         if (productsInTransit.isEmpty) {
+          print('📭 Список пуст, показываю заглушку');
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Container(
               height: MediaQuery.of(context).size.height * 0.7,
               alignment: Alignment.center,
               child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
+                    SizedBox(height: 16),
+                    Text(
                     'Нет товаров в пути',
-                    style: TextStyle(color: Colors.grey, fontSize: 18),
-                  ),
-                ],
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
+                  ],
               ),
             ),
           );
         }
 
+        print('📋 Отображаю список из ${productsInTransit.length} товаров');
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: productsInTransit.length,
-          itemBuilder: (context, index) => _buildProductInTransitCard(productsInTransit[index]),
+          itemBuilder: (context, index) {
+            print('🏗️ Строю карточку для товара ${index}: ${productsInTransit[index].name}');
+            return _buildProductInTransitCard(productsInTransit[index]);
+          },
         );
       },
     );
@@ -225,6 +287,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Наименование
                         Text(
                           productInTransit.name,
                           style: const TextStyle(
@@ -232,23 +295,64 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Количество: ${productInTransit.quantity.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
+                        const SizedBox(height: 8),
+                        
+                        // Производитель
                         if (productInTransit.producer != null) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.business, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Производитель: ${productInTransit.producer!}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
-                          Text(
-                            'Производитель: ${productInTransit.producer!}',
+                        ],
+                        
+                        // Склад назначения
+                        if (productInTransit.warehouse != null) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.warehouse, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  'Склад: ${productInTransit.warehouse!.name}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        
+                        // Место отправления
+                        if (productInTransit.shippingLocation != null) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  'Отправлено из: ${productInTransit.shippingLocation!}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.grey,
                             ),
                           ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
                         ],
                       ],
                     ),
@@ -283,14 +387,6 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                 ],
               ),
               const SizedBox(height: 8),
-
-              if (productInTransit.shippingLocation != null) ...[
-                Text(
-                  'Место отгрузки: ${productInTransit.shippingLocation!}',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-              ],
               if (productInTransit.shippingDate != null) ...[
                 Text(
                   'Дата отгрузки: ${_formatDate(productInTransit.shippingDate!)}',
@@ -299,10 +395,10 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                 const SizedBox(height: 4),
               ],
               if (productInTransit.expectedArrivalDate != null) ...[
-                Text(
+              Text(
                   'Ожидаемая дата прибытия: ${_formatDate(productInTransit.expectedArrivalDate!)}',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
                 const SizedBox(height: 4),
               ],
               if (productInTransit.warehouse != null) ...[
@@ -613,7 +709,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                     }
                   } catch (e) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Ошибка создания товара в пути: $e'), backgroundColor: AppColors.error),
                       );
                     }
