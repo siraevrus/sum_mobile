@@ -16,7 +16,6 @@ abstract class SalesRemoteDataSource {
     String? search,
     int? warehouseId,
     String? paymentStatus,
-    String? deliveryStatus,
     String? paymentMethod,
     String? dateFrom,
     String? dateTo,
@@ -38,7 +37,6 @@ abstract class SalesRemoteDataSource {
     String? search,
     int? warehouseId,
     String? paymentStatus,
-    String? deliveryStatus,
     String? paymentMethod,
     String? dateFrom,
     String? dateTo,
@@ -58,7 +56,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
     String? search,
     int? warehouseId,
     String? paymentStatus,
-    String? deliveryStatus,
     String? paymentMethod,
     String? dateFrom,
     String? dateTo,
@@ -72,7 +69,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (warehouseId != null) queryParams['warehouse_id'] = warehouseId;
       if (paymentStatus != null) queryParams['payment_status'] = paymentStatus;
-      if (deliveryStatus != null) queryParams['delivery_status'] = deliveryStatus;
       if (paymentMethod != null) queryParams['payment_method'] = paymentMethod;
       if (dateFrom != null) queryParams['date_from'] = dateFrom;
       if (dateTo != null) queryParams['date_to'] = dateTo;
@@ -276,7 +272,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
     String? search,
     int? warehouseId,
     String? paymentStatus,
-    String? deliveryStatus,
     String? paymentMethod,
     String? dateFrom,
     String? dateTo,
@@ -287,7 +282,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       if (warehouseId != null) queryParams['warehouse_id'] = warehouseId;
       if (paymentStatus != null) queryParams['payment_status'] = paymentStatus;
-      if (deliveryStatus != null) queryParams['delivery_status'] = deliveryStatus;
       if (paymentMethod != null) queryParams['payment_method'] = paymentMethod;
       if (dateFrom != null) queryParams['date_from'] = dateFrom;
       if (dateTo != null) queryParams['date_to'] = dateTo;

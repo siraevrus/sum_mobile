@@ -17,7 +17,6 @@ class SalesListPage extends ConsumerStatefulWidget {
 class _SalesListPageState extends ConsumerState<SalesListPage> {
   String? _searchQuery;
   String? _paymentStatusFilter;
-  String? _deliveryStatusFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -105,13 +104,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
               children: [
                 _buildSearchField(),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildPaymentStatusFilter()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDeliveryStatusFilter()),
-                  ],
-                ),
+                _buildPaymentStatusFilter(),
               ],
             );
           } else {
@@ -120,8 +113,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
                 Expanded(flex: 2, child: _buildSearchField()),
                 const SizedBox(width: 16),
                 Expanded(child: _buildPaymentStatusFilter()),
-                const SizedBox(width: 16),
-                Expanded(child: _buildDeliveryStatusFilter()),
               ],
             );
           }
@@ -170,6 +161,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       items: const [
         DropdownMenuItem(value: null, child: Text('Все')),
         DropdownMenuItem(value: 'paid', child: Text('Оплачено')),
+        DropdownMenuItem(value: 'cancelled', child: Text('Отменено')),
       ],
     );
   }
@@ -217,7 +209,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
-        onTap: () => _handleSaleAction('edit', sale),
+        onTap: () => _handleSaleAction('view', sale),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -263,16 +255,17 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           child: PopupMenuButton<String>(
             onSelected: (action) => _handleSaleAction(action, sale),
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Удалить', style: TextStyle(color: Colors.red)),
-                  ],
+              if (sale.paymentStatus != 'cancelled')
+                const PopupMenuItem(
+                  value: 'cancel',
+                  child: Row(
+                    children: [
+                      Icon(Icons.cancel, size: 20, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Отменить', style: TextStyle(color: Colors.orange)),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -332,16 +325,17 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
         PopupMenuButton<String>(
           onSelected: (action) => _handleSaleAction(action, sale),
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Удалить', style: TextStyle(color: Colors.red)),
-                ],
+            if (sale.paymentStatus != 'cancelled')
+              const PopupMenuItem(
+                value: 'cancel',
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel, size: 20, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('Отменить', style: TextStyle(color: Colors.orange)),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ],
@@ -352,9 +346,8 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStatusChip(sale.paymentStatus ?? 'unknown', _getPaymentStatusColor(sale.paymentStatus ?? 'unknown')),
-        const SizedBox(height: 4),
-        _buildStatusChip(sale.deliveryStatus ?? 'unknown', _getDeliveryStatusColor(sale.deliveryStatus ?? 'unknown')),
+        if (sale.paymentStatus != 'pending' && sale.paymentStatus != 'unknown')
+          _buildStatusChip(sale.paymentStatus ?? 'unknown', _getPaymentStatusColor(sale.paymentStatus ?? 'unknown')),
       ],
     );
   }
@@ -380,7 +373,11 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
   void _handleSaleAction(String action, SaleModel sale) {
     switch (action) {
       case 'view':
-        // TODO: Просмотр деталей продажи
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => SaleFormPage(sale: sale, isViewMode: true),
+          ),
+        ).then((_) => setState(() {}));
         break;
       case 'edit':
         Navigator.of(context).push(
@@ -389,9 +386,36 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           ),
         ).then((_) => setState(() {}));
         break;
-      case 'delete':
-        // TODO: Удаление продажи
+      case 'cancel':
+        _cancelSale(sale);
         break;
+    }
+  }
+
+  Future<void> _cancelSale(SaleModel sale) async {
+    try {
+      final dataSource = ref.read(salesRemoteDataSourceProvider);
+      if (sale.id != null) {
+        await dataSource.cancelSale(sale.id!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Реализация отменена'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {}); // Обновить список продаж
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка отмены реализации: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -471,21 +495,8 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
         return const Color(0xFF2ECC71);
       case 'cancelled':
         return const Color(0xFFE74C3C);
-      default:
-        return const Color(0xFF6C757D);
-    }
-  }
-
-  Color _getDeliveryStatusColor(String status) {
-    switch (status) {
-      case 'delivered':
-        return const Color(0xFF2ECC71);
-      case 'shipped':
-        return const Color(0xFF3498DB);
-      case 'processing':
-        return const Color(0xFFF39C12);
-      case 'returned':
-        return const Color(0xFFE74C3C);
+      case 'pending':
+        return const Color(0xFFF39C12); // Добавляем цвет для статуса "Ожидание"
       default:
         return const Color(0xFF6C757D);
     }
@@ -497,14 +508,8 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
         return 'Оплачено';
       case 'cancelled':
         return 'Отменено';
-      case 'delivered':
-        return 'Доставлено';
-      case 'shipped':
-        return 'Отправлено';
-      case 'processing':
-        return 'Обрабатывается';
-      case 'returned':
-        return 'Возвращено';
+      case 'pending':
+        return 'Ожидание';
       default:
         return status;
     }

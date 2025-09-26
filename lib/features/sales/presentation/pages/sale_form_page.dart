@@ -9,10 +9,12 @@ import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 /// Экран создания/редактирования реализации (продажи)
 class SaleFormPage extends ConsumerStatefulWidget {
   final SaleModel? sale;
+  final bool isViewMode;
   
   const SaleFormPage({
     super.key,
     this.sale,
+    this.isViewMode = false,
   });
 
   @override
@@ -44,7 +46,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   
   // 1. Добавить переменную состояния для режима просмотра
   bool get _isEditing => widget.sale != null;
-  bool get _isViewMode => _isEditing && ModalRoute.of(context)?.settings.arguments == 'view';
+  bool get _isViewMode => widget.isViewMode; // Используем параметр конструктора
   
   @override
   void initState() {
@@ -198,11 +200,13 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_isViewMode ? 'Просмотр Реализации' : (_isEditing ? 'Редактирование Реализация' : 'Создать Реализацию')),
+        title: Text(_isViewMode 
+          ? 'Просмотр Реализации' 
+          : (_isEditing ? 'Редактирование Реализации' : 'Создать Реализацию')),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
-          if (_isEditing && !_isViewMode)
+          if (_isEditing && !_isViewMode) // Только в режиме редактирования
             IconButton(
               onPressed: _deleteSale,
               icon: const Icon(Icons.delete, color: Colors.white),
@@ -261,6 +265,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           label: 'Количество',
           isRequired: true,
           keyboardType: TextInputType.number,
+          enabled: !_isViewMode,
         ),
         const SizedBox(height: 16),
 
@@ -269,6 +274,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           label: 'Сумма (нал)',
           isRequired: false,
           keyboardType: TextInputType.number,
+          enabled: !_isViewMode,
         ),
         const SizedBox(height: 16),
 
@@ -277,6 +283,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           label: 'Сумма (безнал)',
           isRequired: false,
           keyboardType: TextInputType.number,
+          enabled: !_isViewMode,
         ),
         const SizedBox(height: 16),
 
@@ -305,7 +312,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             DropdownMenuItem(value: 'RUB', child: Text('RUB')),
             DropdownMenuItem(value: 'UZS', child: Text('UZS')),
           ],
-          onChanged: (value) {
+          onChanged: _isViewMode ? null : (value) {
             setState(() {
               _selectedCurrency = value;
             });
@@ -325,6 +332,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           controller: _customerNameController,
           label: 'Имя клиента',
           isRequired: false,
+          enabled: !_isViewMode,
         ),
         const SizedBox(height: 16),
 
@@ -334,6 +342,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           isRequired: false,
           keyboardType: TextInputType.phone,
           icon: Icons.call,
+          enabled: !_isViewMode,
         ),
       ],
     );
@@ -350,6 +359,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           label: 'Заметки',
           isRequired: false,
           maxLines: 4,
+          enabled: !_isViewMode,
         ),
       ],
     );
@@ -401,7 +411,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   }) {
     return TextFormField(
       controller: controller,
-      enabled: enabled,
+      enabled: enabled && !_isViewMode,
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
         labelStyle: TextStyle(color: Colors.grey.shade500),
@@ -439,7 +449,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         value: warehouse.id,
         child: Text(warehouse.name),
       )).toList(),
-      onChanged: (warehouseId) {
+      onChanged: _isViewMode ? null : (warehouseId) {
         setState(() {
           _selectedWarehouseId = warehouseId;
           _selectedProductId = null; // Сбрасываем выбранный товар
@@ -493,11 +503,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           ),
         );
       }).toList(),
-      onChanged: _selectedWarehouseId == null ? null : (productId) {
+      onChanged: _isViewMode ? null : (_selectedWarehouseId == null ? null : (productId) {
         setState(() {
           _selectedProductId = productId;
         });
-      },
+      }),
       validator: (value) {
         if (value == null) {
           return 'Выберите товар';
@@ -509,7 +519,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   
   Widget _buildDateField() {
     return InkWell(
-      onTap: () async {
+      onTap: _isViewMode ? null : () async {
         final date = await showDatePicker(
           context: context,
           initialDate: _saleDate,
@@ -729,8 +739,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     final sale = widget.sale!;
     final fields = [
       ['Номер продажи', sale.saleNumber ?? ''],
-      ['Склад', _warehouses.firstWhere((w) => w.id == sale.warehouseId, orElse: () => WarehouseModel(id: 0, name: '—')).name],
-      ['Товар', sale.productName ?? ''],
+      ['Склад', _warehouses.firstWhere((w) => w.id == sale.warehouseId, orElse: () => WarehouseModel(id: 0, name: '—', address: 'Не указан', companyId: 0, isActive: true, createdAt: DateTime.now().toIso8601String(), updatedAt: DateTime.now().toIso8601String())).name],
+      ['Товар', sale.product?.name ?? ''],
       ['Количество', sale.quantity?.toString() ?? ''],
       ['Сумма (нал)', sale.cashAmount?.toString() ?? ''],
       ['Сумма (безнал)', sale.nocashAmount?.toString() ?? ''],

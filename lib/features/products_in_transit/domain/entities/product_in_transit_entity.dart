@@ -1,34 +1,35 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:sum_warehouse/features/users/domain/entities/user_entity.dart';
+import 'package:sum_warehouse/features/warehouses/domain/entities/warehouse_entity.dart';
+import 'package:sum_warehouse/features/products/domain/entities/product_entity.dart';
 
-part 'receipt_entity.freezed.dart';
+part 'product_in_transit_entity.freezed.dart';
 
 @freezed
-class ReceiptEntity with _$ReceiptEntity {
-  const factory ReceiptEntity({
+class ProductInTransitEntity with _$ProductInTransitEntity {
+  const factory ProductInTransitEntity({
     required int id,
-    required int productId,
     required int warehouseId,
-    required int userId,
-    required double quantity,
+    required String name,
     required String status,
+    required double quantity,
+    required double actualQuantity,
+    String? producer,
+    String? shippingLocation,
+    DateTime? shippingDate,
+    DateTime? expectedArrivalDate,
+    String? notes,
+    required bool isActive,
+    required int createdBy,
     required DateTime createdAt,
     required DateTime updatedAt,
-    String? documentNumber,
-    String? description,
-    String? transportInfo,
-    String? driverInfo,
-    DateTime? dispatchDate,
-    DateTime? expectedArrivalDate,
-    DateTime? actualArrivalDate,
-    String? notes,
     // Связанные объекты
-    ProductEntity? product,
+    ProductEntity? productTemplate,
     WarehouseEntity? warehouse,
-    UserEntity? user,
-  }) = _ReceiptEntity;
+    UserEntity? creator,
+  }) = _ProductInTransitEntity;
 }
 
-// Модели для связанных объектов (упрощенные)
 @freezed
 class ProductEntity with _$ProductEntity {
   const factory ProductEntity({
@@ -37,6 +38,7 @@ class ProductEntity with _$ProductEntity {
     required int productTemplateId,
     String? unit,
     String? producer,
+    String? description,
   }) = _ProductEntity;
 }
 
@@ -56,11 +58,12 @@ class UserEntity with _$UserEntity {
     required int id,
     required String name,
     String? email,
+    @Default(UserRole.operator) UserRole role,
   }) = _UserEntity;
 }
 
-// Enum для статусов приемки
-enum ReceiptStatus {
+// Enum для статусов товаров в пути
+enum ProductInTransitStatus {
   @JsonValue('in_transit')
   inTransit,
   @JsonValue('arrived')
@@ -72,13 +75,13 @@ enum ReceiptStatus {
 
   String get displayName {
     switch (this) {
-      case ReceiptStatus.inTransit:
+      case ProductInTransitStatus.inTransit:
         return 'В пути';
-      case ReceiptStatus.arrived:
+      case ProductInTransitStatus.arrived:
         return 'Прибыл';
-      case ReceiptStatus.received:
+      case ProductInTransitStatus.received:
         return 'Принят';
-      case ReceiptStatus.cancelled:
+      case ProductInTransitStatus.cancelled:
         return 'Отменен';
     }
   }
