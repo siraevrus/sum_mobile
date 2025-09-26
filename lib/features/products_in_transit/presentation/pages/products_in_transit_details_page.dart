@@ -123,7 +123,7 @@ class _ProductsInTransitDetailsPageState extends ConsumerState<ProductsInTransit
                     children: [
                       _infoRow('Название шаблона', productInTransit.productTemplate!.name),
                       const SizedBox(height: 8),
-                      _infoRow('Единица измерения', productInTransit.productTemplate!.unit ?? '-'),
+                      _infoRow('Единица измерения', productInTransit.productTemplate?.unit ?? '-'),
                       if (productInTransit.productTemplate!.description != null) ...[
                         const SizedBox(height: 8),
                         _infoRow('Описание шаблона', productInTransit.productTemplate!.description!),

@@ -1,7 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:sum_warehouse/features/users/domain/entities/user_entity.dart';
-import 'package:sum_warehouse/features/warehouses/domain/entities/warehouse_entity.dart';
-import 'package:sum_warehouse/features/products/domain/entities/product_entity.dart';
 
 part 'product_in_transit_entity.freezed.dart';
 
@@ -23,44 +20,46 @@ class ProductInTransitEntity with _$ProductInTransitEntity {
     required int createdBy,
     required DateTime createdAt,
     required DateTime updatedAt,
-    // Связанные объекты
-    ProductEntity? productTemplate,
-    WarehouseEntity? warehouse,
-    UserEntity? creator,
+    // Связанные объекты как простые объекты
+    ProductTemplateInfo? productTemplate,
+    WarehouseInfo? warehouse,
+    CreatorInfo? creator,
   }) = _ProductInTransitEntity;
 }
 
+/// Информация о шаблоне товара
 @freezed
-class ProductEntity with _$ProductEntity {
-  const factory ProductEntity({
+class ProductTemplateInfo with _$ProductTemplateInfo {
+  const factory ProductTemplateInfo({
     required int id,
     required String name,
-    required int productTemplateId,
-    String? unit,
-    String? producer,
     String? description,
-  }) = _ProductEntity;
+    String? unit,
+  }) = _ProductTemplateInfo;
 }
 
+/// Информация о складе
 @freezed
-class WarehouseEntity with _$WarehouseEntity {
-  const factory WarehouseEntity({
+class WarehouseInfo with _$WarehouseInfo {
+  const factory WarehouseInfo({
     required int id,
     required String name,
     required String address,
     required int companyId,
-  }) = _WarehouseEntity;
+  }) = _WarehouseInfo;
 }
 
+/// Информация о создателе
 @freezed
-class UserEntity with _$UserEntity {
-  const factory UserEntity({
+class CreatorInfo with _$CreatorInfo {
+  const factory CreatorInfo({
     required int id,
     required String name,
-    String? email,
-    @Default(UserRole.operator) UserRole role,
-  }) = _UserEntity;
+    required String email,
+    String? role,
+  }) = _CreatorInfo;
 }
+
 
 // Enum для статусов товаров в пути
 enum ProductInTransitStatus {

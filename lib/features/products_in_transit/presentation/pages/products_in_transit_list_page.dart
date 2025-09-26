@@ -6,7 +6,7 @@ import 'package:sum_warehouse/features/products_in_transit/domain/entities/produ
 import 'package:sum_warehouse/features/products_in_transit/presentation/providers/products_in_transit_provider.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_details_page.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
-import 'package:sum_warehouse/features/products/presentation/providers/product_templates_provider.dart';
+import 'package:sum_warehouse/features/products/presentation/providers/products_provider.dart';
 
 /// Экран списка товаров в пути
 class ProductsInTransitListPage extends ConsumerStatefulWidget {
@@ -474,7 +474,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
     _selectedShippingDate = null;
 
     final warehousesAsync = ref.read(warehousesProvider);
-    final productsAsync = ref.read(productTemplatesProvider);
+    // Products будут загружены через Consumer widget
 
     await showDialog(context: context, builder: (context) {
       return StatefulBuilder(builder: (context, setState) {
@@ -499,17 +499,23 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                     error: (e, s) => Text('Ошибка загрузки складов: $e'),
                   ),
                   const SizedBox(height: 12),
-                  productsAsync.when(
-                    data: (products) => DropdownButtonFormField<int>(
-                      dropdownColor: Colors.white,
-                      value: _selectedProductTemplateId,
-                      hint: const Text('Выберите шаблон товара'),
-                      onChanged: (value) => setState(() => _selectedProductTemplateId = value),
-                      validator: (value) => value == null ? 'Выберите шаблон товара' : null,
-                      items: products.map((product) => DropdownMenuItem(value: product.id, child: Text(product.name))).toList(),
-                    ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, s) => Text('Ошибка загрузки товаров: $e'),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final productsState = ref.watch(productsProvider);
+                      return switch (productsState) {
+                        ProductsLoaded(:final products) => DropdownButtonFormField<int>(
+                          dropdownColor: Colors.white,
+                          value: _selectedProductTemplateId,
+                          hint: const Text('Выберите шаблон товара'),
+                          onChanged: (value) => setState(() => _selectedProductTemplateId = value),
+                          validator: (value) => value == null ? 'Выберите шаблон товара' : null,
+                          items: products.data.map((product) => DropdownMenuItem(value: product.id, child: Text(product.name))).toList(),
+                        ),
+                        ProductsLoading() => const Center(child: CircularProgressIndicator()),
+                        ProductsError(:final message) => Text('Ошибка загрузки товаров: $message'),
+                        _ => const SizedBox.shrink(),
+                      };
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

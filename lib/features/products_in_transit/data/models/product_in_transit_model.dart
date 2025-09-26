@@ -1,9 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sum_warehouse/features/products_in_transit/domain/entities/product_in_transit_entity.dart';
-import 'package:sum_warehouse/features/products/domain/entities/product_entity.dart';
-import 'package:sum_warehouse/features/warehouses/domain/entities/warehouse_entity.dart';
-import 'package:sum_warehouse/features/users/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/shared/models/paginated_response.dart';
+
 part 'product_in_transit_model.freezed.dart';
 part 'product_in_transit_model.g.dart';
 
@@ -30,7 +28,7 @@ class ProductInTransitModel with _$ProductInTransitModel {
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
     String? notes,
-    @JsonKey(name: 'is_active') required bool isActive,
+    required bool isActive,
     @JsonKey(name: 'created_by') required int createdBy,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
@@ -62,9 +60,9 @@ class ProductInTransitModel with _$ProductInTransitModel {
         createdBy: createdBy,
         createdAt: createdAt,
         updatedAt: updatedAt,
-        warehouse: warehouse?.toWarehouseEntity(),
-        productTemplate: template?.toProductEntity(),
-        creator: creator?.toUserEntity(),
+        warehouse: warehouse?.toWarehouseInfo(),
+        productTemplate: template?.toProductTemplateInfo(),
+        creator: creator?.toCreatorInfo(),
       );
 }
 
@@ -85,7 +83,8 @@ class WarehouseProductInTransitModel with _$WarehouseProductInTransitModel {
 
   const WarehouseProductInTransitModel._();
 
-  WarehouseEntity toWarehouseEntity() => WarehouseEntity(
+  // Добавим метод toWarehouseInfo
+  WarehouseInfo toWarehouseInfo() => WarehouseInfo(
         id: id,
         name: name,
         address: address,
@@ -109,12 +108,14 @@ class ProductTemplateInTransitModel with _$ProductTemplateInTransitModel {
   factory ProductTemplateInTransitModel.fromJson(Map<String, dynamic> json) =>
       _$ProductTemplateInTransitModelFromJson(json);
 
-  ProductEntity toProductEntity() => ProductEntity(
+  const ProductTemplateInTransitModel._();
+
+  // Добавим метод toProductTemplateInfo
+  ProductTemplateInfo toProductTemplateInfo() => ProductTemplateInfo(
         id: id,
         name: name,
-        productTemplateId: id, // Предполагаем, что templateId равен id
-        unit: unit,
         description: description,
+        unit: unit,
       );
 }
 
@@ -144,11 +145,11 @@ class CreatorProductInTransitModel with _$CreatorProductInTransitModel {
 
   const CreatorProductInTransitModel._();
 
-  UserEntity toUserEntity() => UserEntity(
+  CreatorInfo toCreatorInfo() => CreatorInfo(
         id: id,
         name: name,
         email: email,
-        role: UserRole.values.firstWhere((e) => e.toString().split('.').last == role, orElse: () => UserRole.operator),
+        role: role,
       );
 }
 
