@@ -29,7 +29,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
   final _notesController = TextEditingController();
-  final _currencyController = TextEditingController();
   
   bool _isLoading = false;
   DateTime _saleDate = DateTime.now();
@@ -40,7 +39,12 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   List<WarehouseModel> _warehouses = [];
   List<Map<String, dynamic>> _warehouseProducts = [];
   
+  // 1. Добавить переменную состояния для валюты
+  String? _selectedCurrency;
+  
+  // 1. Добавить переменную состояния для режима просмотра
   bool get _isEditing => widget.sale != null;
+  bool get _isViewMode => _isEditing && ModalRoute.of(context)?.settings.arguments == 'view';
   
   @override
   void initState() {
@@ -78,7 +82,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       _customerNameController.text = sale.customerName ?? '';
       _customerPhoneController.text = sale.customerPhone ?? '';
       _notesController.text = sale.notes ?? '';
-      _currencyController.text = sale.currency ?? '';
+      // 2. В initState/initForm: инициализация валюты
+      _selectedCurrency = sale.currency ?? 'RUB';
       _saleDate = DateTime.parse(sale.saleDate);
       _selectedWarehouseId = sale.warehouseId;
       // Безопасное преобразование productId к int
@@ -90,7 +95,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       _cashAmountController.text = '0';
       _nocashAmountController.text = '0';
       _totalAmountController.text = '0';
-      _currencyController.text = 'RUB';
+      // 2. В initState/initForm: инициализация валюты
+      _selectedCurrency = 'RUB';
     }
     
     // Подписываемся на изменения сумм для автоматического расчета общей суммы
@@ -192,11 +198,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Редактирование Реализация' : 'Создать Реализацию'),
+        title: Text(_isViewMode ? 'Просмотр Реализации' : (_isEditing ? 'Редактирование Реализация' : 'Создать Реализацию')),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
-          if (_isEditing)
+          if (_isEditing && !_isViewMode)
             IconButton(
               onPressed: _deleteSale,
               icon: const Icon(Icons.delete, color: Colors.white),
@@ -207,24 +213,26 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       
       body: (_isLoading && !_isEditing)
         ? const Center(child: CircularProgressIndicator())
-        : Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildBasicInfoSection(),
-                  const SizedBox(height: 32),
-                  _buildClientInfoSection(),
-                  const SizedBox(height: 32),
-                  _buildAdditionalInfoSection(),
-                  const SizedBox(height: 32),
-                  _buildBottomButtons(),
-                ],
+        : _isViewMode
+          ? _buildViewModeSection()
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildBasicInfoSection(),
+                    const SizedBox(height: 32),
+                    _buildClientInfoSection(),
+                    const SizedBox(height: 32),
+                    _buildAdditionalInfoSection(),
+                    const SizedBox(height: 32),
+                    _buildBottomButtons(),
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
   
@@ -284,11 +292,24 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         _buildDateField(),
         const SizedBox(height: 16),
 
-        _buildTextField(
-          controller: _currencyController,
-          label: 'Валюта',
-          isRequired: false,
-          enabled: true,
+        // 3. В _buildBasicInfoSection заменить _buildTextField для валюты на DropdownButtonFormField
+        DropdownButtonFormField<String>(
+          value: _selectedCurrency,
+          decoration: const InputDecoration(
+            labelText: 'Валюта',
+            border: OutlineInputBorder(),
+            filled: true,
+          ),
+          items: const [
+            DropdownMenuItem(value: 'USD', child: Text('USD')),
+            DropdownMenuItem(value: 'RUB', child: Text('RUB')),
+            DropdownMenuItem(value: 'UZS', child: Text('UZS')),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedCurrency = value;
+            });
+          },
         ),
       ],
     );
@@ -517,6 +538,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   }
   
   Widget _buildBottomButtons() {
+    if (_isViewMode) return const SizedBox.shrink();
     return Row(
       children: [
         Expanded(
@@ -568,7 +590,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           quantity: double.parse(_quantityController.text),
           cashAmount: double.tryParse(_cashAmountController.text) ?? 0.0,
           nocashAmount: double.tryParse(_nocashAmountController.text) ?? 0.0,
-          currency: _currencyController.text.isEmpty ? null : _currencyController.text,
+          // 4. В _saveSale и updateSaleRequest использовать _selectedCurrency вместо _currencyController.text
+          currency: _selectedCurrency,
           saleDate: _saleDate.toIso8601String().split('T')[0],
           customerName: _customerNameController.text.isEmpty ? null : _customerNameController.text,
           customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
@@ -593,7 +616,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             quantity: quantity,
             cashAmount: cashAmount, // ОБЯЗАТЕЛЬНОЕ поле API
             nocashAmount: nocashAmount, // ОБЯЗАТЕЛЬНОЕ поле API
-            currency: _currencyController.text.isEmpty ? null : _currencyController.text,
+            // 4. В _saveSale и updateSaleRequest использовать _selectedCurrency вместо _currencyController.text
+            currency: _selectedCurrency,
             saleDate: _saleDate.toIso8601String().split('T')[0],
             customerName: _customerNameController.text.isEmpty ? null : _customerNameController.text,
             customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
@@ -698,5 +722,45 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         });
       }
     }
+  }
+
+  // 3. Реализация _buildViewModeSection
+  Widget _buildViewModeSection() {
+    final sale = widget.sale!;
+    final fields = [
+      ['Номер продажи', sale.saleNumber ?? ''],
+      ['Склад', _warehouses.firstWhere((w) => w.id == sale.warehouseId, orElse: () => WarehouseModel(id: 0, name: '—')).name],
+      ['Товар', sale.productName ?? ''],
+      ['Количество', sale.quantity?.toString() ?? ''],
+      ['Сумма (нал)', sale.cashAmount?.toString() ?? ''],
+      ['Сумма (безнал)', sale.nocashAmount?.toString() ?? ''],
+      ['Общая сумма', sale.totalPrice?.toString() ?? ''],
+      ['Дата продажи', sale.saleDate ?? ''],
+      ['Валюта', sale.currency ?? ''],
+      ['Имя клиента', sale.customerName ?? ''],
+      ['Телефон клиента', sale.customerPhone ?? ''],
+      ['Заметки', sale.notes ?? ''],
+    ];
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Просмотр реализации', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          ...fields.map((pair) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(pair[0], style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))),
+                const SizedBox(width: 16),
+                Expanded(child: Text(pair[1], textAlign: TextAlign.right, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600))),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
   }
 }

@@ -170,31 +170,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       items: const [
         DropdownMenuItem(value: null, child: Text('Все')),
         DropdownMenuItem(value: 'paid', child: Text('Оплачено')),
-        DropdownMenuItem(value: 'pending', child: Text('Ожидает оплаты')),
-        DropdownMenuItem(value: 'cancelled', child: Text('Отменено')),
-      ],
-    );
-  }
-
-  Widget _buildDeliveryStatusFilter() {
-    return DropdownButtonFormField<String>(
-        dropdownColor: Colors.white,
-      value: _deliveryStatusFilter,
-      onChanged: (value) => setState(() => _deliveryStatusFilter = value),
-      decoration: InputDecoration(
-        labelText: 'Статус доставки',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-      ),
-      items: const [
-        DropdownMenuItem(value: null, child: Text('Все')),
-        DropdownMenuItem(value: 'processing', child: Text('Обрабатывается')),
-        DropdownMenuItem(value: 'shipped', child: Text('Отправлено')),
-        DropdownMenuItem(value: 'delivered', child: Text('Доставлено')),
-        DropdownMenuItem(value: 'returned', child: Text('Возвращено')),
       ],
     );
   }
@@ -210,7 +185,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
         future: dataSource.getSales(
           search: _searchQuery,
           paymentStatus: _paymentStatusFilter,
-          deliveryStatus: _deliveryStatusFilter,
         ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -378,15 +352,9 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildStatusChip(
-          sale.paymentStatus ?? 'pending',
-          _getPaymentStatusColor(sale.paymentStatus ?? 'pending'),
-        ),
+        _buildStatusChip(sale.paymentStatus ?? 'unknown', _getPaymentStatusColor(sale.paymentStatus ?? 'unknown')),
         const SizedBox(height: 4),
-        _buildStatusChip(
-          sale.deliveryStatus ?? 'pending',
-          _getDeliveryStatusColor(sale.deliveryStatus ?? 'pending'),
-        ),
+        _buildStatusChip(sale.deliveryStatus ?? 'unknown', _getDeliveryStatusColor(sale.deliveryStatus ?? 'unknown')),
       ],
     );
   }
@@ -501,8 +469,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     switch (status) {
       case 'paid':
         return const Color(0xFF2ECC71);
-      case 'pending':
-        return const Color(0xFFF39C12);
       case 'cancelled':
         return const Color(0xFFE74C3C);
       default:
@@ -529,8 +495,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     switch (status) {
       case 'paid':
         return 'Оплачено';
-      case 'pending':
-        return 'Ожидает оплаты';
       case 'cancelled':
         return 'Отменено';
       case 'delivered':
