@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Sum Warehouse';
-  static const String baseUrl = 'http://31.184.253.122';
+  static const String baseUrl = 'http://31.184.253.122/api';
   
   // Размеры
   static const double defaultPadding = 16.0;
