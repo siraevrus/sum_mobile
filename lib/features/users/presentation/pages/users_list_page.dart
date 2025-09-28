@@ -139,10 +139,22 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
 
   Widget _buildSearchField() {
     return TextField(
-      onChanged: (value) => setState(() => _searchQuery = value),
+      onChanged: (value) {
+        setState(() => _searchQuery = value);
+        _loadUsers(); // Добавляем вызов поиска
+      },
       decoration: InputDecoration(
         hintText: 'Поиск пользователей...',
         prefixIcon: const Icon(Icons.search),
+        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  setState(() => _searchQuery = null);
+                  _loadUsers();
+                },
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFE9ECEF)),

@@ -137,10 +137,22 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
 
   Widget _buildSearchField() {
     return TextField(
-      onChanged: (value) => setState(() => _searchQuery = value),
+      onChanged: (value) {
+        setState(() => _searchQuery = value);
+        _loadUsers(); // Добавляем вызов поиска
+      },
       decoration: InputDecoration(
         hintText: 'Поиск сотрудников...',
         prefixIcon: const Icon(Icons.search),
+        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  setState(() => _searchQuery = null);
+                  _loadUsers();
+                },
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
@@ -305,6 +317,10 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
           children: [
             Text(_getFullName(user), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
+            if (user.username != null && user.username!.isNotEmpty) ...[
+              Text('Логин: ${user.username}', style: const TextStyle(color: Color(0xFF6C757D), fontWeight: FontWeight.w500)),
+              const SizedBox(height: 4),
+            ],
             Text(user.email, style: const TextStyle(color: Color(0xFF6C757D))),
             if (user.phone != null) ...[
               const SizedBox(height: 4),
@@ -373,6 +389,10 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
             children: [
               Text(_getFullName(user), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
+              if (user.username != null && user.username!.isNotEmpty) ...[
+                Text('Логин: ${user.username}', style: const TextStyle(color: Color(0xFF6C757D), fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+              ],
               Text(user.email, style: const TextStyle(color: Color(0xFF6C757D))),
               if (user.phone != null) ...[
                 const SizedBox(height: 4),
