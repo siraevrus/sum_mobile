@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 
 /// Карточка с быстрыми действиями
 class QuickActionsCard extends StatelessWidget {

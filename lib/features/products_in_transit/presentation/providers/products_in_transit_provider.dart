@@ -1,88 +1,226 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/models/product_in_transit_model.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/repositories/products_in_transit_repository_impl.dart';
-import 'package:sum_warehouse/features/products_in_transit/domain/entities/product_in_transit_entity.dart';
+import 'package:sum_warehouse/features/products/data/datasources/products_api_datasource.dart';
+import 'package:sum_warehouse/shared/models/product_model.dart';
+import 'package:sum_warehouse/shared/models/api_response_model.dart';
 
 part 'products_in_transit_provider.g.dart';
 
+/// Состояния для товаров в пути
+sealed class ProductsInTransitState {}
+
+class ProductsInTransitLoading extends ProductsInTransitState {}
+
+class ProductsInTransitLoaded extends ProductsInTransitState {
+  final PaginatedResponse<ProductModel> products;
+  final ProductFilters? filters;
+
+  ProductsInTransitLoaded({
+    required this.products,
+    this.filters,
+  });
+}
+
+class ProductsInTransitError extends ProductsInTransitState {
+  final String message;
+
+  ProductsInTransitError(this.message);
+}
+
+/// Provider для товаров в пути (статус for_receipt)
 @riverpod
 class ProductsInTransit extends _$ProductsInTransit {
   @override
-  Future<List<ProductInTransitEntity>> build() async {
-    return await _loadProductsInTransit();
+  ProductsInTransitState build() {
+    // Начинаем с пустого состояния, загрузка будет вызвана явно
+    return ProductsInTransitLoading();
   }
 
-  Future<List<ProductInTransitEntity>> _loadProductsInTransit({String? status, String? search}) async {
+  /// Загрузка товаров в пути
+  Future<void> loadProductsInTransit([ProductFilters? filters]) async {
     try {
-      print('🔄 Загрузка товаров в пути...');
-      final repository = ref.read(productsInTransitRepositoryProvider);
-      final result = await repository.getProductsInTransit(status: status, search: search);
-      print('✅ Загружено товаров в пути: ${result.length}');
-      if (result.isNotEmpty) {
-        print('📦 Первый товар: ${result.first.name} - ${result.first.producer}');
+      state = ProductsInTransitLoading();
+      
+      print('🔵 Начинаем загрузку товаров в пути...');
+      
+      final apiDataSource = ref.read(productsApiDataSourceProvider);
+      
+      // Создаем фильтры для товаров в пути
+      final transitFilters = ProductFilters(
+        status: 'for_receipt', // Фильтруем только товары со статусом for_receipt
+        search: filters?.search,
+        warehouseId: filters?.warehouseId,
+        templateId: filters?.templateId,
+        producer: filters?.producer,
+        page: filters?.page ?? 1,
+        perPage: filters?.perPage ?? 15,
+      );
+      
+      print('🔵 Фильтры для товаров в пути: ${transitFilters.toQueryParams()}');
+      
+      final response = await apiDataSource.getProducts(transitFilters);
+      
+      print('🔵 Получено товаров в пути: ${response.data.length}');
+      
+      state = ProductsInTransitLoaded(
+        products: response,
+        filters: transitFilters,
+      );
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка загрузки товаров в пути: $e');
+      print('🔴 Stack trace: $stackTrace');
+      
+      // Создаем более информативное сообщение об ошибке
+      String errorMessage = 'Ошибка загрузки товаров в пути';
+      if (e.toString().contains('401')) {
+        errorMessage = 'Ошибка авторизации. Войдите в систему заново.';
+      } else if (e.toString().contains('404')) {
+        errorMessage = 'API не найдено. Проверьте настройки сервера.';
+      } else if (e.toString().contains('500')) {
+        errorMessage = 'Ошибка сервера. Попробуйте позже.';
+      } else if (e.toString().contains('SocketException')) {
+        errorMessage = 'Нет подключения к интернету.';
+      } else {
+        errorMessage = 'Неизвестная ошибка: ${e.toString()}';
       }
-      return result;
-    } catch (e) {
-      print('❌ Ошибка загрузки товаров в пути: $e');
-      throw Exception('Ошибка загрузки товаров в пути: $e');
+      
+      state = ProductsInTransitError(errorMessage);
     }
   }
 
-  /// Обновить список товаров в пути
+  /// Обновление списка
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _loadProductsInTransit());
+    final currentState = state;
+    final currentFilters = currentState is ProductsInTransitLoaded 
+        ? currentState.filters 
+        : null;
+    await loadProductsInTransit(currentFilters);
   }
 
   /// Поиск товаров в пути
-  Future<void> searchProductsInTransit(String query) async {
-    if (query.isEmpty) {
-      await refresh();
-      return;
-    }
-
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      return await _loadProductsInTransit(search: query);
-    });
+  Future<void> searchProducts(String query) async {
+    final filters = ProductFilters(
+      search: query.isNotEmpty ? query : null,
+      status: 'for_receipt',
+      page: 1,
+    );
+    await loadProductsInTransit(filters);
   }
 
-  /// Фильтр по статусу
-  Future<void> filterByStatus(String? status) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      return await _loadProductsInTransit(status: status);
-    });
+  /// Фильтрация товаров в пути
+  Future<void> filterProducts(ProductFilters filters) async {
+    final transitFilters = filters.copyWith(status: 'for_receipt');
+    await loadProductsInTransit(transitFilters);
   }
 
-  /// Создать товар в пути
-  Future<List<ProductInTransitEntity>> createProductInTransit(CreateProductInTransitRequest request) async {
+  /// Создание нового товара в пути
+  Future<ProductModel?> createProductInTransit(CreateProductRequest request) async {
     try {
-      final repository = ref.read(productsInTransitRepositoryProvider);
-      final newProductsInTransit = await repository.createProductInTransit(request);
+      final apiDataSource = ref.read(productsApiDataSourceProvider);
+      
+      // Убеждаемся, что статус установлен в for_receipt
+      final transitRequest = request.copyWith(status: 'for_receipt');
+      
+      final newProduct = await apiDataSource.createProduct(transitRequest);
+      
+      // Обновляем список после создания
       await refresh();
-      return newProductsInTransit;
+      
+      return newProduct;
     } catch (e) {
-      throw Exception('Ошибка создания товара в пути: $e');
+      print('🔴 Ошибка создания товара в пути: $e');
+      rethrow;
     }
   }
 
-  /// Принять товар
-  Future<void> receiveProductInTransit(int productId, ReceiveProductInTransitRequest request) async {
+  /// Обновление товара в пути
+  Future<ProductModel?> updateProductInTransit(int id, UpdateProductRequest request) async {
     try {
-      final repository = ref.read(productsInTransitRepositoryProvider);
-      await repository.receiveProductInTransit(productId, request);
-      // Обновляем список после принятия
-      await refresh();
+      print('🔵 Обновляем товар в пути с ID: $id');
+      final apiDataSource = ref.read(productsApiDataSourceProvider);
+      final updatedProduct = await apiDataSource.updateProduct(id, request);
+      
+      // Обновляем состояние списка
+      final currentState = state;
+      if (currentState is ProductsInTransitLoaded) {
+        final updatedProducts = currentState.products.data.map((product) {
+          return product.id == id ? updatedProduct : product;
+        }).toList();
+        
+        state = ProductsInTransitLoaded(
+          products: currentState.products.copyWith(data: updatedProducts),
+          filters: currentState.filters,
+        );
+      }
+      
+      print('🔵 Товар в пути обновлен успешно');
+      return updatedProduct;
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка обновления товара в пути: $e');
+      print('🔴 Stack trace: $stackTrace');
+      throw e;
+    }
+  }
+
+  /// Удаление товара в пути
+  Future<void> deleteProductInTransit(int id) async {
+    try {
+      print('🔵 Удаляем товар в пути с ID: $id');
+      final apiDataSource = ref.read(productsApiDataSourceProvider);
+      await apiDataSource.deleteProduct(id);
+      
+      // Обновляем состояние списка - убираем удаленный товар
+      final currentState = state;
+      if (currentState is ProductsInTransitLoaded) {
+        final filteredProducts = currentState.products.data.where((product) => product.id != id).toList();
+        
+        // Получаем текущий total из meta или pagination
+        final currentTotal = currentState.products.meta?.total ?? 
+                            currentState.products.pagination?.total ?? 
+                            filteredProducts.length;
+        
+        // Создаем новую мета-информацию с обновленным total
+        final updatedMeta = currentState.products.meta?.copyWith(total: currentTotal - 1);
+        final updatedPagination = currentState.products.pagination?.copyWith(total: currentTotal - 1);
+        
+        state = ProductsInTransitLoaded(
+          products: currentState.products.copyWith(
+            data: filteredProducts,
+            meta: updatedMeta,
+            pagination: updatedPagination,
+          ),
+          filters: currentState.filters,
+        );
+      }
+      
+      print('🔵 Товар в пути удален успешно');
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка удаления товара в пути: $e');
+      print('🔴 Stack trace: $stackTrace');
+      throw e;
+    }
+  }
+
+  /// Загрузка следующей страницы
+  Future<void> loadNextPage() async {
+    final currentState = state;
+    if (currentState is! ProductsInTransitLoaded) return;
+    
+    final currentFilters = currentState.filters;
+    if (currentFilters == null) return;
+    
+    // Проверяем, есть ли еще страницы
+    final currentPage = currentFilters.page;
+    final totalPages = currentState.products.pagination?.lastPage ?? 
+                       currentState.products.meta?.lastPage ?? 1;
+    
+    if (currentPage >= totalPages) return;
+    
+    try {
+      final nextFilters = currentFilters.copyWith(page: currentPage + 1);
+      await loadProductsInTransit(nextFilters);
     } catch (e) {
-      throw Exception('Ошибка принятия товара в пути: $e');
+      // При ошибке загрузки следующей страницы не меняем состояние
+      print('Ошибка загрузки следующей страницы: $e');
     }
   }
 }
-
-@riverpod
-Future<ProductInTransitEntity> productInTransitById(ProductInTransitByIdRef ref, int id) async {
-  final repository = ref.read(productsInTransitRepositoryProvider);
-  return await repository.getProductInTransitById(id);
-}
-

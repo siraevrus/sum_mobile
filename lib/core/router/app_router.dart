@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/auth/presentation/pages/modern_login_page
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/pages/responsive_dashboard_page.dart';
+import 'package:sum_warehouse/debug_products_api.dart';
 import 'package:sum_warehouse/features/auth/presentation/pages/splash_page_simple.dart';
 
 part 'app_router.g.dart';
@@ -150,6 +151,21 @@ GoRouter router(RouterRef ref) {
         path: '/inventory',
         name: 'inventory',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'inventory'),
+      ),
+      GoRoute(
+        path: '/products-in-transit',
+        name: 'products-in-transit',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
+      ),
+      GoRoute(
+        path: '/product-in-transit',
+        name: 'product-in-transit',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
+      ),
+      GoRoute(
+        path: '/debug-products-api',
+        name: 'debug-products-api',
+        builder: (context, state) => const DebugProductsApiPage(),
       ),
       GoRoute(
         path: '/reception',

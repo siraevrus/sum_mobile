@@ -59,6 +59,10 @@ class ProductModel with _$ProductModel {
     @JsonKey(name: 'calculated_volume', fromJson: _parseNullableStringToDouble) double? calculatedVolume,
     @JsonKey(name: 'transport_number') String? transportNumber,
     String? status, // Статус товара (in_transit, received, etc.)
+    @JsonKey(name: 'shipping_location') String? shippingLocation,
+    @JsonKey(name: 'shipping_date') DateTime? shippingDate,
+    @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
+    @JsonKey(name: 'document_path') List<String>? documentPath,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
     
@@ -128,8 +132,8 @@ class CreateProductRequest with _$CreateProductRequest {
   const factory CreateProductRequest({
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
-    String? name, // Изменили на nullable, так как генерируется автоматически
     required double quantity,
+    String? name, // Изменили на nullable, так как генерируется автоматически
     String? description,
     String? notes,
     @Default({}) Map<String, dynamic> attributes,
@@ -137,7 +141,11 @@ class CreateProductRequest with _$CreateProductRequest {
     @JsonKey(name: 'transport_number') String? transportNumber,
     @JsonKey(name: 'arrival_date') DateTime? arrivalDate,
     @JsonKey(name: 'is_active') @Default(true) bool isActive,
-    String? status, // Статус товара при создании
+    @Default('for_receipt') String status, // Статус товара при создании
+    @JsonKey(name: 'shipping_location') String? shippingLocation,
+    @JsonKey(name: 'shipping_date') DateTime? shippingDate,
+    @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
+    @JsonKey(name: 'document_path') List<String>? documentPath,
   }) = _CreateProductRequest;
 
   factory CreateProductRequest.fromJson(Map<String, dynamic> json) => 
@@ -160,6 +168,10 @@ class UpdateProductRequest with _$UpdateProductRequest {
     @JsonKey(name: 'arrival_date') DateTime? arrivalDate,
     @JsonKey(name: 'is_active') bool? isActive,
     String? status, // Статус товара при обновлении
+    @JsonKey(name: 'shipping_location') String? shippingLocation,
+    @JsonKey(name: 'shipping_date') DateTime? shippingDate,
+    @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
+    @JsonKey(name: 'document_path') List<String>? documentPath,
   }) = _UpdateProductRequest;
 
   factory UpdateProductRequest.fromJson(Map<String, dynamic> json) => 
