@@ -111,8 +111,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   void _onTemplateSelected(ProductTemplateModel template) {
     setState(() {
       _selectedTemplate = template;
-      // Автозаполняем название товара по шаблону
-      _nameController.text = template.name;
+      // Генерируем название товара с учетом характеристик
+      _nameController.text = _generateProductName();
     });
     
     // Загружаем атрибуты шаблона из API
@@ -186,6 +186,11 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     }
     
     print('🔵 Созданы контроллеры для ${_attributeControllers.length} атрибутов');
+    
+    // Обновляем название товара после загрузки атрибутов
+    setState(() {
+      _nameController.text = _generateProductName();
+    });
   }
 
   @override
@@ -440,6 +445,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           isRequired: attribute.isRequired,
           onChanged: (value) {
             _attributeValues[attribute.variable] = value;
+            // Обновляем название товара при изменении характеристик
+            _nameController.text = _generateProductName();
           },
           validator: (value) {
             if (attribute.isRequired && (value == null || value.trim().isEmpty)) {
@@ -471,6 +478,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           isRequired: attribute.isRequired,
           onChanged: (value) {
             _attributeValues[attribute.variable] = value;
+            // Обновляем название товара при изменении характеристик
+            _nameController.text = _generateProductName();
           },
           validator: (value) {
             if (attribute.isRequired && (value == null || value.trim().isEmpty)) {
@@ -504,7 +513,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         hint: attribute.defaultValue ?? 'Введите ${attribute.name.toLowerCase()}',
         isRequired: attribute.isRequired,
         onChanged: (value) {
-          _attributeValues[attribute.name] = value;
+          _attributeValues[attribute.variable] = value;
+          // Обновляем название товара при изменении характеристик
+          _nameController.text = _generateProductName();
         },
       );
     }
@@ -531,6 +542,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       onChanged: (value) {
         controller.text = value ?? '';
         _attributeValues[attribute.variable] = value ?? '';
+        // Обновляем название товара при изменении характеристик
+        _nameController.text = _generateProductName();
       },
       validator: attribute.isRequired ? (value) {
         if (value == null || value.isEmpty) {
@@ -1038,5 +1051,64 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         });
       }
     }
+  }
+
+  /// Генерировать название товара на основе характеристик
+  String _generateProductName() {
+    if (_selectedTemplate == null) {
+      return 'Выберите шаблон товара';
+    }
+    
+    // Начинаем с названия шаблона
+    String name = _selectedTemplate!.name;
+    
+    if (_attributeValues.isNotEmpty && _templateAttributes.isNotEmpty) {
+      // Разделяем атрибуты по типу
+      final formulaAttributes = <String>[]; // только number
+      final regularAttributes = <String>[]; // только select
+      
+      // Собираем значения для каждой группы
+      for (final attribute in _templateAttributes) {
+        final value = _attributeValues[attribute.variable];
+        
+        // Пропускаем пустые значения
+        if (value == null || value.toString().isEmpty) {
+          continue;
+        }
+        
+        // Классифицируем по типу атрибута
+        switch (attribute.type.toLowerCase()) {
+          case 'number':
+          case 'decimal':
+            // Формульные значения (number)
+            formulaAttributes.add(value.toString());
+            break;
+          case 'select':
+            // Обычные значения (select)
+            regularAttributes.add(value.toString());
+            break;
+          case 'text':
+          case 'string':
+          default:
+            // Текстовые поля игнорируем полностью
+            break;
+        }
+      }
+      
+      // Формируем строку по шаблону
+      final parts = <String>[];
+      if (formulaAttributes.isNotEmpty) {
+        parts.add(formulaAttributes.join(' x '));
+      }
+      if (regularAttributes.isNotEmpty) {
+        parts.add(regularAttributes.join(', '));
+      }
+      
+      if (parts.isNotEmpty) {
+        name += ': ' + parts.join(', ');
+      }
+    }
+    
+    return name;
   }
 }
