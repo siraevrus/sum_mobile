@@ -432,10 +432,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       }
     }
     
-    // 3. Проверяем поле producer (строка) - fallback
-    if (product.producer != null && product.producer!.isNotEmpty) {
-      return product.producer!;
-    }
+    // 3. Fallback - возвращаем "Не указан"
     
     return 'Не указан';
   }

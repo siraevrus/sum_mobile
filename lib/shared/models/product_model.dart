@@ -39,6 +39,98 @@ int _parseRequiredId(dynamic value) {
   throw FormatException('Invalid required ID value: $value');
 }
 
+/// Парсер для document_path (может быть массивом или строкой)
+String? _parseDocumentPath(dynamic value) {
+  if (value == null) return null;
+  if (value is List) {
+    // Если массив пустой, возвращаем null
+    if (value.isEmpty) return null;
+    // Если массив не пустой, берем первый элемент
+    return value.first?.toString();
+  }
+  if (value is String) {
+    return value.isEmpty ? null : value;
+  }
+  return null;
+}
+
+/// Парсер для attributes (всегда возвращает Map<String, dynamic>)
+Map<String, dynamic> _parseAttributes(dynamic value) {
+  if (value == null) return {};
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return Map<String, dynamic>.from(value);
+  }
+  return {};
+}
+
+/// Парсер для nullable string to double
+double? _parseNullableStringToDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    return double.tryParse(value);
+  }
+  return null;
+}
+
+/// Парсер для ProductTemplateRef
+ProductTemplateRef? _parseProductTemplate(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) {
+    try {
+      return ProductTemplateRef.fromJson(value);
+    } catch (e) {
+      print('🔴 Ошибка парсинга template: $e');
+      return null;
+    }
+  }
+  return null;
+}
+
+/// Парсер для WarehouseRef
+WarehouseRef? _parseWarehouse(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) {
+    try {
+      return WarehouseRef.fromJson(value);
+    } catch (e) {
+      print('🔴 Ошибка парсинга warehouse: $e');
+      return null;
+    }
+  }
+  return null;
+}
+
+/// Парсер для UserRef
+UserRef? _parseUser(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) {
+    try {
+      return UserRef.fromJson(value);
+    } catch (e) {
+      print('🔴 Ошибка парсинга creator: $e');
+      return null;
+    }
+  }
+  return null;
+}
+
+/// Парсер для ProducerRef
+ProducerRef? _parseProducer(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) {
+    try {
+      return ProducerRef.fromJson(value);
+    } catch (e) {
+      print('🔴 Ошибка парсинга producer: $e');
+      return null;
+    }
+  }
+  return null;
+}
+
 /// Основная модель товара по API
 @freezed
 class ProductModel with _$ProductModel {
@@ -52,7 +144,6 @@ class ProductModel with _$ProductModel {
     @JsonKey(fromJson: _parseQuantity) required double quantity,
     @JsonKey(fromJson: _parseAttributes) @Default({}) Map<String, dynamic>? attributes,
     @JsonKey(name: 'producer_id', fromJson: _parseId) int? producerId,
-    String? producer,
     String? notes,
     @JsonKey(name: 'arrival_date') DateTime? arrivalDate,
     @JsonKey(name: 'is_active') required bool isActive,
@@ -62,15 +153,15 @@ class ProductModel with _$ProductModel {
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
-    @JsonKey(name: 'document_path') List<String>? documentPath,
+    @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
     
     // Связанные объекты (приходят только с ?include)
-    ProductTemplateRef? template,
-    WarehouseRef? warehouse,
-    UserRef? creator,
-    @JsonKey(name: 'producer_info') ProducerRef? producerInfo,
+    @JsonKey(fromJson: _parseProductTemplate) ProductTemplateRef? template,
+    @JsonKey(fromJson: _parseWarehouse) WarehouseRef? warehouse,
+    @JsonKey(fromJson: _parseUser) UserRef? creator,
+    @JsonKey(name: 'producer', fromJson: _parseProducer) ProducerRef? producerInfo,
   }) = _ProductModel;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) => 
@@ -145,7 +236,7 @@ class CreateProductRequest with _$CreateProductRequest {
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
-    @JsonKey(name: 'document_path') List<String>? documentPath,
+    @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
   }) = _CreateProductRequest;
 
   factory CreateProductRequest.fromJson(Map<String, dynamic> json) => 
@@ -171,7 +262,7 @@ class UpdateProductRequest with _$UpdateProductRequest {
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
-    @JsonKey(name: 'document_path') List<String>? documentPath,
+    @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
   }) = _UpdateProductRequest;
 
   factory UpdateProductRequest.fromJson(Map<String, dynamic> json) => 
@@ -280,71 +371,4 @@ extension ProductFiltersX on ProductFilters {
     
     return params;
   }
-}
-
-/// Парсер для поля calculated_volume (может быть null, строкой или числом)
-double? _parseNullableStringToDouble(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is int) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
-
-/// Парсер для поля attributes (может быть строкой JSON или объектом)
-Map<String, dynamic>? _parseAttributes(dynamic value) {
-  if (value == null) return {};
-  if (value is Map<String, dynamic>) return value;
-  if (value is String) {
-    try {
-      // Пытаемся распарсить JSON строку
-      final parsed = _parseJsonString(value);
-      if (parsed is Map<String, dynamic>) {
-        return parsed;
-      }
-    } catch (e) {
-      // Если не получилось распарсить, возвращаем пустой объект
-      return {};
-    }
-  }
-  return {};
-}
-
-/// Вспомогательная функция для парсинга JSON строки
-dynamic _parseJsonString(String jsonString) {
-  // Простой парсер для случаев вида: {grade: 1, width: 5, height: 5, length: 5}
-  jsonString = jsonString.trim();
-  if (!jsonString.startsWith('{') || !jsonString.endsWith('}')) {
-    return {};
-  }
-  
-  final result = <String, dynamic>{};
-  final content = jsonString.substring(1, jsonString.length - 1);
-  final pairs = content.split(',');
-  
-  for (final pair in pairs) {
-    final parts = pair.split(':');
-    if (parts.length == 2) {
-      final key = parts[0].trim();
-      final value = parts[1].trim();
-      
-      // Попытаемся определить тип значения
-      if (value == 'null') {
-        result[key] = null;
-      } else if (value == 'true') {
-        result[key] = true;
-      } else if (value == 'false') {
-        result[key] = false;
-      } else if (int.tryParse(value) != null) {
-        result[key] = int.parse(value);
-      } else if (double.tryParse(value) != null) {
-        result[key] = double.parse(value);
-      } else {
-        // Удаляем кавычки если они есть
-        result[key] = value.replaceAll('"', '').replaceAll("'", '');
-      }
-    }
-  }
-  
-  return result;
 }

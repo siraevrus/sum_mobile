@@ -252,6 +252,36 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             _buildViewItem('Ожидаемая дата прибытия', _formatDate(widget.product!.expectedArrivalDate!)),
           if (widget.product?.notes != null && widget.product!.notes!.isNotEmpty)
             _buildViewItem('Заметки', widget.product!.notes!),
+          
+          // Показываем атрибуты товара
+          if (widget.product?.attributes != null && widget.product!.attributes!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Характеристики:',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...widget.product!.attributes!.entries.map((entry) {
+              // Ищем соответствующий атрибут по variable, чтобы получить name
+              final attribute = _templateAttributes.firstWhere(
+                (attr) => attr.variable == entry.key,
+                orElse: () => TemplateAttributeModel(
+                  id: 0,
+                  productTemplateId: 0,
+                  name: entry.key, // Fallback к variable если не найден
+                  variable: entry.key,
+                  type: 'text',
+                  isRequired: false,
+                ),
+              );
+              return _buildViewItem(attribute.name, entry.value.toString());
+            }),
+          ],
+          
           _buildViewItem('Статус', widget.product?.isActive == true ? 'Активный' : 'Неактивный'),
         ],
       ),
@@ -328,8 +358,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             ),
             const SizedBox(height: 24),
 
-            // Необязательные поля
-            _buildSectionTitle('Необязательные поля'),
+            // Наименование
+            _buildSectionTitle('Наименование'),
             const SizedBox(height: 16),
 
             _buildTextField(

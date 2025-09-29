@@ -29,6 +29,12 @@ abstract class ReceiptsRemoteDataSource {
     int page = 1,
     int perPage = 15,
   });
+
+  /// Принять товар (переводит в статус in_stock)
+  Future<Map<String, dynamic>> receiveProduct(int receiptId);
+
+  /// Добавить уточнение к товару (автоматически принимает товар)
+  Future<Map<String, dynamic>> addCorrection(int receiptId, String correction);
 }
 
 /// Implementation of receipts remote data source
@@ -217,6 +223,35 @@ class ReceiptsRemoteDataSourceImpl implements ReceiptsRemoteDataSource {
       final response = await _dio.get('/products-in-transit', queryParameters: queryParams);
       
       print('📥 Products in Transit API response: ${response.data}');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> receiveProduct(int receiptId) async {
+    try {
+      print('🔵 Принимаем товар с ID: $receiptId');
+      final response = await _dio.post('/receipts/$receiptId/receive');
+      print('📥 Receive Product API response: ${response.data}');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> addCorrection(int receiptId, String correction) async {
+    try {
+      print('🔵 Добавляем уточнение к товару с ID: $receiptId');
+      final response = await _dio.post(
+        '/receipts/$receiptId/correction',
+        data: {
+          'correction': correction,
+        },
+      );
+      print('📥 Add Correction API response: ${response.data}');
       return response.data as Map<String, dynamic>;
     } catch (e) {
       throw _handleError(e);

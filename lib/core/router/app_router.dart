@@ -177,6 +177,11 @@ GoRouter router(RouterRef ref) {
         name: 'receipts',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'receipts'),
       ),
+      GoRoute(
+        path: '/receipts-for-receipt',
+        name: 'receipts-for-receipt',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'receipts-for-receipt'),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(

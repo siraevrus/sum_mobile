@@ -14,6 +14,7 @@ import 'package:sum_warehouse/features/inventory/presentation/pages/stocks_list_
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
+import 'package:sum_warehouse/features/receipts/presentation/pages/receipts_for_receipt_list_page.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
@@ -303,6 +304,14 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       title: 'Товары В Пути',
                       section: 'products-in-transit',
                     ),
+                  // Приемка - админ, оператор, работник склада
+                  if (_hasAccess(user, ['admin', 'operator', 'warehouse_worker']))
+                    _buildDrawerMenuItem(
+                      context,
+                      icon: Icons.inventory_2,
+                      title: 'Приемка',
+                      section: 'receipts-for-receipt',
+                    ),
                   // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                   if (_hasAccess(user, ['admin', 'warehouse_worker', 'sales_manager']))
                     _buildDrawerMenuItem(
@@ -424,6 +433,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Остатки на складе';
       case 'products-in-transit':
         return 'Товары в пути';
+      case 'receipts-for-receipt':
+        return 'Приемка';
       default:
         return 'Инфопанель';
     }
@@ -453,6 +464,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const StocksListPage();
       case 'products-in-transit':
         return const ProductsInTransitListPage();
+      case 'receipts-for-receipt':
+        return const ReceiptsForReceiptListPage();
       default:
         return ResponsiveDashboardContent(
           onShowAllProductsPressed: () => context.go('/products'),

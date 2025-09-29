@@ -11,18 +11,18 @@ class ReceiptModel with _$ReceiptModel {
     required String name,
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
-    @JsonKey(name: 'producer_id') int? producerId,
+    @JsonKey(name: 'producer_id', fromJson: _parseId) int? producerId,
     required Map<String, dynamic> attributes,
-    @JsonKey(name: 'calculated_volume') double? calculatedVolume,
+    @JsonKey(name: 'calculated_volume', fromJson: _parseCalculatedVolume) double? calculatedVolume,
     @JsonKey(fromJson: _parseQuantity) required int quantity,
     @JsonKey(fromJson: _parseStatus) required ReceiptStatus status,
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date', fromJson: _parseDate) DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date', fromJson: _parseDate) DateTime? expectedArrivalDate,
     @JsonKey(name: 'transport_number') String? transportNumber,
-    @JsonKey(name: 'document_path') String? documentPath,
+    @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
     String? notes,
-    @JsonKey(name: 'created_by') int? createdBy,
+    @JsonKey(name: 'created_by', fromJson: _parseId) int? createdBy,
     @JsonKey(name: 'created_at', fromJson: _parseDateTime) required DateTime createdAt,
     @JsonKey(name: 'updated_at', fromJson: _parseDateTime) required DateTime updatedAt,
   }) = _ReceiptModel;
@@ -107,4 +107,37 @@ DateTime _parseDateTime(dynamic value) {
     }
   }
   return DateTime.now();
+}
+
+String? _parseDocumentPath(dynamic value) {
+  if (value == null) return null;
+  if (value is List) {
+    // Если массив пустой, возвращаем null
+    if (value.isEmpty) return null;
+    // Если массив не пустой, берем первый элемент
+    return value.first?.toString();
+  }
+  if (value is String) {
+    return value.isEmpty ? null : value;
+  }
+  return null;
+}
+
+double? _parseCalculatedVolume(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    return double.tryParse(value);
+  }
+  return null;
+}
+
+int? _parseId(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) {
+    return int.tryParse(value);
+  }
+  return null;
 }
