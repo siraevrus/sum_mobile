@@ -275,17 +275,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Описание
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Описание',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-
                     // Характеристики товара
                     if (_templateAttributes.isNotEmpty) ...[
                       const Text(
@@ -311,6 +300,17 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
                           _isActive = value;
                         });
                       },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Заметки (описание) - перенесено в самый низ
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Заметки',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
                     ),
                     const SizedBox(height: 24),
 
