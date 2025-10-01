@@ -607,11 +607,11 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              stock.name,
-              style: TextStyle(
+              _getDisplayName(stock),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: _getTitleColor(stock.correctionStatus),
+                color: Color(0xFF2C3E50),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -654,6 +654,13 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     );
   }
 
+  String _getDisplayName(InventoryStockModel stock) {
+    if (stock.correction == 'revised') {
+      return '‼️🟢 ${stock.name}';
+    }
+    return stock.name;
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -681,19 +688,6 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         ],
       ),
     );
-  }
-
-  /// Определяет цвет заголовка в зависимости от correction_status
-  Color _getTitleColor(String? correctionStatus) {
-    switch (correctionStatus) {
-      case 'correction':
-        return Colors.red; // Красный для correction
-      case 'revised':
-        return Colors.green; // Зеленый для revised
-      case null:
-      default:
-        return const Color(0xFF2C3E50); // Обычный цвет для null
-    }
   }
 
   Widget _buildErrorState(String message) {
