@@ -219,26 +219,22 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   }
 
   /// Загружаем шаблон для генерации названия
-  void _loadTemplateForNameGeneration(int templateId) {
-    // Создаем простой шаблон для генерации названия
-    final template = ProductTemplateModel(
-      id: templateId,
-      name: 'Шаблон #$templateId',
-      unit: 'м³',
-      isActive: true,
-    );
-    
-    setState(() {
-      _selectedTemplate = template;
-    });
-  }
-
-  /// Пытаемся найти шаблон среди загруженных атрибутов
-  void _findTemplateFromAttributes() {
-    if (_templateAttributes.isNotEmpty && _selectedProductTemplateId != null) {
+  Future<void> _loadTemplateForNameGeneration(int templateId) async {
+    try {
+      final dataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      final response = await dataSource.getProductTemplateById(templateId);
+      
+      setState(() {
+        _selectedTemplate = response.data;
+      });
+      
+      print('🔵 Загружен шаблон: ${response.data?.name ?? 'Unknown'}');
+    } catch (e) {
+      print('🔴 Ошибка загрузки шаблона $templateId: $e');
+      // Создаем фиктивный шаблон как fallback
       final template = ProductTemplateModel(
-        id: _selectedProductTemplateId!,
-        name: 'Шаблон #${_selectedProductTemplateId!}',
+        id: templateId,
+        name: 'Шаблон #$templateId',
         unit: 'м³',
         isActive: true,
       );
@@ -246,6 +242,13 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       setState(() {
         _selectedTemplate = template;
       });
+    }
+  }
+
+  /// Пытаемся найти шаблон среди загруженных атрибутов
+  Future<void> _findTemplateFromAttributes() async {
+    if (_templateAttributes.isNotEmpty && _selectedProductTemplateId != null) {
+      await _loadTemplateForNameGeneration(_selectedProductTemplateId!);
     }
   }
 

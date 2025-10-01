@@ -140,10 +140,10 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () => _handleProductAction('view', product),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -160,6 +160,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF2C3E50),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   // Меню действий на уровне названия
@@ -202,50 +204,43 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
               ),
               const SizedBox(height: 8),
               
-              // Основная информация без иконок
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Информация в структурированном виде
+              if (product.producerInfo?.name != null) ...[
+                _buildInfoRow('Производитель', product.producerInfo!.name!),
+              ],
+              
+              if (product.warehouse?.name != null) ...[
+                _buildInfoRow('Склад', product.warehouse!.name!),
+              ],
+              
+              _buildInfoRow('Количество', '${product.quantity.toStringAsFixed(0)} шт.'),
+              
+              if (product.calculatedVolume != null) ...[
+                _buildInfoRow('Объем', '${product.calculatedVolume!.toStringAsFixed(2)} м³'),
+              ],
+              
+              if (product.shippingLocation != null) ...[
+                _buildInfoRow('Место отправки', product.shippingLocation!),
+              ],
+              
+              // Статус товара
+              const SizedBox(height: 8),
+              Row(
                 children: [
-                  // Производитель
-                  if (product.producerInfo?.name != null) ...[
-                    Text(
-                      'Производитель: ${product.producerInfo!.name}',
-                      style: const TextStyle(color: Color(0xFF6C757D)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(product.status ?? 'unknown'),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                  ],
-                  
-                  // Склад назначения
-                  if (product.warehouse?.name != null) ...[
-                    Text(
-                      'Склад: ${product.warehouse!.name}',
-                      style: const TextStyle(color: Color(0xFF6C757D)),
+                    child: Text(
+                      _getStatusText(product.status ?? 'unknown'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _getStatusTextColor(product.status ?? 'unknown'),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                  ],
-                  
-                  // Объем
-                  if (product.calculatedVolume != null) ...[
-                    Text(
-                      'Объем: ${product.calculatedVolume!.toStringAsFixed(2)} м³',
-                      style: const TextStyle(color: Color(0xFF6C757D)),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  
-                  // Место отправки
-                  if (product.shippingLocation != null) ...[
-                    Text(
-                      'Место отправки: ${product.shippingLocation}',
-                      style: const TextStyle(color: Color(0xFF6C757D)),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  
-                  // Количество
-                  Text(
-                    'Количество: ${product.quantity.toStringAsFixed(0)}',
-                    style: const TextStyle(color: Color(0xFF6C757D)),
                   ),
                 ],
               ),
@@ -420,6 +415,78 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
           ),
         );
       }
+    }
+  }
+
+  /// Построение строки информации в стиле поступления товара
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Получить цвет фона для статуса
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'for_receipt':
+        return Colors.orange.shade100;
+      case 'in_stock':
+        return Colors.green.shade100;
+      case 'sold':
+        return Colors.blue.shade100;
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  /// Получить текст для статуса
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'for_receipt':
+        return 'К приемке';
+      case 'in_stock':
+        return 'В наличии';
+      case 'sold':
+        return 'Продан';
+      default:
+        return status;
+    }
+  }
+
+  /// Получить цвет текста для статуса
+  Color _getStatusTextColor(String status) {
+    switch (status) {
+      case 'for_receipt':
+        return Colors.orange.shade800;
+      case 'in_stock':
+        return Colors.green.shade800;
+      case 'sold':
+        return Colors.blue.shade800;
+      default:
+        return Colors.grey.shade800;
     }
   }
 
