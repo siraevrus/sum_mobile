@@ -1407,7 +1407,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         final request = UpdateProductRequest(
           productTemplateId: _selectedTemplate?.id,
           warehouseId: _selectedWarehouseId ?? widget.product!.warehouseId,
-          name: null, // Имя генерируется автоматически на сервере
+          name: _getGeneratedProductName(), // Отправляем сгенерированное наименование
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -1458,7 +1458,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         final request = CreateProductRequest(
           productTemplateId: _selectedTemplate!.id,
           warehouseId: _selectedWarehouseId!,
-          name: null, // Имя генерируется автоматически на сервере
+          name: _getGeneratedProductName(), // Отправляем сгенерированное наименование
           quantity: double.tryParse(_quantityController.text) ?? 0,
           description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
