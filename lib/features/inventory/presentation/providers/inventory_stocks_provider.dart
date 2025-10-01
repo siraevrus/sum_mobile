@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/product_model.dart';
 import '../../data/datasources/inventory_stocks_remote_datasource.dart';
 
 part 'inventory_stocks_provider.g.dart';
@@ -10,7 +11,7 @@ sealed class InventoryStocksState {}
 class InventoryStocksLoading extends InventoryStocksState {}
 
 class InventoryStocksLoaded extends InventoryStocksState {
-  final List<InventoryStockModel> stocks;
+  final List<ProductModel> stocks;
   final InventoryPaginationModel? pagination;
   
   InventoryStocksLoaded({
@@ -44,7 +45,7 @@ class InventoryStocks extends _$InventoryStocks {
       state = InventoryStocksLoading();
       
       final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-      final response = await dataSource.getStocks(
+      final stocks = await dataSource.getStocks(
         page: page,
         perPage: perPage,
         warehouseId: warehouseId,
@@ -52,8 +53,8 @@ class InventoryStocks extends _$InventoryStocks {
       );
       
       state = InventoryStocksLoaded(
-        stocks: response.data,
-        pagination: response.pagination,
+        stocks: stocks,
+        pagination: null, // Пока не используем пагинацию
       );
     } catch (e) {
       state = InventoryStocksError(e.toString());

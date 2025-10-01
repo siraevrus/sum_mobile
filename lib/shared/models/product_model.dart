@@ -64,6 +64,15 @@ Map<String, dynamic> _parseAttributes(dynamic value) {
   return {};
 }
 
+/// Парсер для bool значений (обрабатывает null как false)
+bool _parseBool(dynamic value) {
+  if (value == null) return false;
+  if (value is bool) return value;
+  if (value is String) return value.toLowerCase() == 'true';
+  if (value is int) return value != 0;
+  return false;
+}
+
 /// Парсер для nullable string to double
 double? _parseNullableStringToDouble(dynamic value) {
   if (value == null) return null;
@@ -146,10 +155,11 @@ class ProductModel with _$ProductModel {
     @JsonKey(name: 'producer_id', fromJson: _parseId) int? producerId,
     String? notes,
     @JsonKey(name: 'arrival_date') DateTime? arrivalDate,
-    @JsonKey(name: 'is_active') required bool isActive,
+    @JsonKey(name: 'is_active', fromJson: _parseBool) required bool isActive,
     @JsonKey(name: 'calculated_volume', fromJson: _parseNullableStringToDouble) double? calculatedVolume,
     @JsonKey(name: 'transport_number') String? transportNumber,
     String? status, // Статус товара (in_transit, received, etc.)
+    @JsonKey(name: 'correction_status') String? correctionStatus, // Статус корректировки
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
@@ -187,6 +197,7 @@ class WarehouseRef with _$WarehouseRef {
     required int id,
     String? name,
     String? address,
+    @JsonKey(name: 'company_id') int? companyId,
   }) = _WarehouseRef;
 
   factory WarehouseRef.fromJson(Map<String, dynamic> json) => 

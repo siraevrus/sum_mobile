@@ -3,13 +3,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/error/app_exceptions.dart';
 import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/product_model.dart';
 
 part 'inventory_stocks_remote_datasource.g.dart';
 
 /// Abstract interface for inventory stocks remote data source
 abstract class InventoryStocksRemoteDataSource {
-  /// Получить остатки на складах
-  Future<InventoryStocksResponse> getStocks({
+  /// Получить остатки на складах (товары со статусом in_stock)
+  Future<List<ProductModel>> getStocks({
     int page = 1,
     int perPage = 15,
     int? warehouseId,
@@ -39,7 +40,7 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   InventoryStocksRemoteDataSourceImpl(this._dio);
 
   @override
-  Future<InventoryStocksResponse> getStocks({
+  Future<List<ProductModel>> getStocks({
     int page = 1,
     int perPage = 15,
     int? warehouseId,
@@ -66,7 +67,16 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       print('📥 Ответ API товаров (поступление): ${response.data}');
       
-      return InventoryStocksResponse.fromJson(response.data);
+      // Парсим ответ как список товаров
+      if (response.data is Map<String, dynamic> && response.data['data'] is List) {
+        final List<dynamic> productsData = response.data['data'];
+        return productsData.map((productJson) => ProductModel.fromJson(productJson)).toList();
+      } else if (response.data is List) {
+        // Если ответ сразу список
+        return (response.data as List).map((productJson) => ProductModel.fromJson(productJson)).toList();
+      } else {
+        throw const ServerException('Неожиданный формат ответа для товаров');
+      }
     } catch (e) {
       print('🔴 Ошибка получения остатков: $e');
       throw _handleError(e);

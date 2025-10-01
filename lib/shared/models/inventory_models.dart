@@ -169,6 +169,18 @@ class InventoryStocksResponse with _$InventoryStocksResponse {
       _$InventoryStocksResponseFromJson(json);
 }
 
+/// Ответ API для товаров (используется в разделе Поступление товара)
+@freezed
+class InventoryProductsResponse with _$InventoryProductsResponse {
+  const factory InventoryProductsResponse({
+    required List<dynamic> data, // Используем dynamic для гибкости парсинга
+    InventoryPaginationModel? pagination,
+  }) = _InventoryProductsResponse;
+
+  factory InventoryProductsResponse.fromJson(Map<String, dynamic> json) => 
+      _$InventoryProductsResponseFromJson(json);
+}
+
 /// Ответ API для производителей (простой список)
 class InventoryProducersResponse {
   final List<InventoryProducerModel> data;

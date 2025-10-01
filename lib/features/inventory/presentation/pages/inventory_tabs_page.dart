@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/product_model.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/inventory_stocks_provider.dart';
 
@@ -565,7 +566,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
       case InventoryStocksError():
         return _buildErrorState(state.message);
       case InventoryStocksLoaded():
-        List<InventoryStockModel> filteredStocks = state.stocks;
+        List<ProductModel> filteredStocks = state.stocks;
         
         // Клиентская фильтрация для производителя и компании
         if (widget.filterType == _FilterType.producer) {
@@ -597,7 +598,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     }
   }
 
-  Widget _buildStockCard(InventoryStockModel stock) {
+  Widget _buildStockCard(ProductModel stock) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -618,16 +619,19 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
             ),
             const SizedBox(height: 8),
             
-            if (stock.warehouse != null) ...[
-              _buildInfoRow('Склад', stock.warehouse!.name),
+            if (stock.warehouse != null && stock.warehouse!.name != null) ...[
+              _buildInfoRow('Склад', stock.warehouse!.name!),
             ],
             
-            if (stock.producer != null) ...[
-              _buildInfoRow('Производитель', stock.producer!.name),
+            if (stock.producerInfo != null && stock.producerInfo!.name != null) ...[
+              _buildInfoRow('Производитель', stock.producerInfo!.name!),
             ],
             
-            _buildInfoRow('Количество', stock.totalQuantity),
-            _buildInfoRow('Объем', '${stock.totalVolume} м³'),
+            _buildInfoRow('Количество', '${stock.quantity.toStringAsFixed(0)} шт.'),
+            
+            if (stock.calculatedVolume != null) ...[
+              _buildInfoRow('Объем', '${stock.calculatedVolume!.toStringAsFixed(2)} м³'),
+            ],
             
             Row(
               children: [
@@ -638,7 +642,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    stock.status == 'in_stock' ? 'В наличии' : stock.status,
+                    stock.status == 'in_stock' ? 'В наличии' : stock.status ?? 'Неизвестно',
                     style: TextStyle(
                       fontSize: 12,
                       color: stock.status == 'in_stock' ? Colors.green.shade800 : Colors.grey.shade800,
