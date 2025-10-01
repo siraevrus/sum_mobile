@@ -51,21 +51,19 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       final queryParams = <String, dynamic>{
         'page': page,
         'per_page': perPage,
+        'status': status ?? 'in_stock', // Всегда добавляем статус
       };
       
       if (warehouseId != null) {
         queryParams['warehouse_id'] = warehouseId;
       }
       
-      if (status != null) {
-        queryParams['status'] = status;
-      }
+      print('🔵 Параметры запроса к /products: $queryParams');
       
-      print('🔵 Параметры запроса: $queryParams');
+      // Используем эндпоинт /products со статусом in_stock
+      final response = await _dio.get('/products', queryParameters: queryParams);
       
-      final response = await _dio.get('/stocks', queryParameters: queryParams);
-      
-      print('📥 Ответ API остатков: ${response.data}');
+      print('📥 Ответ API товаров (поступление): ${response.data}');
       
       return InventoryStocksResponse.fromJson(response.data);
     } catch (e) {
