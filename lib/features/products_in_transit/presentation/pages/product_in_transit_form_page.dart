@@ -91,7 +91,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _quantityController.text = product.quantity.toString();
       _selectedProductTemplateId = product.productTemplateId;
       _selectedWarehouseId = product.warehouseId;
-      // Не устанавливаем исходное имя, а будем генерировать его после загрузки атрибутов
+      // Временно устанавливаем исходное имя, оно будет обновлено после загрузки шаблона
+      _nameController.text = product.name;
       _transportNumberController.text = product.transportNumber ?? '';
       _shippingLocationController.text = product.shippingLocation ?? '';
       _notesController.text = product.notes ?? '';
@@ -226,6 +227,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       setState(() {
         _selectedTemplate = response.data;
+        // Обновляем название товара после загрузки шаблона
+        _nameController.text = _generateProductName();
       });
       
       print('🔵 Загружен шаблон: ${response.data?.name ?? 'Unknown'}');
@@ -241,6 +244,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       setState(() {
         _selectedTemplate = template;
+        // Обновляем название товара после создания fallback шаблона
+        _nameController.text = _generateProductName();
       });
     }
   }
