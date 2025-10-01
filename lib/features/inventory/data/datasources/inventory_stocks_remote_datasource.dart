@@ -52,6 +52,7 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
         'page': page,
         'per_page': perPage,
         'status': status ?? 'in_stock', // Всегда добавляем статус
+        'include': 'template,warehouse,creator,producer', // Добавляем include для связанных объектов
       };
       
       if (warehouseId != null) {
