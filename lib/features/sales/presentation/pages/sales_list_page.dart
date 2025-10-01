@@ -211,36 +211,9 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Ошибка загрузки продаж',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: const TextStyle(color: Color(0xFF6C757D)),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(salesListProvider),
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
+        child: AppErrorWidget(
+          error: error,
+          onRetry: () => ref.invalidate(salesListProvider),
         ),
       ),
     );

@@ -406,30 +406,9 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Ошибка загрузки запросов',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => setState(() {}),
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
+        child: AppErrorWidget(
+          error: 'Ошибка загрузки запросов',
+          onRetry: () => setState(() {}),
         ),
       ),
     );

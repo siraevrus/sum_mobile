@@ -458,29 +458,9 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
   }
 
   Widget _buildErrorState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(
-            'Ошибка',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: const TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadInitialData,
-            child: const Text('Повторить'),
-          ),
-        ],
-      ),
+    return AppErrorWidget(
+      error: message,
+      onRetry: _loadInitialData,
     );
   }
 
@@ -708,29 +688,9 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
   }
 
   Widget _buildErrorState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: const TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadFilteredStocks,
-            child: const Text('Повторить'),
-          ),
-        ],
-      ),
+    return AppErrorWidget(
+      error: message,
+      onRetry: _loadFilteredStocks,
     );
   }
 

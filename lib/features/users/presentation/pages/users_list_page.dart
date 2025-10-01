@@ -785,30 +785,9 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Ошибка загрузки пользователей',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: const Text('Повторить'),
-          ),
-        ],
-      ),
+    return AppErrorWidget(
+      error: 'Ошибка загрузки пользователей',
+      onRetry: () => setState(() {}),
     );
   }
 

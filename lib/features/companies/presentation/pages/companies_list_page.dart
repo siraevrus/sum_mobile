@@ -58,7 +58,7 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
               child: companiesList.when(
                 loading: () => const LoadingWidget(message: 'Загружаем компании...'),
                 error: (error, stack) => AppErrorWidget(
-                  message: 'Не удалось загрузить компании',
+                  error: error,
                   onRetry: () => ref.invalidate(companiesListProvider),
                 ),
                 data: (companies) => companies.isEmpty

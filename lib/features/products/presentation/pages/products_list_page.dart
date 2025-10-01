@@ -8,6 +8,7 @@ import 'package:sum_warehouse/features/products/domain/entities/product_entity.d
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
+import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Страница списка товаров
 class ProductsListPage extends ConsumerStatefulWidget {
@@ -67,20 +68,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
               child: switch (productsAsync) {
                 ProductsLoaded(products: final products) => _buildProductsList(products.data),
                 ProductsLoading() => const Center(child: CircularProgressIndicator()),
-                ProductsError(message: final error) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Ошибка загрузки товаров: $error'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => ref.read(productsProvider.notifier).loadProducts(),
-                        child: const Text('Повторить'),
-                      ),
-                    ],
-                  ),
+                ProductsError(message: final error) => AppErrorWidget(
+                  error: error,
+                  onRetry: () => ref.read(productsProvider.notifier).loadProducts(),
                 ),
                 ProductsInitial() => const Center(child: CircularProgressIndicator()),
               },

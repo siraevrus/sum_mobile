@@ -539,36 +539,9 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   }
 
   Widget _buildErrorState(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Ошибка загрузки',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF6C757D)),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => ref.read(productsInTransitProvider.notifier).refresh(),
-            child: const Text('Повторить'),
-          ),
-        ],
-      ),
+    return AppErrorWidget(
+      error: message,
+      onRetry: () => ref.read(productsInTransitProvider.notifier).refresh(),
     );
   }
 

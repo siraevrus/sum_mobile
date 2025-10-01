@@ -37,7 +37,7 @@ class _ProducersListPageState extends ConsumerState<ProducersListPage> {
         data: (producers) => _buildProducersList(producers),
         loading: () => const LoadingWidget(),
         error: (error, stack) => AppErrorWidget(
-          message: 'Ошибка загрузки производителей: $error',
+          error: error,
           onRetry: () => ref.read(producersProvider.notifier).loadProducers(),
         ),
       ),

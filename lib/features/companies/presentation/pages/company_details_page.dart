@@ -41,7 +41,7 @@ class CompanyDetailsPage extends ConsumerWidget {
       body: companyDetails.when(
         loading: () => const LoadingWidget(message: 'Загружаем данные компании...'),
         error: (error, stack) => AppErrorWidget(
-          message: 'Не удалось загрузить данные компании',
+          error: error,
           onRetry: () => ref.invalidate(companyDetailsProvider(companyId)),
         ),
         data: (company) => RefreshIndicator(

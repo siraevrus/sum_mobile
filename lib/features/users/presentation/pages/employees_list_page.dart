@@ -705,30 +705,9 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.6,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Ошибка загрузки сотрудников',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => setState(() {}),
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
+        child: AppErrorWidget(
+          error: 'Ошибка загрузки сотрудников',
+          onRetry: () => setState(() {}),
         ),
       ),
     );
