@@ -6,6 +6,8 @@ import 'package:sum_warehouse/features/products_in_transit/presentation/pages/pr
 import 'package:sum_warehouse/shared/models/product_model.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 
 /// Страница списка товаров в пути
 class ProductsInTransitListPage extends ConsumerStatefulWidget {
@@ -18,6 +20,11 @@ class ProductsInTransitListPage extends ConsumerStatefulWidget {
 class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitListPage> {
   final _searchController = TextEditingController();
   String? _searchQuery;
+  
+  // Переменные для фильтра
+  int? _selectedProducerId;
+  int? _selectedWarehouseId;
+  bool _showFilter = false;
 
   @override
   void initState() {
@@ -37,6 +44,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   void _loadInitialData() {
     try {
       ref.read(productsInTransitProvider.notifier).loadProductsInTransit();
+      // Инициализируем загрузку производителей для фильтра
+      ref.read(producersProvider.notifier).loadProducers();
     } catch (e) {
       print('🔴 Ошибка при загрузке данных: $e');
     }
@@ -45,12 +54,19 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   @override
   Widget build(BuildContext context) {
     final productsState = ref.watch(productsInTransitProvider);
+    // Загружаем производителей и склады для фильтра
+    ref.watch(producersProvider);
+    ref.watch(warehousesProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          _buildSearchField(),
+          _buildSearchAndFilterSection(),
+          
+          // Фильтр (показывается при нажатии на иконку фильтра)
+          if (_showFilter) _buildFilterSection(),
+          
           Expanded(child: _buildProductsList()),
         ],
       ),
@@ -63,49 +79,272 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   }
 
 
-  Widget _buildSearchField() {
+  Widget _buildSearchAndFilterSection() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
       ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() => _searchQuery = value);
-          _performSearch();
-        },
-        decoration: InputDecoration(
-          hintText: 'Поиск товаров в пути...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = null);
-                    ref.read(productsInTransitProvider.notifier).refresh();
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+      child: Row(
+        children: [
+          // Поле поиска
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() => _searchQuery = value);
+                _performSearch();
+              },
+              decoration: InputDecoration(
+                hintText: 'Поиск товаров в пути...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = null);
+                          ref.read(productsInTransitProvider.notifier).refresh();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFF007BFF)),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+              ),
+            ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+          const SizedBox(width: 12),
+          // Иконка фильтра
+          Container(
+            decoration: BoxDecoration(
+              color: _showFilter ? AppColors.primary : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _showFilter ? AppColors.primary : const Color(0xFFE0E0E0),
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                setState(() {
+                  _showFilter = !_showFilter;
+                });
+              },
+              icon: Icon(
+                _showFilter ? Icons.filter_list_off : Icons.filter_list,
+                color: _showFilter ? Colors.white : Colors.grey.shade600,
+              ),
+              tooltip: 'Фильтр',
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF007BFF)),
-          ),
-          filled: true,
-          fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-        ),
+        ],
       ),
     );
+  }
+
+  /// Виджет секции фильтра
+  Widget _buildFilterSection() {
+    final producersAsync = ref.watch(producersProvider);
+    final warehousesAsync = ref.watch(warehousesProvider);
+    
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFFE0E0E0)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.filter_list, size: 20, color: Color(0xFF6C757D)),
+              const SizedBox(width: 8),
+              const Text(
+                'Фильтры',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2C3E50),
+                ),
+              ),
+              const Spacer(),
+              // Кнопка сброса фильтров
+              TextButton(
+                onPressed: _clearFilters,
+                child: const Text(
+                  'Сбросить',
+                  style: TextStyle(color: Color(0xFF6C757D)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              // Фильтр по производителю
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Производитель',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF495057),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: _selectedProducerId,
+                    decoration: InputDecoration(
+                      hintText: 'Все производители',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: producersAsync.when(
+                      data: (producers) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Все производители'),
+                        ),
+                        ...producers.map((producer) => DropdownMenuItem<int>(
+                          value: producer.id,
+                          child: Text(producer.name),
+                        )),
+                      ],
+                      loading: () => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Загрузка...'),
+                        ),
+                      ],
+                      error: (_, __) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Ошибка загрузки'),
+                        ),
+                      ],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedProducerId = value;
+                      });
+                      _applyFilters();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Фильтр по складу
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Склад',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF495057),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: _selectedWarehouseId,
+                    decoration: InputDecoration(
+                      hintText: 'Все склады',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: warehousesAsync.when(
+                      data: (warehouses) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Все склады'),
+                        ),
+                        ...warehouses.map((warehouse) => DropdownMenuItem<int>(
+                          value: warehouse.id,
+                          child: Text(warehouse.name),
+                        )),
+                      ],
+                      loading: () => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Загрузка...'),
+                        ),
+                      ],
+                      error: (_, __) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Ошибка загрузки'),
+                        ),
+                      ],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedWarehouseId = value;
+                      });
+                      _applyFilters();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Сбросить все фильтры
+  void _clearFilters() {
+    setState(() {
+      _selectedProducerId = null;
+      _selectedWarehouseId = null;
+    });
+    _applyFilters();
+  }
+
+  /// Применить фильтры
+  void _applyFilters() {
+    // Здесь можно добавить логику фильтрации через провайдер
+    // Пока просто обновляем список
+    ref.read(productsInTransitProvider.notifier).refresh();
   }
 
   Widget _buildProductsList() {
@@ -119,7 +358,24 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
   }
 
   Widget _buildLoadedState(PaginatedResponse<ProductModel> products) {
-    if (products.data.isEmpty) {
+    // Применяем фильтры
+    var filteredProducts = products.data;
+    
+    // Фильтр по производителю
+    if (_selectedProducerId != null) {
+      filteredProducts = filteredProducts.where((p) => 
+        p.producerId == _selectedProducerId
+      ).toList();
+    }
+    
+    // Фильтр по складу
+    if (_selectedWarehouseId != null) {
+      filteredProducts = filteredProducts.where((p) => 
+        p.warehouse?.id == _selectedWarehouseId
+      ).toList();
+    }
+    
+    if (filteredProducts.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -127,9 +383,9 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
       onRefresh: () => ref.read(productsInTransitProvider.notifier).refresh(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: products.data.length,
+        itemCount: filteredProducts.length,
         itemBuilder: (context, index) {
-          final product = products.data[index];
+          final product = filteredProducts[index];
           return _buildProductCard(product);
         },
       ),
