@@ -57,7 +57,7 @@ class InventoryStockModel with _$InventoryStockModel {
     required String name,
     required String status,
     @JsonKey(name: 'is_active') required bool isActive,
-    @JsonKey(fromJson: _parseNullableString) String? correction,
+    @JsonKey(name: 'correction_status', fromJson: _parseNullableString) String? correctionStatus,
     
     // Связанные объекты
     @JsonKey(name: 'product_template') InventoryProductTemplateModel? productTemplate,

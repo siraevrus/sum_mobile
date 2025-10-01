@@ -655,12 +655,12 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
   }
 
   String _getDisplayName(InventoryStockModel stock) {
-    print('🔍 Проверка correction для товара: ${stock.name}');
-    print('🔍 correction значение: ${stock.correction}');
-    print('🔍 correction тип: ${stock.correction.runtimeType}');
-    print('🔍 correction == "revised": ${stock.correction == 'revised'}');
+    print('🔍 Проверка correction_status для товара: ${stock.name}');
+    print('🔍 correction_status значение: ${stock.correctionStatus}');
+    print('🔍 correction_status тип: ${stock.correctionStatus.runtimeType}');
+    print('🔍 correction_status == "revised": ${stock.correctionStatus == 'revised'}');
     
-    if (stock.correction == 'revised') {
+    if (stock.correctionStatus == 'revised') {
       print('✅ Добавляем символы для товара: ${stock.name}');
       return '‼️🟢 ${stock.name}';
     }
