@@ -608,10 +608,10 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
           children: [
             Text(
               stock.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2C3E50),
+                color: _getTitleColor(stock.correctionStatus),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -681,6 +681,19 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         ],
       ),
     );
+  }
+
+  /// Определяет цвет заголовка в зависимости от correction_status
+  Color _getTitleColor(String? correctionStatus) {
+    switch (correctionStatus) {
+      case 'correction':
+        return Colors.red; // Красный для correction
+      case 'revised':
+        return Colors.green; // Зеленый для revised
+      case null:
+      default:
+        return const Color(0xFF2C3E50); // Обычный цвет для null
+    }
   }
 
   Widget _buildErrorState(String message) {
