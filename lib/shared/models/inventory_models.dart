@@ -44,6 +44,15 @@ String _parseRequiredString(dynamic value) {
   return value.toString();
 }
 
+/// Парсер для bool значений (обрабатывает null как false)
+bool _parseBool(dynamic value) {
+  if (value == null) return false;
+  if (value is bool) return value;
+  if (value is String) return value.toLowerCase() == 'true';
+  if (value is int) return value != 0;
+  return false;
+}
+
 /// Модель остатков согласно новому API /api/stocks
 @freezed
 class InventoryStockModel with _$InventoryStockModel {
@@ -56,7 +65,7 @@ class InventoryStockModel with _$InventoryStockModel {
     @JsonKey(name: 'total_volume', fromJson: _parseStringFromNumber) required String totalVolume,
     required String name,
     required String status,
-    @JsonKey(name: 'is_active') required bool isActive,
+    @JsonKey(name: 'is_active', fromJson: _parseBool) required bool isActive,
     @JsonKey(name: 'correction_status', fromJson: _parseNullableString) String? correctionStatus,
     
     // Связанные объекты
@@ -93,7 +102,7 @@ class InventoryWarehouseModel with _$InventoryWarehouseModel {
     @JsonKey(fromJson: _parseRequiredString) required String name,
     @JsonKey(fromJson: _parseRequiredString) required String address,
     @JsonKey(name: 'company_id') required int companyId,
-    @JsonKey(name: 'is_active') required bool isActive,
+    @JsonKey(name: 'is_active', fromJson: _parseBool) required bool isActive,
     InventoryCompanyModel? company,
     List<dynamic>? employees,
   }) = _InventoryWarehouseModel;
@@ -138,7 +147,7 @@ class InventoryProductTemplateModel with _$InventoryProductTemplateModel {
     @JsonKey(fromJson: _parseNullableString) String? description,
     @JsonKey(fromJson: _parseNullableString) String? formula,
     @JsonKey(fromJson: _parseNullableString) String? unit,
-    @JsonKey(name: 'is_active') required bool isActive,
+    @JsonKey(name: 'is_active', fromJson: _parseBool) required bool isActive,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   }) = _InventoryProductTemplateModel;
