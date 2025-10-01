@@ -91,7 +91,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _quantityController.text = product.quantity.toString();
       _selectedProductTemplateId = product.productTemplateId;
       _selectedWarehouseId = product.warehouseId;
-      _nameController.text = product.name;
+      // Не устанавливаем исходное имя, а будем генерировать его после загрузки атрибутов
       _transportNumberController.text = product.transportNumber ?? '';
       _shippingLocationController.text = product.shippingLocation ?? '';
       _notesController.text = product.notes ?? '';
@@ -100,6 +100,11 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _selectedShippingDate = product.shippingDate;
       _selectedExpectedArrivalDate = product.expectedArrivalDate;
       _isActive = product.isActive;
+      
+      // Инициализируем атрибуты из продукта
+      if (product.attributes != null && product.attributes!.isNotEmpty) {
+        _attributeValues = Map.from(product.attributes!);
+      }
       
       // Загружаем атрибуты шаблона для редактирования
       if (product.productTemplateId != null) {
@@ -164,7 +169,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       controller.dispose();
     }
     _attributeControllers.clear();
-    _attributeValues.clear();
+    // НЕ очищаем _attributeValues, чтобы сохранить значения из существующего товара
 
     // Сохраняем загруженные атрибуты
     _templateAttributes = attributes;
@@ -178,24 +183,31 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       // Устанавливаем значение по умолчанию
       String initialValue = '';
-      if (attribute.defaultValue != null && attribute.defaultValue!.isNotEmpty) {
-        initialValue = attribute.defaultValue!;
-      }
       
-      // Если редактируем существующий товар, заполняем значения
-      if (_isEditing && widget.product?.attributes != null) {
-        final existingValue = widget.product!.attributes![attribute.variable];
-        if (existingValue != null) {
-          initialValue = existingValue.toString();
-        }
+      // Сначала проверяем существующие значения из _attributeValues
+      if (_attributeValues.containsKey(attribute.variable) && 
+          _attributeValues[attribute.variable] != null) {
+        initialValue = _attributeValues[attribute.variable].toString();
+      } else if (attribute.defaultValue != null && attribute.defaultValue!.isNotEmpty) {
+        initialValue = attribute.defaultValue!;
+        _attributeValues[attribute.variable] = initialValue;
       }
       
       controller.text = initialValue;
       _attributeControllers[attribute.variable] = controller;
-      _attributeValues[attribute.variable] = initialValue;
     }
     
     print('🔵 Созданы контроллеры для ${_attributeControllers.length} атрибутов');
+    
+    // Загружаем шаблон для генерации названия
+    if (_selectedProductTemplateId != null) {
+      _loadTemplateForNameGeneration(_selectedProductTemplateId!);
+    } else {
+      // Пытаемся найти шаблон среди загруженных атрибутов
+      if (_templateAttributes.isNotEmpty) {
+        _findTemplateFromAttributes();
+      }
+    }
     
     // Обновляем название товара после загрузки атрибутов
     setState(() {
@@ -204,6 +216,37 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     
     // Пересчитываем объем после загрузки атрибутов
     _calculateFormula();
+  }
+
+  /// Загружаем шаблон для генерации названия
+  void _loadTemplateForNameGeneration(int templateId) {
+    // Создаем простой шаблон для генерации названия
+    final template = ProductTemplateModel(
+      id: templateId,
+      name: 'Шаблон #$templateId',
+      unit: 'м³',
+      isActive: true,
+    );
+    
+    setState(() {
+      _selectedTemplate = template;
+    });
+  }
+
+  /// Пытаемся найти шаблон среди загруженных атрибутов
+  void _findTemplateFromAttributes() {
+    if (_templateAttributes.isNotEmpty && _selectedProductTemplateId != null) {
+      final template = ProductTemplateModel(
+        id: _selectedProductTemplateId!,
+        name: 'Шаблон #${_selectedProductTemplateId!}',
+        unit: 'м³',
+        isActive: true,
+      );
+      
+      setState(() {
+        _selectedTemplate = template;
+      });
+    }
   }
 
   @override
@@ -359,6 +402,10 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
               keyboardType: TextInputType.number,
               isRequired: true,
               onChanged: (value) {
+                // Обновляем название товара при изменении количества
+                setState(() {
+                  _nameController.text = _generateProductName();
+                });
                 // Пересчитываем объем при изменении количества
                 _calculateFormula();
               },
@@ -1359,7 +1406,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           productTemplateId: _selectedProductTemplateId,
           warehouseId: _selectedWarehouseId,
           quantity: quantity,
-          name: _nameController.text.isEmpty ? null : _nameController.text,
+          name: _generateProductName(), // Отправляем сгенерированное наименование
           notes: _notesController.text.isEmpty ? null : _notesController.text,
           producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
@@ -1398,7 +1445,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           productTemplateId: _selectedProductTemplateId!,
           warehouseId: _selectedWarehouseId!,
           quantity: quantity,
-          name: _nameController.text.isEmpty ? null : _nameController.text,
+          name: _generateProductName(), // Отправляем сгенерированное наименование
           notes: _notesController.text.isEmpty ? null : _notesController.text,
           producerId: _selectedProducerId,
           transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
