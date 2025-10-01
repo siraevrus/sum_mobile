@@ -15,9 +15,6 @@ abstract class InventoryStocksRemoteDataSource {
     int perPage = 15,
     int? warehouseId,
     String? status,
-    int? companyId,
-    DateTime? dateFrom,
-    DateTime? dateTo,
   });
 
   /// Получить список производителей
@@ -48,9 +45,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
     int perPage = 15,
     int? warehouseId,
     String? status,
-    int? companyId,
-    DateTime? dateFrom,
-    DateTime? dateTo,
   }) async {
     try {
       print('🔵 Запрос остатков на складах...');
@@ -64,20 +58,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       if (warehouseId != null) {
         queryParams['warehouse_id'] = warehouseId;
-      }
-      
-      // Добавляем фильтр по компании (если поддерживается API)
-      if (companyId != null) {
-        queryParams['company_id'] = companyId;
-      }
-      
-      // Добавляем фильтр по датам (если поддерживается API)
-      if (dateFrom != null) {
-        queryParams['date_from'] = dateFrom.toIso8601String().split('T')[0];
-      }
-      
-      if (dateTo != null) {
-        queryParams['date_to'] = dateTo.toIso8601String().split('T')[0];
       }
       
       print('🔵 Параметры запроса к /products: $queryParams');
