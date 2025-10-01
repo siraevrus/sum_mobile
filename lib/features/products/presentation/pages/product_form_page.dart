@@ -853,6 +853,13 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
             }
             return null;
           } : null,
+          onChanged: (value) {
+            setState(() {
+              _attributeValues[attribute.variable] = value;
+            });
+            // Пересчитываем формулу при изменении text атрибута
+            _calculateFormula();
+          },
         );
       case AttributeType.select:
         return _buildSelectField(attribute);
@@ -1619,10 +1626,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   String _getGeneratedProductName() {
     if (_selectedTemplate == null) {
       return 'Автоматически формируется из характеристик товара (нередактируемое)';
-    }
-    
-    if (_isEditing && widget.product != null) {
-      return widget.product!.name;
     }
     
     // Формируем название по новым правилам:
