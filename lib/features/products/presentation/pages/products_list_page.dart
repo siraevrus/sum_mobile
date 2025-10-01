@@ -27,6 +27,15 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
   bool _showFilter = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Инициализируем загрузку производителей
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(producersProvider.notifier).loadProducers();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -149,7 +158,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                 });
               },
               icon: Icon(
-                Icons.filter_list,
+                _showFilter ? Icons.filter_list_off : Icons.filter_list,
                 color: _showFilter ? Colors.white : Colors.grey.shade600,
               ),
               tooltip: 'Фильтр',
@@ -207,130 +216,126 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Column(
             children: [
               // Фильтр по производителю
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Производитель',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF495057),
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Производитель',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF495057),
                     ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      value: _selectedProducerId,
-                      decoration: InputDecoration(
-                        hintText: 'Все производители',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: _selectedProducerId,
+                    decoration: InputDecoration(
+                      hintText: 'Все производители',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                       ),
-                      items: producersAsync.when(
-                        data: (producers) => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Все производители'),
-                          ),
-                          ...producers.map((producer) => DropdownMenuItem<int>(
-                            value: producer.id,
-                            child: Text(producer.name),
-                          )),
-                        ],
-                        loading: () => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Загрузка...'),
-                          ),
-                        ],
-                        error: (_, __) => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Ошибка загрузки'),
-                          ),
-                        ],
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedProducerId = value;
-                        });
-                      },
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                  ],
-                ),
+                    items: producersAsync.when(
+                      data: (producers) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Все производители'),
+                        ),
+                        ...producers.map((producer) => DropdownMenuItem<int>(
+                          value: producer.id,
+                          child: Text(producer.name),
+                        )),
+                      ],
+                      loading: () => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Загрузка...'),
+                        ),
+                      ],
+                      error: (_, __) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Ошибка загрузки'),
+                        ),
+                      ],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedProducerId = value;
+                      });
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(height: 16),
               // Фильтр по складу
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Склад',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF495057),
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Склад',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF495057),
                     ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      value: _selectedWarehouseId,
-                      decoration: InputDecoration(
-                        hintText: 'Все склады',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    value: _selectedWarehouseId,
+                    decoration: InputDecoration(
+                      hintText: 'Все склады',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                       ),
-                      items: warehousesAsync.when(
-                        data: (warehouses) => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Все склады'),
-                          ),
-                          ...warehouses.map((warehouse) => DropdownMenuItem<int>(
-                            value: warehouse.id,
-                            child: Text(warehouse.name),
-                          )),
-                        ],
-                        loading: () => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Загрузка...'),
-                          ),
-                        ],
-                        error: (_, __) => [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Ошибка загрузки'),
-                          ),
-                        ],
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
                       ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedWarehouseId = value;
-                        });
-                      },
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                  ],
-                ),
+                    items: warehousesAsync.when(
+                      data: (warehouses) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Все склады'),
+                        ),
+                        ...warehouses.map((warehouse) => DropdownMenuItem<int>(
+                          value: warehouse.id,
+                          child: Text(warehouse.name),
+                        )),
+                      ],
+                      loading: () => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Загрузка...'),
+                        ),
+                      ],
+                      error: (_, __) => [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('Ошибка загрузки'),
+                        ),
+                      ],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedWarehouseId = value;
+                      });
+                    },
+                  ),
+                ],
               ),
             ],
           ),
