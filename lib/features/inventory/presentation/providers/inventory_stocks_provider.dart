@@ -40,6 +40,9 @@ class InventoryStocks extends _$InventoryStocks {
     int perPage = 15,
     int? warehouseId,
     String? status,
+    int? companyId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
   }) async {
     try {
       state = InventoryStocksLoading();
@@ -50,6 +53,9 @@ class InventoryStocks extends _$InventoryStocks {
         perPage: perPage,
         warehouseId: warehouseId,
         status: status ?? 'in_stock',
+        companyId: companyId,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       );
       
       state = InventoryStocksLoaded(

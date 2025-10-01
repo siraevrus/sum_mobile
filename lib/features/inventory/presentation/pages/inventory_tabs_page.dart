@@ -5,6 +5,7 @@ import '../../../../shared/models/inventory_models.dart';
 import '../../../../shared/models/product_model.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/inventory_stocks_provider.dart';
+import 'inventory_main_page.dart';
 
 /// Экран остатков на складе с табуляцией
 class InventoryTabsPage extends ConsumerStatefulWidget {
@@ -21,7 +22,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     
     // Загружаем данные при инициализации
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,6 +53,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
             child: TabBar(
               controller: _tabController,
               tabs: const [
+                Tab(text: 'Все товары'),
                 Tab(text: 'Производитель'),
                 Tab(text: 'Склад'),
                 Tab(text: 'Компания'),
@@ -76,6 +78,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
             child: TabBarView(
               controller: _tabController,
               children: [
+                const InventoryMainPage(),
                 _buildProducerTab(),
                 _buildWarehouseTab(),
                 _buildCompanyTab(),
