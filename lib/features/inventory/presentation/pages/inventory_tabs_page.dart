@@ -751,7 +751,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     switch (status) {
       case 'revised':
         return Colors.red.shade100; // Красный фон для "Требует корректировки"
-      case 'corrected':
+      case 'correction':
         return Colors.yellow.shade100; // Желтый фон для "Учтена корректировка"
       default:
         return Colors.grey.shade100;
@@ -763,7 +763,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     switch (status) {
       case 'revised':
         return 'Требует корректировки';
-      case 'corrected':
+      case 'correction':
         return 'Учтена корректировка';
       default:
         return status;
@@ -775,7 +775,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     switch (status) {
       case 'revised':
         return Colors.red.shade800; // Красный текст
-      case 'corrected':
+      case 'correction':
         return Colors.yellow.shade800; // Темно-желтый текст
       default:
         return Colors.grey.shade800;
