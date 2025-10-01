@@ -29,18 +29,11 @@ class ReceiptCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          receipt.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        _buildStatusChip(context),
-                      ],
+                    child: Text(
+                      receipt.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   if (receipt.status == ReceiptStatus.forReceipt && onReceive != null)
@@ -59,40 +52,13 @@ class ReceiptCard extends StatelessWidget {
                 '${receipt.quantity} шт.',
                 Icons.inventory_2_outlined,
               ),
-              if (receipt.shippingLocation != null) ...[
+              if (receipt.calculatedVolume != null) ...[
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   context,
-                  'Место отгрузки',
-                  receipt.shippingLocation!,
-                  Icons.location_on_outlined,
-                ),
-              ],
-              if (receipt.expectedArrivalDate != null) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  context,
-                  'Ожидаемая дата прибытия',
-                  DateFormat('dd.MM.yyyy').format(receipt.expectedArrivalDate!),
-                  Icons.schedule_outlined,
-                ),
-              ],
-              if (receipt.transportNumber != null) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  context,
-                  'Номер транспорта',
-                  receipt.transportNumber!,
-                  Icons.local_shipping_outlined,
-                ),
-              ],
-              if (receipt.notes != null && receipt.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  context,
-                  'Заметки',
-                  receipt.notes!,
-                  Icons.note_outlined,
+                  'Объем',
+                  '${receipt.calculatedVolume!.toStringAsFixed(2)} м³',
+                  Icons.straighten_outlined,
                 ),
               ],
             ],

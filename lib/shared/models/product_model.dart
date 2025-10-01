@@ -237,6 +237,7 @@ class CreateProductRequest with _$CreateProductRequest {
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
     @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
+    @JsonKey(name: 'calculated_volume') double? calculatedVolume, // Рассчитанный объем
   }) = _CreateProductRequest;
 
   factory CreateProductRequest.fromJson(Map<String, dynamic> json) => 
@@ -263,6 +264,7 @@ class UpdateProductRequest with _$UpdateProductRequest {
     @JsonKey(name: 'shipping_date') DateTime? shippingDate,
     @JsonKey(name: 'expected_arrival_date') DateTime? expectedArrivalDate,
     @JsonKey(name: 'document_path', fromJson: _parseDocumentPath) String? documentPath,
+    @JsonKey(name: 'calculated_volume') double? calculatedVolume, // Рассчитанный объем
   }) = _UpdateProductRequest;
 
   factory UpdateProductRequest.fromJson(Map<String, dynamic> json) => 

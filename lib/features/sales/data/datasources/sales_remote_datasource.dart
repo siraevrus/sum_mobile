@@ -2,120 +2,84 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 import 'package:sum_warehouse/core/error/app_exceptions.dart';
-import 'package:sum_warehouse/shared/models/sale_model.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
-import 'package:sum_warehouse/shared/models/common_references.dart';
+import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 
 part 'sales_remote_datasource.g.dart';
 
 /// Абстрактный класс для работы с API продаж
 abstract class SalesRemoteDataSource {
+  /// Получить список продаж с фильтрацией
   Future<PaginatedResponse<SaleModel>> getSales({
     int page = 1,
     int perPage = 15,
-    String? search,
-    int? warehouseId,
-    String? paymentStatus,
-    String? paymentMethod,
-    String? dateFrom,
-    String? dateTo,
+    SaleFilters? filters,
   });
 
-  /// Get single sale by ID (exists in OpenAPI spec)
+  /// Получить продажу по ID
   Future<SaleModel> getSale(int id);
-  
+
+  /// Создать новую продажу
   Future<SaleModel> createSale(CreateSaleRequest request);
+
+  /// Обновить продажу
   Future<SaleModel> updateSale(int id, UpdateSaleRequest request);
+
+  /// Удалить продажу
   Future<void> deleteSale(int id);
+
+  /// Обработать продажу (списание товара)
   Future<void> processSale(int id);
+
+  /// Отменить продажу
   Future<void> cancelSale(int id);
-  Future<SalesStatsResponse> getSalesStats();
-  
-  /// Export sales (NOT DEFINED in OpenAPI specification)
-  /// TODO: Add /sales/export endpoint to OpenAPI spec
-  Future<List<Map<String, dynamic>>> exportSales({
-    String? search,
-    int? warehouseId,
-    String? paymentStatus,
-    String? paymentMethod,
-    String? dateFrom,
-    String? dateTo,
-  });
 }
 
 /// Реализация remote data source для продаж
 class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   final Dio _dio;
-  
+
   SalesRemoteDataSourceImpl(this._dio);
 
   @override
   Future<PaginatedResponse<SaleModel>> getSales({
     int page = 1,
     int perPage = 15,
-    String? search,
-    int? warehouseId,
-    String? paymentStatus,
-    String? paymentMethod,
-    String? dateFrom,
-    String? dateTo,
+    SaleFilters? filters,
   }) async {
     try {
       final queryParams = <String, dynamic>{
         'page': page,
         'per_page': perPage,
       };
-      
-      if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (warehouseId != null) queryParams['warehouse_id'] = warehouseId;
-      if (paymentStatus != null) queryParams['payment_status'] = paymentStatus;
-      if (paymentMethod != null) queryParams['payment_method'] = paymentMethod;
-      if (dateFrom != null) queryParams['date_from'] = dateFrom;
-      if (dateTo != null) queryParams['date_to'] = dateTo;
+
+      // Добавляем параметры фильтрации
+      if (filters != null) {
+        if (filters.search != null && filters.search!.isNotEmpty) {
+          queryParams['search'] = filters.search;
+        }
+        if (filters.warehouseId != null) {
+          queryParams['warehouse_id'] = filters.warehouseId;
+        }
+        if (filters.paymentStatus != null) {
+          queryParams['payment_status'] = filters.paymentStatus;
+        }
+        if (filters.dateFrom != null) {
+          queryParams['date_from'] = filters.dateFrom;
+        }
+        if (filters.dateTo != null) {
+          queryParams['date_to'] = filters.dateTo;
+        }
+      }
 
       final response = await _dio.get('/sales', queryParameters: queryParams);
 
-      // Safely normalize numeric fields that may come as strings
-      dynamic normalizeItem(dynamic item) {
-        if (item is Map<String, dynamic>) {
-          final copy = Map<String, dynamic>.from(item);
-          // Fields that should be numeric
-          for (final key in ['quantity', 'cash_amount', 'nocash_amount', 'total_price', 'unit_price', 'vat_rate', 'vat_amount', 'price_without_vat', 'exchange_rate']) {
-            if (copy.containsKey(key) && copy[key] is String) {
-              final parsed = double.tryParse(copy[key]);
-              if (parsed != null) copy[key] = parsed;
-            }
-          }
-          return copy;
-        }
-        return item;
-      }
-
-      // If response.data contains 'data' list, normalize each item
-      if (response.data is Map<String, dynamic> && response.data.containsKey('data')) {
-        final map = Map<String, dynamic>.from(response.data);
-        final rawList = map['data'] as List<dynamic>;
-        final normalizedList = rawList.map((e) => normalizeItem(e)).toList();
-        map['data'] = normalizedList;
-        return PaginatedResponse<SaleModel>.fromJson(
-          map,
-          (json) => SaleModel.fromJson(json as Map<String, dynamic>),
-        );
-      }
-
-      // Otherwise try to parse directly
       return PaginatedResponse<SaleModel>.fromJson(
         response.data,
         (json) => SaleModel.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      print('⚠️ API /sales не работает: $e. Используем тестовые данные.');
-      // Возвращаем тестовые данные при ошибке
-      return PaginatedResponse<SaleModel>(
-        data: [],
-        links: const PaginationLinks(first: null, last: null, prev: null, next: null),
-        meta: const PaginationMeta(currentPage: 1, lastPage: 1, perPage: 15, total: 3),
-      );
+      throw _handleError(e);
     }
   }
 
@@ -123,51 +87,79 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   Future<SaleModel> getSale(int id) async {
     try {
       final response = await _dio.get('/sales/$id');
-      
+
       final responseData = response.data;
       if (responseData is Map<String, dynamic>) {
-        // Check if wrapped in data structure
+        // Если ответ обернут в data структуру
         if (responseData.containsKey('data')) {
           return SaleModel.fromJson(responseData['data'] as Map<String, dynamic>);
         } else {
           return SaleModel.fromJson(responseData);
         }
       }
-      
-      throw Exception('Unexpected response format for getSale');
+
+      throw Exception('Неожиданный формат ответа для getSale');
     } catch (e) {
       throw _handleError(e);
     }
   }
 
-  // getSale метод удален - API не поддерживает GET /sales/{id}
-  // Данные для редактирования передаются напрямую через конструктор SaleFormPage
-
   @override
   Future<SaleModel> createSale(CreateSaleRequest request) async {
     try {
-      print('🔵 Creating sale with data: ${request.toJson()}');
-      final response = await _dio.post('/sales', data: request.toJson());
-      print('🟢 Sale created successfully: ${response.statusCode}');
+      final requestData = request.toJson();
       
-      // API может вернуть { "message": "...", "sale": { ... } } или напрямую данные
+      print('🔵 === СОЗДАНИЕ ПРОДАЖИ ===');
+      print('🔵 Полный JSON запрос: $requestData');
+
+      final response = await _dio.post('/sales', data: requestData);
+      
+      print('🟢 Sale created successfully: ${response.statusCode}');
+      print('🔵 Raw response data: ${response.data}');
+
       final responseData = response.data;
       print('🔵 Response data type: ${responseData.runtimeType}');
-      print('🔵 Response data: $responseData');
       
       if (responseData is Map<String, dynamic>) {
+        Map<String, dynamic> saleData;
+        
         if (responseData.containsKey('sale')) {
-          return SaleModel.fromJson(responseData['sale'] as Map<String, dynamic>);
+          saleData = responseData['sale'] as Map<String, dynamic>;
+          print('🔵 Using sale field structure');
         } else if (responseData.containsKey('data')) {
-          return SaleModel.fromJson(responseData['data'] as Map<String, dynamic>);
+          saleData = responseData['data'] as Map<String, dynamic>;
+          print('🔵 Using nested data structure');
         } else {
-          return SaleModel.fromJson(responseData);
+          saleData = responseData;
+          print('🔵 Using direct response structure');
+        }
+        
+        print('🔵 Sale data before parsing: $saleData');
+        
+        try {
+          final sale = SaleModel.fromJson(saleData);
+          print('🟢 Sale parsed successfully');
+          return sale;
+        } catch (e) {
+          print('🔴 Error parsing sale: $e');
+          print('🔴 Sale data that failed: $saleData');
+          rethrow;
         }
       } else {
-        throw Exception('Unexpected response format: ${responseData.runtimeType}');
+        throw Exception('Неожиданный формат ответа: ${responseData.runtimeType}');
       }
     } catch (e) {
+      print('🔴 === ОШИБКА СОЗДАНИЯ ПРОДАЖИ ===');
       print('🔴 Error creating sale: $e');
+      
+      if (e is DioException) {
+        print('🔴 DioException details:');
+        print('🔴 Status code: ${e.response?.statusCode}');
+        print('🔴 Response data: ${e.response?.data}');
+        print('🔴 Request data: ${e.requestOptions.data}');
+        print('🔴 Request URL: ${e.requestOptions.uri}');
+      }
+      
       throw _handleError(e);
     }
   }
@@ -176,23 +168,20 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   Future<SaleModel> updateSale(int id, UpdateSaleRequest request) async {
     try {
       print('🔵 Updating sale $id with data: ${request.toJson()}');
+      
       final response = await _dio.put('/sales/$id', data: request.toJson());
+      
       print('🟢 Sale updated successfully: ${response.statusCode}');
-      
+
       final responseData = response.data;
-      print('🔵 Response data type: ${responseData.runtimeType}');
-      print('🔵 Response data: $responseData');
-      
       if (responseData is Map<String, dynamic>) {
-        if (responseData.containsKey('sale')) {
-          return SaleModel.fromJson(responseData['sale'] as Map<String, dynamic>);
-        } else if (responseData.containsKey('data')) {
+        if (responseData.containsKey('data')) {
           return SaleModel.fromJson(responseData['data'] as Map<String, dynamic>);
         } else {
           return SaleModel.fromJson(responseData);
         }
       } else {
-        throw Exception('Unexpected response format: ${responseData.runtimeType}');
+        throw Exception('Неожиданный формат ответа: ${responseData.runtimeType}');
       }
     } catch (e) {
       print('🔴 Error updating sale: $e');
@@ -227,161 +216,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
     }
   }
 
-  @override
-  Future<SalesStatsResponse> getSalesStats() async {
-    try {
-      final response = await _dio.get('/sales/stats');
-      
-      // Проверяем формат ответа
-      if (response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        if (data.containsKey('success') && data.containsKey('data')) {
-          return SalesStatsResponse.fromJson(data);
-        } else {
-          // API возвращает данные напрямую
-          return SalesStatsResponse(
-            success: true,
-            data: SalesStatsModel.fromJson(data),
-          );
-        }
-      }
-      
-      throw Exception('Неверный формат ответа API');
-    } catch (e) {
-      print('⚠️ API /sales/stats не работает: $e. Используем тестовые данные.');
-      // Возвращаем тестовые данные
-      return SalesStatsResponse(
-        success: true,
-        data: SalesStatsModel(
-          totalSales: 567,
-          paidSales: 520,
-          pendingPayments: 47,
-          todaySales: 23,
-          monthRevenue: 156789.50,
-          totalRevenue: 2345678.90,
-          totalQuantity: 1890.5,
-          averageSale: 4140.2,
-          inDelivery: 12,
-        ),
-      );
-    }
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> exportSales({
-    String? search,
-    int? warehouseId,
-    String? paymentStatus,
-    String? paymentMethod,
-    String? dateFrom,
-    String? dateTo,
-  }) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      
-      if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (warehouseId != null) queryParams['warehouse_id'] = warehouseId;
-      if (paymentStatus != null) queryParams['payment_status'] = paymentStatus;
-      if (paymentMethod != null) queryParams['payment_method'] = paymentMethod;
-      if (dateFrom != null) queryParams['date_from'] = dateFrom;
-      if (dateTo != null) queryParams['date_to'] = dateTo;
-
-      final response = await _dio.get('/sales/export', queryParameters: queryParams);
-      
-      if (response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        if (data.containsKey('data')) {
-          return List<Map<String, dynamic>>.from(data['data']);
-        }
-      }
-      
-      return List<Map<String, dynamic>>.from(response.data);
-    } catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  /// Мок данные для демонстрации
-  List<SaleModel> _getMockSales() {
-    return [
-      SaleModel(
-        id: 1,
-        productId: 1,
-        warehouseId: 1,
-        userId: 1,
-        saleNumber: 'SALE-2024-001',
-        quantity: 500.0,
-        unitPrice: 25.50,
-        totalPrice: 12750.0,
-        cashAmount: 12750.0,
-        nocashAmount: 0.0,
-        vatRate: 20.0,
-        vatAmount: 2125.0,
-        priceWithoutVat: 10625.0,
-        currency: 'RUB',
-        exchangeRate: 1.0,
-        paymentStatus: 'paid',
-        deliveryStatus: 'delivered',
-        saleDate: '2024-01-15',
-        customerName: 'ООО "Стройка"',
-        customerPhone: '+7 (999) 123-45-67',
-        isActive: true,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z',
-      ),
-      SaleModel(
-        id: 2,
-        productId: 2,
-        warehouseId: 2,
-        userId: 2,
-        saleNumber: 'SALE-2024-002',
-        quantity: 100.0,
-        unitPrice: 450.0,
-        totalPrice: 45000.0,
-        cashAmount: 0.0,
-        nocashAmount: 45000.0,
-        vatRate: 20.0,
-        vatAmount: 7500.0,
-        priceWithoutVat: 37500.0,
-        currency: 'RUB',
-        exchangeRate: 1.0,
-        paymentStatus: 'pending',
-        deliveryStatus: 'processing',
-        saleDate: '2024-01-16',
-        customerName: 'ИП Иванов',
-        isActive: true,
-        createdAt: '2024-01-16T09:30:00Z',
-        updatedAt: '2024-01-16T09:30:00Z',
-      ),
-      SaleModel(
-        id: 3,
-        productId: 3,
-        warehouseId: 1,
-        userId: 1,
-        saleNumber: 'SALE-2024-003',
-        quantity: 10.0,
-        unitPrice: 1200.0,
-        totalPrice: 12000.0,
-        cashAmount: 6000.0,
-        nocashAmount: 6000.0,
-        vatRate: 20.0,
-        vatAmount: 2000.0,
-        priceWithoutVat: 10000.0,
-        currency: 'RUB',
-        exchangeRate: 1.0,
-        paymentStatus: 'paid',
-        deliveryStatus: 'in_transit',
-        saleDate: '2024-01-17',
-        customerName: 'ООО "МегаСтрой"',
-        customerPhone: '+7 (999) 234-56-78',
-        customerEmail: 'order@megastroy.ru',
-        isActive: true,
-        createdAt: '2024-01-17T08:15:00Z',
-        updatedAt: '2024-01-17T08:15:00Z',
-      ),
-    ];
-  }
-
   /// Обработка ошибок
   AppException _handleError(dynamic error) {
     if (error is DioException) {
@@ -393,17 +227,21 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
         return NetworkException('Ошибка подключения к сети.');
       } else if (error.response != null) {
         final statusCode = error.response!.statusCode;
-        final message = error.response!.data['message'] ?? 'Произошла ошибка на сервере.';
+        final message = error.response!.data['message'] ?? 
+            'Произошла ошибка на сервере.';
+        
         if (statusCode == 404) {
           return ServerException('Продажа не найдена.');
         } else if (statusCode == 422) {
           // Normalize errors to Map<String, List<String>>
           final rawErrors = error.response!.data['errors'];
           final Map<String, List<String>> normalizedErrors = {};
+          
           if (rawErrors is Map) {
             rawErrors.forEach((key, value) {
               if (value is List) {
-                normalizedErrors[key.toString()] = value.map((e) => e.toString()).toList();
+                normalizedErrors[key.toString()] = 
+                    value.map((e) => e.toString()).toList();
               } else if (value == null) {
                 normalizedErrors[key.toString()] = [];
               } else {
@@ -412,7 +250,8 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
             });
           }
 
-          return ValidationException('Ошибка валидации: $message', normalizedErrors);
+          return ValidationException('Ошибка валидации: $message', 
+              normalizedErrors);
         } else if (statusCode == 400 && message.contains('остаток')) {
           return ServerException('Недостаточный остаток товара на складе.');
         } else {

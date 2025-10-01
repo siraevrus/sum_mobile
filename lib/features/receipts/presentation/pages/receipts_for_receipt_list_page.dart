@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/receipts_provider.dart';
 import '../../domain/entities/receipt_entity.dart';
 import 'package:sum_warehouse/features/receipts/data/datasources/receipts_remote_datasource.dart';
+import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
+import 'package:sum_warehouse/features/products/data/models/product_template_model.dart';
 
 /// Страница приемки товаров (статус for_receipt)
 class ReceiptsForReceiptListPage extends ConsumerStatefulWidget {
@@ -169,22 +171,6 @@ class _ReceiptsForReceiptListPageState extends ConsumerState<ReceiptsForReceiptL
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                    ),
-                    child: const Text(
-                      'К приемке',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -257,6 +243,36 @@ class ReceiptsForReceiptDetailPage extends ConsumerStatefulWidget {
 
 class _ReceiptsForReceiptDetailPageState extends ConsumerState<ReceiptsForReceiptDetailPage> {
   bool _isLoading = false;
+  List<TemplateAttributeModel> _templateAttributes = [];
+  bool _attributesLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTemplateAttributes();
+  }
+
+  /// Загрузка атрибутов шаблона товара
+  Future<void> _loadTemplateAttributes() async {
+    try {
+      final dataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      final attributes = await dataSource.getTemplateAttributes(widget.receipt.productTemplateId);
+      
+      if (mounted) {
+        setState(() {
+          _templateAttributes = attributes;
+          _attributesLoaded = true;
+        });
+      }
+    } catch (e) {
+      print('Ошибка загрузки атрибутов шаблона: $e');
+      if (mounted) {
+        setState(() {
+          _attributesLoaded = true;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -271,23 +287,64 @@ class _ReceiptsForReceiptDetailPageState extends ConsumerState<ReceiptsForReceip
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Основная информация в формате "Наименование: значение"
+            // Блок Основная информация
+            const Text(
+              'Основная информация',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 16),
             _buildViewField('Наименование', widget.receipt.name),
-            _buildViewField('Количество', '${widget.receipt.quantity} шт.'),
-            _buildViewField('ID шаблона товара', widget.receipt.productTemplateId.toString()),
-            _buildViewField('ID склада', widget.receipt.warehouseId.toString()),
-            if (widget.receipt.producerId != null)
-              _buildViewField('ID производителя', widget.receipt.producerId.toString()),
-            if (widget.receipt.calculatedVolume != null)
-              _buildViewField('Рассчитанный объем', '${widget.receipt.calculatedVolume!.toStringAsFixed(2)} м³'),
+            if (widget.receipt.shippingLocation != null && widget.receipt.shippingLocation!.isNotEmpty)
+              _buildViewField('Место отгрузки', widget.receipt.shippingLocation!),
+            if (widget.receipt.shippingDate != null)
+              _buildViewField('Дата отгрузки', _formatDate(widget.receipt.shippingDate!)),
+            _buildViewField('Склад назначения', 'Склад ID: ${widget.receipt.warehouseId}'),
+            if (widget.receipt.expectedArrivalDate != null)
+              _buildViewField('Ожидаемая дата', _formatDate(widget.receipt.expectedArrivalDate!)),
             if (widget.receipt.transportNumber != null && widget.receipt.transportNumber!.isNotEmpty)
               _buildViewField('Номер транспорта', widget.receipt.transportNumber!),
-            if (widget.receipt.shippingLocation != null && widget.receipt.shippingLocation!.isNotEmpty)
-              _buildViewField('Место отправки', widget.receipt.shippingLocation!),
-            if (widget.receipt.shippingDate != null)
-              _buildViewField('Дата отправки', _formatDate(widget.receipt.shippingDate!)),
-            if (widget.receipt.expectedArrivalDate != null)
-              _buildViewField('Ожидаемая дата прибытия', _formatDate(widget.receipt.expectedArrivalDate!)),
+            _buildViewField('Статус', _getStatusText(widget.receipt.status)),
+            
+            const SizedBox(height: 24),
+            
+            // Блок Информация о товаре
+            const Text(
+              'Информация о товаре',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (widget.receipt.producerId != null)
+              _buildViewField('Производитель', 'Производитель ID: ${widget.receipt.producerId}'),
+            _buildViewField('Количество', '${widget.receipt.quantity} шт.'),
+            if (widget.receipt.calculatedVolume != null)
+              _buildViewField('Объем', '${widget.receipt.calculatedVolume!.toStringAsFixed(2)} м³'),
+              
+            const SizedBox(height: 24),
+            
+            // Блок Характеристики
+            const Text(
+              'Характеристики',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (!_attributesLoaded)
+              const CircularProgressIndicator()
+            else if (widget.receipt.attributes.isNotEmpty)
+              _buildAttributesTable(widget.receipt.attributes)
+            else
+              const Text('Нет доступных характеристик', style: TextStyle(color: Color(0xFF6C757D))),
             
             const SizedBox(height: 32),
             
@@ -367,6 +424,82 @@ class _ReceiptsForReceiptDetailPageState extends ConsumerState<ReceiptsForReceip
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
+  
+  /// Преобразует статус в текст на русском языке
+  String _getStatusText(ReceiptStatus status) {
+    switch (status) {
+      case ReceiptStatus.inTransit:
+        return 'В пути';
+      case ReceiptStatus.forReceipt:
+        return 'К приемке';
+      case ReceiptStatus.inStock:
+        return 'На складе';
+      default:
+        return 'Неизвестный статус';
+    }
+  }
+  
+  /// Отображает таблицу атрибутов
+  Widget _buildAttributesTable(Map<String, dynamic> attributes) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFDEE2E6)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: attributes.entries.map((entry) {
+          // Находим соответствующий атрибут по переменной
+          final attribute = _templateAttributes.firstWhere(
+            (attr) => attr.variable == entry.key,
+            orElse: () => TemplateAttributeModel(
+              id: 0,
+              productTemplateId: 0,
+              name: entry.key, // Если не найден, используем переменную
+              variable: entry.key,
+              type: 'text',
+              isRequired: false,
+            ),
+          );
+          
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: const Color(0xFFDEE2E6),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    attribute.name, // Используем имя атрибута вместо переменной
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2C3E50),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    entry.value?.toString() ?? 'Не указано',
+                    style: const TextStyle(
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   /// Показать диалог уточнения

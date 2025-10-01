@@ -290,7 +290,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       ),
                     ),
                     TextSpan(
-                      text: '${product.quantity} ${product.template?.unit ?? 'шт'}',
+                      text: '${product.calculatedVolume ?? 0} ${product.template?.unit ?? 'м³'}',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF1A1A1A),

@@ -115,6 +115,9 @@ class ProductsInTransit extends _$ProductsInTransit {
   /// Создание нового товара в пути
   Future<ProductModel?> createProductInTransit(CreateProductRequest request) async {
     try {
+      print('🔵 Создание товара в пути: $request');
+      print('🔵 calculated_volume в запросе товара в пути: ${request.calculatedVolume}');
+      
       final apiDataSource = ref.read(productsApiDataSourceProvider);
       
       // Убеждаемся, что статус установлен в for_receipt
@@ -136,6 +139,7 @@ class ProductsInTransit extends _$ProductsInTransit {
   Future<ProductModel?> updateProductInTransit(int id, UpdateProductRequest request) async {
     try {
       print('🔵 Обновляем товар в пути с ID: $id');
+      print('🔵 calculated_volume в запросе обновления товара в пути: ${request.calculatedVolume}');
       final apiDataSource = ref.read(productsApiDataSourceProvider);
       final updatedProduct = await apiDataSource.updateProduct(id, request);
       

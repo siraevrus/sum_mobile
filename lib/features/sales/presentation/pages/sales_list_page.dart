@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sum_warehouse/features/sales/data/datasources/sales_remote_datasource.dart';
-import 'package:sum_warehouse/features/sales/presentation/pages/sale_form_page.dart';
-import 'package:sum_warehouse/shared/models/sale_model.dart';
-import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
+import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
+import 'package:sum_warehouse/features/sales/presentation/pages/sale_form_page.dart';
+import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
+import 'package:sum_warehouse/features/sales/presentation/widgets/sale_card.dart';
+import 'package:sum_warehouse/features/sales/presentation/widgets/sales_filter_widget.dart';
+import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Страница списка продаж
 class SalesListPage extends ConsumerStatefulWidget {
@@ -15,8 +17,15 @@ class SalesListPage extends ConsumerStatefulWidget {
 }
 
 class _SalesListPageState extends ConsumerState<SalesListPage> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showFilters = false;
   String? _searchQuery;
-  String? _paymentStatusFilter;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,109 +33,67 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          _buildFilters(),
+          _buildSearchAndFilters(),
           Expanded(child: _buildSalesList()),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const SaleFormPage(),
-            ),
-          ).then((_) => setState(() {}));
-        },
+        onPressed: () => _navigateToCreateSale(),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildSearchAndFilters() {
     return Container(
-      padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
       ),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(
-            Icons.point_of_sale,
-            color: Color(0xFF2ECC71),
-            size: 28,
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Продажи',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF2C3E50),
-            ),
-          ),
-          const Spacer(),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SaleFormPage(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.add, size: 20),
-            label: const Text('Создать'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2ECC71),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return Column(
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                _buildSearchField(),
-                const SizedBox(height: 12),
-                _buildPaymentStatusFilter(),
-              ],
-            );
-          } else {
-            return Row(
-              children: [
-                Expanded(flex: 2, child: _buildSearchField()),
+                Expanded(child: _buildSearchField()),
                 const SizedBox(width: 16),
-                Expanded(child: _buildPaymentStatusFilter()),
+                IconButton(
+                  onPressed: () => setState(() => _showFilters = !_showFilters),
+                  icon: Icon(
+                    _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: _showFilters ? 'Скрыть фильтры' : 'Показать фильтры',
+                ),
               ],
-            );
-          }
-        },
+            ),
+          ),
+          if (_showFilters) const SalesFilterWidget(),
+        ],
       ),
     );
   }
 
   Widget _buildSearchField() {
     return TextField(
-      onChanged: (value) => setState(() => _searchQuery = value),
+      onChanged: (value) {
+        setState(() => _searchQuery = value);
+        _performSearch();
+      },
       decoration: InputDecoration(
         hintText: 'Поиск продаж...',
         prefixIcon: const Icon(Icons.search),
+        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  setState(() => _searchQuery = null);
+                  _clearSearch();
+                },
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
@@ -145,284 +112,68 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     );
   }
 
-  Widget _buildPaymentStatusFilter() {
-    return DropdownButtonFormField<String>(
-        dropdownColor: Colors.white,
-      value: _paymentStatusFilter,
-      onChanged: (value) => setState(() => _paymentStatusFilter = value),
-      decoration: InputDecoration(
-        labelText: 'Статус оплаты',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-      ),
-      items: const [
-        DropdownMenuItem(value: null, child: Text('Все')),
-        DropdownMenuItem(value: 'paid', child: Text('Оплачено')),
-        DropdownMenuItem(value: 'cancelled', child: Text('Отменено')),
-      ],
+  void _performSearch() {
+    // Обновляем фильтры с поисковым запросом
+    final currentFilters = ref.read(salesFiltersNotifierProvider);
+    final newFilters = SaleFilters(
+      search: _searchQuery?.isEmpty == true ? null : _searchQuery,
+      warehouseId: currentFilters.warehouseId,
+      paymentStatus: currentFilters.paymentStatus,
+      dateFrom: currentFilters.dateFrom,
+      dateTo: currentFilters.dateTo,
     );
+    ref.read(salesFiltersNotifierProvider.notifier).updateFilters(newFilters);
+  }
+
+  void _clearSearch() {
+    final currentFilters = ref.read(salesFiltersNotifierProvider);
+    final newFilters = SaleFilters(
+      search: null,
+      warehouseId: currentFilters.warehouseId,
+      paymentStatus: currentFilters.paymentStatus,
+      dateFrom: currentFilters.dateFrom,
+      dateTo: currentFilters.dateTo,
+    );
+    ref.read(salesFiltersNotifierProvider.notifier).updateFilters(newFilters);
   }
 
   Widget _buildSalesList() {
-    final dataSource = ref.watch(salesRemoteDataSourceProvider);
+    final salesAsync = ref.watch(salesListProvider());
 
     return RefreshIndicator(
       onRefresh: () async {
-        setState(() {});
+        ref.invalidate(salesListProvider);
       },
-      child: FutureBuilder(
-        future: dataSource.getSales(
-          search: _searchQuery,
-          paymentStatus: _paymentStatusFilter,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingWidget();
-          }
-
-          if (snapshot.hasError) {
-            return _buildErrorState();
-          }
-
-          final sales = snapshot.data?.data ?? [];
+      child: salesAsync.when(
+        loading: () => const LoadingWidget(),
+        error: (error, stack) => _buildErrorState(error),
+        data: (salesResponse) {
+          final sales = salesResponse.data;
           
           if (sales.isEmpty) {
             return _buildEmptyState();
           }
 
           return ListView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.all(16),
             itemCount: sales.length,
-            itemBuilder: (context, index) => _buildSaleCard(sales[index]),
+            itemBuilder: (context, index) => SaleCard(
+              sale: sales[index],
+              onTap: () => _navigateToSaleDetail(sales[index]),
+              onEdit: () => _navigateToEditSale(sales[index]),
+              onCancel: () => _cancelSale(sales[index]),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildSaleCard(SaleModel sale) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: InkWell(
-        onTap: () => _handleSaleAction('view', sale),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                return _buildMobileSaleCard(sale);
-              } else {
-                return _buildDesktopSaleCard(sale);
-              }
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileSaleCard(SaleModel sale) {
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '№${sale.saleNumber}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-                          ),
-              const SizedBox(height: 8),
-            Text('Товар: ${sale.product?.name ?? 'ID ${sale.productId ?? 'Не указан'}'}'),
-            Text('Количество: ${sale.quantity ?? 0}'),
-            Text('Сумма: ${sale.totalPrice?.toStringAsFixed(2) ?? '0.00'}'),
-            if (sale.customerName != null) Text('Клиент: ${sale.customerName}'),
-            const SizedBox(height: 8),
-            _buildStatusChips(sale),
-          ],
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: PopupMenuButton<String>(
-            onSelected: (action) => _handleSaleAction(action, sale),
-            itemBuilder: (context) => [
-              if (sale.paymentStatus != 'cancelled')
-                const PopupMenuItem(
-                  value: 'cancel',
-                  child: Row(
-                    children: [
-                      Icon(Icons.cancel, size: 20, color: Colors.orange),
-                      SizedBox(width: 8),
-                      Text('Отменить', style: TextStyle(color: Colors.orange)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopSaleCard(SaleModel sale) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '№${sale.saleNumber}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text('Товар: ${sale.product?.name ?? 'ID ${sale.productId ?? 'Не указан'}'}'),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Количество: ${sale.quantity ?? 0}'),
-              Text('₽${sale.totalPrice?.toStringAsFixed(2) ?? '0.00'}'),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (sale.customerName != null)
-                Text(sale.customerName!)
-              else
-                const Text('-'),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              _buildStatusChips(sale),
-            ],
-          ),
-        ),
-        PopupMenuButton<String>(
-          onSelected: (action) => _handleSaleAction(action, sale),
-          itemBuilder: (context) => [
-            if (sale.paymentStatus != 'cancelled')
-              const PopupMenuItem(
-                value: 'cancel',
-                child: Row(
-                  children: [
-                    Icon(Icons.cancel, size: 20, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('Отменить', style: TextStyle(color: Colors.orange)),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusChips(SaleModel sale) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (sale.paymentStatus != 'pending' && sale.paymentStatus != 'unknown')
-          _buildStatusChip(sale.paymentStatus ?? 'unknown', _getPaymentStatusColor(sale.paymentStatus ?? 'unknown')),
-      ],
-    );
-  }
-
-  Widget _buildStatusChip(String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        _getStatusDisplayName(status),
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  void _handleSaleAction(String action, SaleModel sale) {
-    switch (action) {
-      case 'view':
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => SaleFormPage(sale: sale, isViewMode: true),
-          ),
-        ).then((_) => setState(() {}));
-        break;
-      case 'edit':
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => SaleFormPage(sale: sale),
-          ),
-        ).then((_) => setState(() {}));
-        break;
-      case 'cancel':
-        _cancelSale(sale);
-        break;
-    }
-  }
-
-  Future<void> _cancelSale(SaleModel sale) async {
-    try {
-      final dataSource = ref.read(salesRemoteDataSourceProvider);
-      if (sale.id != null) {
-        await dataSource.cancelSale(sale.id!);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Реализация отменена'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          setState(() {}); // Обновить список продаж
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка отмены реализации: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   Widget _buildEmptyState() {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
+      child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
         child: const Center(
           child: Column(
@@ -455,10 +206,10 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(Object error) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      child: Container(
+      child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
         child: Center(
           child: Column(
@@ -478,8 +229,14 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
                 ),
               ),
               const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: const TextStyle(color: Color(0xFF6C757D)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => setState(() {}),
+                onPressed: () => ref.invalidate(salesListProvider),
                 child: const Text('Повторить'),
               ),
             ],
@@ -489,29 +246,81 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     );
   }
 
-  Color _getPaymentStatusColor(String status) {
-    switch (status) {
-      case 'paid':
-        return const Color(0xFF2ECC71);
-      case 'cancelled':
-        return const Color(0xFFE74C3C);
-      case 'pending':
-        return const Color(0xFFF39C12); // Добавляем цвет для статуса "Ожидание"
-      default:
-        return const Color(0xFF6C757D);
-    }
+  void _navigateToCreateSale() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const SaleFormPage(),
+      ),
+    ).then((_) => ref.invalidate(salesListProvider));
   }
 
-  String _getStatusDisplayName(String status) {
-    switch (status) {
-      case 'paid':
-        return 'Оплачено';
-      case 'cancelled':
-        return 'Отменено';
-      case 'pending':
-        return 'Ожидание';
-      default:
-        return status;
+  void _navigateToSaleDetail(SaleModel sale) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SaleFormPage(
+          sale: sale, 
+          isViewMode: true,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToEditSale(SaleModel sale) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SaleFormPage(sale: sale),
+      ),
+    ).then((_) => ref.invalidate(salesListProvider));
+  }
+
+  Future<void> _cancelSale(SaleModel sale) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Отменить продажу'),
+        content: Text(
+          'Вы уверены, что хотите отменить продажу №${sale.saleNumber ?? 'Без номера'}?\n\n'
+          'Это действие нельзя будет отменить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text(
+              'Отменить продажу',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(cancelSaleProvider.notifier).cancel(sale.id);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Продажа отменена'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка отмены продажи: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 }

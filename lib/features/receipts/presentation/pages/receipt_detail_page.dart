@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/receipts_provider.dart';
 import '../../domain/entities/receipt_entity.dart';
+import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
+import 'package:sum_warehouse/features/products/data/models/product_template_model.dart';
 
-class ReceiptDetailPage extends ConsumerWidget {
+class ReceiptDetailPage extends ConsumerStatefulWidget {
   final int receiptId;
 
   const ReceiptDetailPage({
@@ -13,8 +15,40 @@ class ReceiptDetailPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final receiptAsync = ref.watch(receiptDetailProvider(receiptId));
+  ConsumerState<ReceiptDetailPage> createState() => _ReceiptDetailPageState();
+}
+
+class _ReceiptDetailPageState extends ConsumerState<ReceiptDetailPage> {
+  List<TemplateAttributeModel> _templateAttributes = [];
+  bool _attributesLoaded = false;
+  
+  /// Загрузка атрибутов шаблона товара
+  Future<void> _loadTemplateAttributes(int productTemplateId) async {
+    if (_attributesLoaded) return; // Загружаем только один раз
+    
+    try {
+      final dataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      final attributes = await dataSource.getTemplateAttributes(productTemplateId);
+      
+      if (mounted) {
+        setState(() {
+          _templateAttributes = attributes;
+          _attributesLoaded = true;
+        });
+      }
+    } catch (e) {
+      print('Ошибка загрузки атрибутов шаблона: $e');
+      if (mounted) {
+        setState(() {
+          _attributesLoaded = true;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final receiptAsync = ref.watch(receiptDetailProvider(widget.receiptId));
 
     return Scaffold(
       appBar: AppBar(
@@ -74,31 +108,38 @@ class ReceiptDetailPage extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.invalidate(receiptDetailProvider(receiptId)),
+                onPressed: () => ref.invalidate(receiptDetailProvider(widget.receiptId)),
                 child: const Text('Повторить'),
               ),
             ],
           ),
         ),
-        data: (receipt) => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, receipt),
-              const SizedBox(height: 24),
-              _buildMainInfo(context, receipt),
-              const SizedBox(height: 24),
-              _buildShippingInfo(context, receipt),
-              if (receipt.notes != null && receipt.notes!.isNotEmpty) ...[
+        data: (receipt) {
+          // Загружаем атрибуты шаблона при получении данных о приемке
+          _loadTemplateAttributes(receipt.productTemplateId);
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, receipt),
                 const SizedBox(height: 24),
-                _buildNotes(context, receipt),
+                _buildMainInfo(context, receipt),
+                const SizedBox(height: 24),
+                _buildShippingInfo(context, receipt),
+                const SizedBox(height: 24),
+                _buildAttributes(context, receipt),
+                if (receipt.notes != null && receipt.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildNotes(context, receipt),
+                ],
+                const SizedBox(height: 24),
+                _buildSystemInfo(context, receipt),
               ],
-              const SizedBox(height: 24),
-              _buildSystemInfo(context, receipt),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -151,46 +192,78 @@ class ReceiptDetailPage extends ConsumerWidget {
             const SizedBox(height: 16),
             _buildInfoRow(
               context,
-              'Количество',
-              '${receipt.quantity} шт.',
-              Icons.inventory_2_outlined,
+              'Наименование',
+              receipt.name,
+              Icons.label_outlined,
             ),
+            if (receipt.shippingLocation != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Место отгрузки',
+                receipt.shippingLocation!,
+                Icons.location_on_outlined,
+              ),
+            ],
+            if (receipt.shippingDate != null) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                context,
+                'Дата отгрузки',
+                DateFormat('dd.MM.yyyy').format(receipt.shippingDate!),
+                Icons.calendar_today_outlined,
+              ),
+            ],
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
-              'Шаблон товара ID',
-              receipt.productTemplateId.toString(),
-              Icons.category_outlined,
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow(
-              context,
-              'Склад ID',
-              receipt.warehouseId.toString(),
+              'Склад назначения',
+              'Склад ID: ${receipt.warehouseId}',
               Icons.warehouse_outlined,
             ),
-            if (receipt.producerId != null) ...[
+            if (receipt.expectedArrivalDate != null) ...[
               const SizedBox(height: 12),
               _buildInfoRow(
                 context,
-                'Производитель ID',
-                receipt.producerId.toString(),
-                Icons.business_outlined,
+                'Ожидаемая дата',
+                DateFormat('dd.MM.yyyy').format(receipt.expectedArrivalDate!),
+                Icons.schedule_outlined,
               ),
             ],
-            if (receipt.calculatedVolume != null) ...[
+            if (receipt.transportNumber != null) ...[
               const SizedBox(height: 12),
               _buildInfoRow(
                 context,
-                'Рассчитанный объем',
-                '${receipt.calculatedVolume!.toStringAsFixed(2)} м³',
-                Icons.straighten_outlined,
+                'Номер транспорта',
+                receipt.transportNumber!,
+                Icons.local_shipping_outlined,
               ),
             ],
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              'Статус',
+              _getStatusText(receipt.status),
+              Icons.info_outline,
+            ),
           ],
         ),
       ),
     );
+  }
+  
+  /// Преобразует статус в текст на русском языке
+  String _getStatusText(ReceiptStatus status) {
+    switch (status) {
+      case ReceiptStatus.inTransit:
+        return 'В пути';
+      case ReceiptStatus.forReceipt:
+        return 'К приемке';
+      case ReceiptStatus.inStock:
+        return 'На складе';
+      default:
+        return 'Неизвестный статус';
+    }
   }
 
   Widget _buildShippingInfo(BuildContext context, ReceiptEntity receipt) {
@@ -201,45 +274,34 @@ class ReceiptDetailPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Информация о доставке',
+              'Информация о товаре',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            if (receipt.shippingLocation != null) ...[
+            if (receipt.producerId != null) ...[
               _buildInfoRow(
                 context,
-                'Место отгрузки',
-                receipt.shippingLocation!,
-                Icons.location_on_outlined,
+                'Производитель',
+                'Производитель ID: ${receipt.producerId}',
+                Icons.business_outlined,
               ),
               const SizedBox(height: 12),
             ],
-            if (receipt.shippingDate != null) ...[
-              _buildInfoRow(
-                context,
-                'Дата отгрузки',
-                DateFormat('dd.MM.yyyy').format(receipt.shippingDate!),
-                Icons.calendar_today_outlined,
-              ),
+            _buildInfoRow(
+              context,
+              'Количество',
+              '${receipt.quantity} шт.',
+              Icons.inventory_2_outlined,
+            ),
+            if (receipt.calculatedVolume != null) ...[
               const SizedBox(height: 12),
-            ],
-            if (receipt.expectedArrivalDate != null) ...[
               _buildInfoRow(
                 context,
-                'Ожидаемая дата прибытия',
-                DateFormat('dd.MM.yyyy').format(receipt.expectedArrivalDate!),
-                Icons.schedule_outlined,
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (receipt.transportNumber != null) ...[
-              _buildInfoRow(
-                context,
-                'Номер транспорта',
-                receipt.transportNumber!,
-                Icons.local_shipping_outlined,
+                'Объем',
+                '${receipt.calculatedVolume!.toStringAsFixed(2)} м³',
+                Icons.straighten_outlined,
               ),
             ],
             if (receipt.documentPath != null) ...[
@@ -285,6 +347,92 @@ class ReceiptDetailPage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAttributes(BuildContext context, ReceiptEntity receipt) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Характеристики',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (!_attributesLoaded)
+              const CircularProgressIndicator()
+            else if (receipt.attributes.isEmpty)
+              const Text('Нет доступных характеристик')
+            else
+              _buildAttributesTable(context, receipt.attributes),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildAttributesTable(BuildContext context, Map<String, dynamic> attributes) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: attributes.entries.map((entry) {
+          // Находим соответствующий атрибут по переменной
+          final attribute = _templateAttributes.firstWhere(
+            (attr) => attr.variable == entry.key,
+            orElse: () => TemplateAttributeModel(
+              id: 0,
+              productTemplateId: 0,
+              name: entry.key, // Если не найден, используем переменную
+              variable: entry.key,
+              type: 'text',
+              isRequired: false,
+            ),
+          );
+          
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    attribute.name, // Используем имя атрибута вместо переменной
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2C3E50),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    entry.value?.toString() ?? 'Не указано',
+                    style: const TextStyle(
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

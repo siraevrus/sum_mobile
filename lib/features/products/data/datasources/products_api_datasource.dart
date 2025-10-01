@@ -80,8 +80,10 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
   @override
   Future<ProductModel> createProduct(CreateProductRequest request) async {
     try {
-      print('🔵 Создание товара: ${request.toJson()}');
-      final response = await _dio.post('/products', data: request.toJson());
+      final requestData = request.toJson();
+      print('🔵 Создание товара: $requestData');
+      print('🔵 calculated_volume в запросе: ${requestData['calculated_volume']}');
+      final response = await _dio.post('/products', data: requestData);
       
       print('🔵 Ответ API создания товара: ${response.data}');
       
@@ -112,8 +114,10 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
   @override
   Future<ProductModel> updateProduct(int id, UpdateProductRequest request) async {
     try {
-      print('🔵 Обновление товара $id: ${request.toJson()}');
-      final response = await _dio.put('/products/$id', data: request.toJson());
+      final requestData = request.toJson();
+      print('🔵 Обновление товара $id: $requestData');
+      print('🔵 calculated_volume в запросе: ${requestData['calculated_volume']}');
+      final response = await _dio.put('/products/$id', data: requestData);
       
       print('🔵 Ответ API обновления товара: ${response.data}');
       

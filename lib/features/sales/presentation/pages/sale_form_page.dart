@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-import 'package:sum_warehouse/features/sales/data/datasources/sales_remote_datasource.dart';
-import 'package:sum_warehouse/shared/models/sale_model.dart';
+import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
+import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 
-/// Экран создания/редактирования реализации (продажи)
+/// Страница создания/редактирования/просмотра продажи
 class SaleFormPage extends ConsumerStatefulWidget {
   final SaleModel? sale;
   final bool isViewMode;
@@ -23,41 +23,41 @@ class SaleFormPage extends ConsumerStatefulWidget {
 
 class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   final _formKey = GlobalKey<FormState>();
+  
+  // Controllers
   final _saleNumberController = TextEditingController();
   final _quantityController = TextEditingController();
   final _cashAmountController = TextEditingController();
   final _nocashAmountController = TextEditingController();
-  final _totalAmountController = TextEditingController();
+  final _totalPriceController = TextEditingController();
+  final _exchangeRateController = TextEditingController();
+  // Customer info controllers
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
-  final _notesController = TextEditingController();
-  
+  final _customerEmailController = TextEditingController();
+  final _customerAddressController = TextEditingController();
+
+  // State variables
   bool _isLoading = false;
   DateTime _saleDate = DateTime.now();
   int? _selectedWarehouseId;
   int? _selectedProductId;
+  String _selectedCurrency = 'RUB';
+  double _exchangeRate = 1.0;
+  int _saleNumberCounter = 1;
   
-  // Данные из API
+  // Reference data
   List<WarehouseModel> _warehouses = [];
   List<Map<String, dynamic>> _warehouseProducts = [];
   
-  // 1. Добавить переменную состояния для валюты
-  String? _selectedCurrency;
-  
-  // 1. Добавить переменную состояния для режима просмотра
   bool get _isEditing => widget.sale != null;
-  bool get _isViewMode => widget.isViewMode; // Используем параметр конструктора
+  bool get _isViewMode => widget.isViewMode;
   
   @override
   void initState() {
     super.initState();
     _initializeForm();
-    // При редактировании данные уже есть, загружаем только справочники
-    if (_isEditing) {
-      _loadReferenceData();
-    } else {
       _loadData();
-    }
   }
   
   @override
@@ -66,10 +66,12 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     _quantityController.dispose();
     _cashAmountController.dispose();
     _nocashAmountController.dispose();
-    _totalAmountController.dispose();
+    _totalPriceController.dispose();
+    _exchangeRateController.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
-    _notesController.dispose();
+    _customerEmailController.dispose();
+    _customerAddressController.dispose();
     super.dispose();
   }
   
@@ -77,62 +79,65 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     if (_isEditing) {
       final sale = widget.sale!;
       _saleNumberController.text = sale.saleNumber ?? '';
-      _quantityController.text = sale.quantity?.toString() ?? '';
-      _cashAmountController.text = sale.cashAmount?.toString() ?? '';
-      _nocashAmountController.text = sale.nocashAmount?.toString() ?? '';
-      _totalAmountController.text = sale.totalPrice?.toString() ?? '';
+      _quantityController.text = sale.quantity.toString();
+      _cashAmountController.text = sale.cashAmount.toString();
+      _nocashAmountController.text = sale.nocashAmount.toString();
+      _totalPriceController.text = sale.totalPrice.toString();
+      _exchangeRateController.text = sale.exchangeRate.toString();
+      
+      // Initialize customer info
       _customerNameController.text = sale.customerName ?? '';
       _customerPhoneController.text = sale.customerPhone ?? '';
-      _notesController.text = sale.notes ?? '';
-      // 2. В initState/initForm: инициализация валюты
-      _selectedCurrency = sale.currency ?? 'RUB';
-      _saleDate = DateTime.parse(sale.saleDate);
+      _customerEmailController.text = sale.customerEmail ?? '';
+      _customerAddressController.text = sale.customerAddress ?? '';
+      
+      if (sale.saleDate != null) {
+        try {
+          _saleDate = DateTime.parse(sale.saleDate!);
+        } catch (e) {
+          _saleDate = DateTime.now();
+        }
+      } else {
+        _saleDate = DateTime.now();
+      }
+      
       _selectedWarehouseId = sale.warehouseId;
-      // Безопасное преобразование productId к int
       _selectedProductId = sale.productId;
+      _selectedCurrency = sale.currency;
+      _exchangeRate = sale.exchangeRate;
     } else {
-      // Автогенерация номера продажи
+      // Default values for new sale
       _generateSaleNumber();
       _quantityController.text = '1';
-      _cashAmountController.text = '0';
-      _nocashAmountController.text = '0';
-      _totalAmountController.text = '0';
-      // 2. В initState/initForm: инициализация валюты
-      _selectedCurrency = 'RUB';
+      _cashAmountController.text = '0.00';
+      _nocashAmountController.text = '0.00';
+      _totalPriceController.text = '0.00';
+      _exchangeRateController.text = '1.0';
+      _customerNameController.text = '';
+      _customerPhoneController.text = '';
+      _customerEmailController.text = '';
+      _customerAddressController.text = '';
     }
-    
-    // Подписываемся на изменения сумм для автоматического расчета общей суммы
-    _cashAmountController.addListener(_calculateTotalAmount);
-    _nocashAmountController.addListener(_calculateTotalAmount);
-  }
-  
-  void _generateSaleNumber() {
-    final now = DateTime.now();
-    final year = now.year.toString();
-    final month = now.month.toString().padLeft(2, '0');
-    final increment = '0003'; // TODO: Получить реальный инкремент из API
-    _saleNumberController.text = 'SALE-$year$month-$increment';
-  }
-  
-  void _calculateTotalAmount() {
-    final cashAmount = double.tryParse(_cashAmountController.text) ?? 0;
-    final nocashAmount = double.tryParse(_nocashAmountController.text) ?? 0;
-    final total = cashAmount + nocashAmount;
-    _totalAmountController.text = total.toString();
+
+    // Add listeners for automatic calculations
+    _cashAmountController.addListener(_calculateTotalPrice);
+    _nocashAmountController.addListener(_calculateTotalPrice);
   }
   
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     
     try {
-      // Загружаем склады
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
       
+      if (_selectedWarehouseId != null) {
+        await _loadWarehouseProducts(_selectedWarehouseId!);
+      }
+      
       setState(() {});
     } catch (e) {
-      print('Ошибка загрузки данных: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -142,46 +147,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: AppColors.primary,
-      ),
-    );
-  }
-
-  // Загрузка справочных данных для формы редактирования (без полноэкранного лоадера)
-  Future<void> _loadReferenceData() async {
-    try {
-      // Загружаем склады
-      final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
-      final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
-      _warehouses = warehousesResponse.data;
-      
-      // Загружаем товары выбранного склада
-      if (_selectedWarehouseId != null) {
-        await _loadWarehouseProducts(_selectedWarehouseId!);
-      }
-      
-      setState(() {});
-    } catch (e) {
-      print('Ошибка загрузки справочных данных: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка загрузки данных: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setState(() => _isLoading = false);
     }
   }
   
@@ -195,237 +161,259 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     }
   }
 
+  void _generateSaleNumber() {
+    final now = DateTime.now();
+    final year = now.year.toString();
+    final month = now.month.toString().padLeft(2, '0');
+    final increment = _saleNumberCounter.toString().padLeft(4, '0');
+    _saleNumberController.text = 'SALE-$year$month-$increment';
+  }
+
+  void _calculateTotalPrice() {
+    final cashAmount = double.tryParse(_cashAmountController.text) ?? 0;
+    final nocashAmount = double.tryParse(_nocashAmountController.text) ?? 0;
+    final total = cashAmount + nocashAmount;
+    _totalPriceController.text = total.toStringAsFixed(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_isViewMode 
-          ? 'Просмотр Реализации' 
-          : (_isEditing ? 'Редактирование Реализации' : 'Создать Реализацию')),
+        title: Text(_getPageTitle()),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        actions: [
-          if (_isEditing && !_isViewMode) // Только в режиме редактирования
+        actions: _buildAppBarActions(),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(),
+      bottomNavigationBar: _isViewMode ? _buildViewModeBottomBar() : null,
+    );
+  }
+
+  String _getPageTitle() {
+    if (_isViewMode) return 'Просмотр продажи';
+    if (_isEditing) return 'Редактирование продажи';
+    return 'Создание продажи';
+  }
+
+  List<Widget> _buildAppBarActions() {
+    final actions = <Widget>[];
+
+    if (_isEditing && !_isViewMode) {
+      actions.add(
             IconButton(
               onPressed: _deleteSale,
-              icon: const Icon(Icons.delete, color: Colors.white),
+          icon: const Icon(Icons.delete),
               tooltip: 'Удалить',
             ),
-        ],
-      ),
-      
-      body: (_isLoading && !_isEditing)
-        ? const Center(child: CircularProgressIndicator())
-        : _isViewMode
-          ? _buildViewModeSection()
-          : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+      );
+    }
+
+    if (_isViewMode && widget.sale?.paymentStatus != 'cancelled') {
+      actions.add(
+        IconButton(
+          onPressed: _editSale,
+          icon: const Icon(Icons.edit),
+          tooltip: 'Редактировать',
+        ),
+      );
+    }
+
+    return actions;
+  }
+
+  Widget _buildBody() {
+    if (_isViewMode) {
+      return _buildViewMode();
+    } else {
+      return _buildEditMode();
+    }
+  }
+
+  Widget _buildViewMode() {
+    final sale = widget.sale!;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildBasicInfoSection(),
-                    const SizedBox(height: 32),
-                    _buildClientInfoSection(),
-                    const SizedBox(height: 32),
-                    _buildAdditionalInfoSection(),
-                    const SizedBox(height: 32),
-                    _buildBottomButtons(),
-                  ],
-                ),
-              ),
+          _buildViewSection('Основная информация', [
+            _buildViewField('Номер продажи', sale.saleNumber ?? 'Не указан'),
+            _buildViewField('Склад', sale.warehouse?.name ?? 'ID: ${sale.warehouseId}'),
+            _buildViewField('Товар', sale.product?.name ?? 'ID: ${sale.productId}'),
+            _buildViewField('Количество', sale.quantity.toString()),
+            _buildViewField('Цена за единицу', '${sale.unitPrice} ${sale.currency}'),
+            _buildViewField('Общая сумма', '${sale.totalPrice} ${sale.currency}'),
+            _buildViewField('Дата продажи', _formatDate(sale.saleDate)),
+          ]),
+          const SizedBox(height: 24),
+          _buildViewSection('Информация о покупателе', [
+            _buildViewField('Имя покупателя', sale.customerName ?? 'Не указан'),
+            _buildViewField('Телефон', sale.customerPhone ?? 'Не указан'),
+            _buildViewField('Email', sale.customerEmail ?? 'Не указан'),
+            _buildViewField('Адрес', sale.customerAddress ?? 'Не указан'),
+          ]),
+          const SizedBox(height: 24),
+          _buildViewSection('Платежная информация', [
+            _buildViewField('Способ оплаты', _getPaymentMethodDisplayName(sale.paymentMethod)),
+            _buildViewField('Статус оплаты', _getPaymentStatusDisplayName(sale.paymentStatus)),
+            _buildViewField('Сумма наличными', '${sale.cashAmount} ${sale.currency}'),
+            _buildViewField('Сумма безналичными', '${sale.nocashAmount} ${sale.currency}'),
+            _buildViewField('НДС ставка', '${sale.vatRate}%'),
+            _buildViewField('Сумма НДС', '${sale.vatAmount} ${sale.currency}'),
+            if (sale.invoiceNumber != null)
+              _buildViewField('Номер счета', sale.invoiceNumber!),
+          ]),
+          if (sale.notes != null && sale.notes!.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            _buildViewSection('Дополнительная информация', [
+              _buildViewField('Заметки', sale.notes!),
+            ]),
+          ],
+        ],
             ),
     );
   }
   
-  Widget _buildBasicInfoSection() {
-    return Column(
+  Widget _buildEditMode() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Основная информация'),
-        const SizedBox(height: 16),
-        _buildTextField(
-          controller: _saleNumberController,
-          label: 'Номер продажи',
-          isRequired: true,
-          enabled: false, // Номер не редактируется
-        ),
-        const SizedBox(height: 16),
-
-        _buildWarehouseDropdown(),
-        const SizedBox(height: 16),
-
-        _buildProductDropdown(),
-        const SizedBox(height: 16),
-
-        _buildTextField(
-          controller: _quantityController,
-          label: 'Количество',
-          isRequired: true,
-          keyboardType: TextInputType.number,
-          enabled: !_isViewMode,
-        ),
-        const SizedBox(height: 16),
-
-        _buildTextField(
-          controller: _cashAmountController,
-          label: 'Сумма (нал)',
-          isRequired: false,
-          keyboardType: TextInputType.number,
-          enabled: !_isViewMode,
-        ),
-        const SizedBox(height: 16),
-
-        _buildTextField(
-          controller: _nocashAmountController,
-          label: 'Сумма (безнал)',
-          isRequired: false,
-          keyboardType: TextInputType.number,
-          enabled: !_isViewMode,
-        ),
-        const SizedBox(height: 16),
-
-        _buildTextField(
-          controller: _totalAmountController,
-          label: 'Общая сумма',
-          isRequired: false,
-          keyboardType: TextInputType.number,
-          enabled: false, // Рассчитывается автоматически
-        ),
-        const SizedBox(height: 16),
-
-        _buildDateField(),
-        const SizedBox(height: 16),
-
-        // 3. В _buildBasicInfoSection заменить _buildTextField для валюты на DropdownButtonFormField
-        DropdownButtonFormField<String>(
-          value: _selectedCurrency,
-          decoration: const InputDecoration(
-            labelText: 'Валюта',
-            border: OutlineInputBorder(),
-            filled: true,
-          ),
-          items: const [
-            DropdownMenuItem(value: 'USD', child: Text('USD')),
-            DropdownMenuItem(value: 'RUB', child: Text('RUB')),
-            DropdownMenuItem(value: 'UZS', child: Text('UZS')),
+          children: [
+            _buildTextField(_saleNumberController, 'Номер продажи', enabled: false),
+            const SizedBox(height: 16),
+            _buildWarehouseDropdown(),
+            const SizedBox(height: 16),
+            _buildDateField(),
+            const SizedBox(height: 16),
+            _buildProductDropdown(),
+            const SizedBox(height: 16),
+            _buildTextField(_quantityController, 'Количество', isRequired: true, keyboardType: TextInputType.number),
+            const SizedBox(height: 16),
+            _buildTextField(_cashAmountController, 'Сумма (нал)', isRequired: true, keyboardType: TextInputType.number),
+            const SizedBox(height: 16),
+            _buildTextField(_nocashAmountController, 'Сумма (безнал)', isRequired: true, keyboardType: TextInputType.number),
+            const SizedBox(height: 16),
+            _buildTextField(_totalPriceController, 'Общая сумма', enabled: false),
+            const SizedBox(height: 16),
+            _buildCurrencyDropdown(),
+            const SizedBox(height: 16),
+            _buildTextField(_exchangeRateController, 'Курс валюты', isRequired: true, keyboardType: TextInputType.number),
+            const SizedBox(height: 32),
+            
+            // Customer information section
+            const Text('Информация о покупателе', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            _buildTextField(_customerNameController, 'Имя покупателя', isRequired: true),
+            const SizedBox(height: 16),
+            _buildTextField(_customerPhoneController, 'Телефон', keyboardType: TextInputType.phone),
+            const SizedBox(height: 16),
+            _buildTextField(_customerEmailController, 'Email', keyboardType: TextInputType.emailAddress),
+            const SizedBox(height: 16),
+            _buildTextField(_customerAddressController, 'Адрес'),
+            const SizedBox(height: 32),
+            
+            _buildBottomButtons(),
           ],
-          onChanged: _isViewMode ? null : (value) {
-            setState(() {
-              _selectedCurrency = value;
-            });
-          },
         ),
-      ],
-    );
-  }
-  
-  Widget _buildClientInfoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Информация о клиенте'),
-        const SizedBox(height: 16),
-        _buildTextField(
-          controller: _customerNameController,
-          label: 'Имя клиента',
-          isRequired: false,
-          enabled: !_isViewMode,
-        ),
-        const SizedBox(height: 16),
-
-        _buildTextField(
-          controller: _customerPhoneController,
-          label: 'Телефон клиента',
-          isRequired: false,
-          keyboardType: TextInputType.phone,
-          icon: Icons.call,
-          enabled: !_isViewMode,
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildAdditionalInfoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Дополнительная информация'),
-        const SizedBox(height: 16),
-        _buildTextField(
-          controller: _notesController,
-          label: 'Заметки',
-          isRequired: false,
-          maxLines: 4,
-          enabled: !_isViewMode,
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildSection({required String title, required List<Widget> children}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
-      child: Column(
+    );
+  }
+
+  Widget _buildViewSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...children,
+      ],
+    );
+  }
+  
+  Widget _buildEditSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...children,
+      ],
+    );
+  }
+  
+  Widget _buildViewField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          ...children,
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
   
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
     bool isRequired = false,
+    bool enabled = true,
     TextInputType? keyboardType,
     int maxLines = 1,
-    bool enabled = true,
-    IconData? icon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
-      enabled: enabled && !_isViewMode,
-      decoration: InputDecoration(
-        labelText: isRequired ? '$label *' : label,
-        labelStyle: TextStyle(color: Colors.grey.shade500),
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? Colors.white,
-        suffixIcon: icon != null ? Icon(icon, color: Colors.grey.shade600) : null,
-      ),
-      style: const TextStyle(color: Colors.black87),
+      enabled: enabled,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: enabled ? Colors.white : Colors.grey[100],
+      ),
       validator: validator ?? (value) {
         if (isRequired && (value == null || value.trim().isEmpty)) {
-          return '$label обязательно для заполнения';
+          return 'Поле "$label" обязательно для заполнения';
         }
         return null;
       },
@@ -435,24 +423,20 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   Widget _buildWarehouseDropdown() {
     return DropdownButtonFormField<int>(
       value: _selectedWarehouseId,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'Склад *',
-        labelStyle: TextStyle(color: Colors.grey.shade500),
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
         filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-        hintStyle: Theme.of(context).inputDecorationTheme.hintStyle,
+        fillColor: Colors.white,
       ),
-      style: const TextStyle(color: Colors.black87),
-      dropdownColor: Colors.white,
       items: _warehouses.map((warehouse) => DropdownMenuItem(
         value: warehouse.id,
         child: Text(warehouse.name),
       )).toList(),
-      onChanged: _isViewMode ? null : (warehouseId) {
+      onChanged: (warehouseId) {
         setState(() {
           _selectedWarehouseId = warehouseId;
-          _selectedProductId = null; // Сбрасываем выбранный товар
+          _selectedProductId = null;
           _warehouseProducts.clear();
         });
         if (warehouseId != null) {
@@ -460,9 +444,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         }
       },
       validator: (value) {
-        if (value == null) {
-          return 'Выберите склад';
-        }
+        if (value == null) return 'Выберите склад';
         return null;
       },
     );
@@ -470,56 +452,52 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   
   Widget _buildProductDropdown() {
     return DropdownButtonFormField<int>(
-      isExpanded: true,
       value: _selectedProductId,
       decoration: InputDecoration(
         labelText: 'Товар *',
-        labelStyle: TextStyle(color: Colors.grey.shade500),
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+        fillColor: Colors.white,
         hintText: _selectedWarehouseId == null 
           ? 'Сначала выберите склад'
           : 'Выберите товар',
-        hintStyle: const TextStyle(color: Colors.grey),
       ),
-      style: const TextStyle(color: Colors.black87),
-      dropdownColor: Colors.white,
       items: _warehouseProducts.map((product) => DropdownMenuItem(
         value: product['id'] as int,
-        child: Text(
-          '${product['name']} (остаток: ${product['quantity']})',
-          overflow: TextOverflow.ellipsis,
-        ),
+        child: Text('${product['name']} (остаток: ${product['quantity']})'),
       )).toList(),
-      // Ensure selected item text also respects ellipsis by providing
-      // a custom selectedItemBuilder that wraps text with ellipsis.
-      selectedItemBuilder: (context) => _warehouseProducts.map((product) {
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '${product['name']} (остаток: ${product['quantity']})',
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      }).toList(),
-      onChanged: _isViewMode ? null : (_selectedWarehouseId == null ? null : (productId) {
-        setState(() {
-          _selectedProductId = productId;
-        });
-      }),
+      onChanged: _selectedWarehouseId == null ? null : (productId) {
+        setState(() => _selectedProductId = productId);
+      },
       validator: (value) {
-        if (value == null) {
-          return 'Выберите товар';
-        }
+        if (value == null) return 'Выберите товар';
         return null;
       },
     );
   }
+
+  Widget _buildCurrencyDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedCurrency,
+      decoration: const InputDecoration(
+        labelText: 'Валюта',
+        border: OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      items: const [
+        DropdownMenuItem(value: 'RUB', child: Text('RUB')),
+        DropdownMenuItem(value: 'USD', child: Text('USD')),
+        DropdownMenuItem(value: 'UZS', child: Text('UZS')),
+      ],
+      onChanged: (value) => setState(() => _selectedCurrency = value ?? 'RUB'),
+    );
+  }
+
   
   Widget _buildDateField() {
     return InkWell(
-      onTap: _isViewMode ? null : () async {
+      onTap: () async {
         final date = await showDatePicker(
           context: context,
           initialDate: _saleDate,
@@ -531,24 +509,19 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         }
       },
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           labelText: 'Дата продажи *',
-          labelStyle: TextStyle(color: Colors.grey.shade500),
-          border: const OutlineInputBorder(),
+          border: OutlineInputBorder(),
           filled: true,
-          fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-          suffixIcon: Icon(Icons.calendar_today, color: Colors.grey.shade600),
+          fillColor: Colors.white,
+          suffixIcon: Icon(Icons.calendar_today),
         ),
-        child: Text(
-          '${_saleDate.day.toString().padLeft(2, '0')}.${_saleDate.month.toString().padLeft(2, '0')}.${_saleDate.year}',
-          style: const TextStyle(color: Colors.black87),
-        ),
+        child: Text(_formatDate(_saleDate.toIso8601String())),
       ),
     );
   }
   
   Widget _buildBottomButtons() {
-    if (_isViewMode) return const SizedBox.shrink();
     return Row(
       children: [
         Expanded(
@@ -581,69 +554,61 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       ],
     );
   }
+
+  Widget? _buildViewModeBottomBar() {
+    if (widget.sale?.paymentStatus == 'cancelled') {
+      return null; // Не показываем кнопку для отмененных продаж
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: ElevatedButton(
+        onPressed: _cancelSaleFromView,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text('Отменить продажу'),
+      ),
+    );
+  }
   
   Future<void> _saveSale() async {
     if (!_formKey.currentState!.validate()) return;
     
-    setState(() {
-      _isLoading = true;
-    });
-    
+    setState(() => _isLoading = true);
+
     try {
-      final dataSource = ref.read(salesRemoteDataSourceProvider);
-      
       if (_isEditing) {
-        // Обновление существующей продажи согласно OpenAPI спецификации
-        final updateRequest = UpdateSaleRequest(
+        // Логика обновления существующей продажи
+        final request = UpdateSaleRequest(
           productId: _selectedProductId,
-          warehouseId: _selectedWarehouseId!,
+          warehouseId: _selectedWarehouseId,
           quantity: double.parse(_quantityController.text),
-          cashAmount: double.tryParse(_cashAmountController.text) ?? 0.0,
-          nocashAmount: double.tryParse(_nocashAmountController.text) ?? 0.0,
-          // 4. В _saveSale и updateSaleRequest использовать _selectedCurrency вместо _currencyController.text
+          cashAmount: double.parse(_cashAmountController.text),
+          nocashAmount: double.parse(_nocashAmountController.text),
           currency: _selectedCurrency,
+          exchangeRate: double.parse(_exchangeRateController.text),
           saleDate: _saleDate.toIso8601String().split('T')[0],
-          customerName: _customerNameController.text.isEmpty ? null : _customerNameController.text,
-          customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
-          notes: _notesController.text.isEmpty ? null : _notesController.text,
         );
-        
-        if (widget.sale?.id != null && _selectedWarehouseId != null) {
-          await dataSource.updateSale(widget.sale!.id!, updateRequest);
-        }
+
+        await ref.read(updateSaleProvider.notifier).updateSale(widget.sale!.id, request);
       } else {
-        // Создание новой продажи согласно OpenAPI спецификации
-        final quantity = double.parse(_quantityController.text);
-        final cashAmount = double.tryParse(_cashAmountController.text) ?? 0.0;
-        final nocashAmount = double.tryParse(_nocashAmountController.text) ?? 0.0;
-
-
-
-        if (_selectedWarehouseId != null) {
-          final createRequest = CreateSaleRequest(
-            productId: _selectedProductId ?? 0, // ID товара как int
-            warehouseId: _selectedWarehouseId!,
-            quantity: quantity,
-            cashAmount: cashAmount, // ОБЯЗАТЕЛЬНОЕ поле API
-            nocashAmount: nocashAmount, // ОБЯЗАТЕЛЬНОЕ поле API
-            // 4. В _saveSale и updateSaleRequest использовать _selectedCurrency вместо _currencyController.text
-            currency: _selectedCurrency,
-            saleDate: _saleDate.toIso8601String().split('T')[0],
-            customerName: _customerNameController.text.isEmpty ? null : _customerNameController.text,
-            customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
-            notes: _notesController.text.isEmpty ? null : _notesController.text,
-          );
-
-          await dataSource.createSale(createRequest);
-        }
+        // Логика создания новой продажи с обработкой дублирования номера
+        await _createSaleWithRetry();
       }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditing 
-                ? 'Реализация обновлена' 
-                : 'Реализация создана'),
+            content: Text(_isEditing ? 'Продажа обновлена' : 'Продажа создана'),
             backgroundColor: Colors.green,
           ),
         );
@@ -659,58 +624,159 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() => _isLoading = false);
     }
   }
-  
-  void _deleteSale() {
-    if (!_isEditing) return;
-    
-    showDialog(
+
+  Future<void> _createSaleWithRetry() async {
+    int maxRetries = 10;
+    int currentRetry = 0;
+
+    while (currentRetry < maxRetries) {
+      try {
+        final cashAmount = double.parse(_cashAmountController.text);
+        final nocashAmount = double.parse(_nocashAmountController.text);
+        final totalPrice = cashAmount + nocashAmount;
+        final quantity = double.parse(_quantityController.text);
+        final unitPrice = quantity > 0 ? totalPrice / quantity : 0.0;
+
+        // Фиксированный способ оплаты - поля cash_amount и nocash_amount просто цифры
+        String paymentMethod = 'cash';
+
+        final request = CreateSaleRequest(
+          saleNumber: _saleNumberController.text,
+          productId: _selectedProductId!,
+          warehouseId: _selectedWarehouseId!,
+          customerName: _customerNameController.text,
+          quantity: quantity,
+          unitPrice: unitPrice,
+          cashAmount: cashAmount,
+          nocashAmount: nocashAmount,
+          currency: _selectedCurrency,
+          exchangeRate: double.parse(_exchangeRateController.text),
+          saleDate: _saleDate.toIso8601String().split('T')[0],
+          paymentMethod: paymentMethod,
+          customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
+          customerEmail: _customerEmailController.text.isEmpty ? null : _customerEmailController.text,
+          customerAddress: _customerAddressController.text.isEmpty ? null : _customerAddressController.text,
+        );
+
+        await ref.read(createSaleProvider.notifier).create(request);
+        break; // Успешное создание, выходим из цикла
+        
+      } catch (e) {
+        final errorString = e.toString();
+        if (errorString.contains('duplicate_sale_number') || 
+            errorString.contains('Ошибка генерации номера продажи')) {
+          // Увеличиваем счетчик и генерируем новый номер
+          currentRetry++;
+          _saleNumberCounter++;
+          _generateSaleNumber();
+          
+          print('🔄 Попытка #$currentRetry: Сгенерирован новый номер продажи: ${_saleNumberController.text}');
+          
+          // Небольшая задержка перед повторной попыткой
+          await Future.delayed(const Duration(milliseconds: 500));
+        } else {
+          // Другие ошибки пробрасываем выше
+          rethrow;
+        }
+      }
+    }
+
+    if (currentRetry >= maxRetries) {
+      throw Exception('Не удалось создать продажу после $maxRetries попыток');
+    }
+  }
+
+  void _editSale() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => SaleFormPage(sale: widget.sale),
+      ),
+    );
+  }
+
+  Future<void> _cancelSaleFromView() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить реализацию'),
-        content: const Text(
-          'Вы уверены, что хотите удалить эту реализацию?\n\n'
+        title: const Text('Отменить продажу'),
+        content: Text(
+          'Вы уверены, что хотите отменить продажу №${widget.sale?.saleNumber ?? 'Без номера'}?\n\n'
           'Это действие нельзя будет отменить.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Отмена'),
           ),
           ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _performDelete();
-            },
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Отменить продажу', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(cancelSaleProvider.notifier).cancel(widget.sale!.id);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Продажа отменена'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+      if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка отмены продажи: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteSale() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить продажу'),
+        content: const Text(
+          'Вы уверены, что хотите удалить эту продажу?\n\n'
+          'Это действие нельзя будет отменить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Удалить', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
-  }
-  
-  Future<void> _performDelete() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final dataSource = ref.read(salesRemoteDataSourceProvider);
-      if (widget.sale?.id != null) {
-        await dataSource.deleteSale(widget.sale!.id!);
-      }
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(deleteSaleProvider.notifier).delete(widget.sale!.id);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Реализация удалена'),
+              content: Text('Продажа удалена'),
             backgroundColor: Colors.green,
           ),
         );
@@ -725,52 +791,40 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
 
-  // 3. Реализация _buildViewModeSection
-  Widget _buildViewModeSection() {
-    final sale = widget.sale!;
-    final fields = [
-      ['Номер продажи', sale.saleNumber ?? ''],
-      ['Склад', _warehouses.firstWhere((w) => w.id == sale.warehouseId, orElse: () => WarehouseModel(id: 0, name: '—', address: 'Не указан', companyId: 0, isActive: true, createdAt: DateTime.now().toIso8601String(), updatedAt: DateTime.now().toIso8601String())).name],
-      ['Товар', sale.product?.name ?? ''],
-      ['Количество', sale.quantity?.toString() ?? ''],
-      ['Сумма (нал)', sale.cashAmount?.toString() ?? ''],
-      ['Сумма (безнал)', sale.nocashAmount?.toString() ?? ''],
-      ['Общая сумма', sale.totalPrice?.toString() ?? ''],
-      ['Дата продажи', sale.saleDate ?? ''],
-      ['Валюта', sale.currency ?? ''],
-      ['Имя клиента', sale.customerName ?? ''],
-      ['Телефон клиента', sale.customerPhone ?? ''],
-      ['Заметки', sale.notes ?? ''],
-    ];
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Просмотр реализации', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
-          ...fields.map((pair) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(pair[0], style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))),
-                const SizedBox(width: 16),
-                Expanded(child: Text(pair[1], textAlign: TextAlign.right, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600))),
-              ],
-            ),
-          )),
-        ],
-      ),
-    );
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return 'Дата не указана';
+    }
+    
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  String _getPaymentMethodDisplayName(String method) {
+    switch (method) {
+      case 'cash': return 'Наличные';
+      case 'card': return 'Карта';
+      case 'bank_transfer': return 'Банковский перевод';
+      case 'other': return 'Другое';
+      default: return method;
+    }
+  }
+
+  String _getPaymentStatusDisplayName(String status) {
+    switch (status) {
+      case 'pending': return 'Ожидание';
+      case 'paid': return 'Оплачено';
+      case 'partially_paid': return 'Частично оплачено';
+      case 'cancelled': return 'Отменено';
+      default: return status;
+    }
   }
 }

@@ -10,7 +10,7 @@ import 'package:sum_warehouse/features/sales/presentation/pages/sales_list_page.
 import 'package:sum_warehouse/features/requests/presentation/pages/requests_list_page.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouses_list_page.dart';
 import 'package:sum_warehouse/features/users/presentation/pages/employees_list_page.dart';
-import 'package:sum_warehouse/features/inventory/presentation/pages/stocks_list_page.dart';
+import 'package:sum_warehouse/features/inventory/presentation/pages/inventory_tabs_page.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
@@ -461,7 +461,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
       case 'companies':
         return const CompaniesListPage();
       case 'inventory':
-        return const StocksListPage();
+        return const InventoryTabsPage();
       case 'products-in-transit':
         return const ProductsInTransitListPage();
       case 'receipts-for-receipt':

@@ -175,6 +175,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         });
         
         _initializeAttributeControllers();
+        
+        // Пересчитываем объем после загрузки шаблона и атрибутов
+        _calculateFormula();
       }
     } catch (e) {
       print('⚠️ Ошибка загрузки шаблона для редактирования: $e');
@@ -364,15 +367,15 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
             child: Text(
               '$label:',
               style: const TextStyle(
-                fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w500,
                 color: Color(0xFF2C3E50),
-              ),
             ),
+          ),
           ),
           Expanded(
             child: Text(
-              value,
-              style: const TextStyle(
+            value,
+            style: const TextStyle(
                 color: Color(0xFF6C757D),
               ),
             ),
@@ -639,7 +642,68 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                   }
                   return null;
                 },
+                onChanged: (value) {
+                  // Пересчитываем объем при изменении количества
+                  _calculateFormula();
+                },
               ),
+              const SizedBox(height: 16),
+              
+              // Объем (нередактируемое поле)
+              if (_selectedTemplate != null && _selectedTemplate!.formula != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Объем',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF6C757D),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.calculate, color: AppColors.info, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _calculatedValue != null 
+                                  ? '${_calculatedValue!.toStringAsFixed(3)} ${_selectedTemplate!.unit ?? 'м³'}'
+                                  : 'Заполните характеристики для расчета',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: _calculatedValue != null ? AppColors.info : Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_selectedTemplate!.formula!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Формула: ${_selectedTemplate!.formula}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6C757D),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               
               // Блок "Дополнительное поле"
@@ -809,6 +873,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     TextInputType? keyboardType,
     int maxLines = 1,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
@@ -822,6 +887,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
+      onChanged: onChanged,
     );
   }
 
@@ -850,9 +916,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         setState(() {
           _attributeValues[attribute.variable] = value;
         });
-        if (attribute.isInFormula) {
+        // Всегда пересчитываем формулу при изменении любого атрибута
           _calculateFormula();
-        }
       },
     );
   }
@@ -875,6 +940,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         setState(() {
           _attributeValues[attribute.variable] = value;
         });
+        // Пересчитываем формулу при изменении select атрибута
+        _calculateFormula();
       },
       validator: attribute.isRequired ? (value) {
         if (value == null || value.isEmpty) {
@@ -893,6 +960,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         setState(() {
           _attributeValues[attribute.variable] = value ?? false;
         });
+        // Пересчитываем формулу при изменении boolean атрибута
+        _calculateFormula();
       },
       controlAffinity: ListTileControlAffinity.leading,
     );
@@ -913,6 +982,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           setState(() {
             _attributeValues[attribute.variable] = date;
           });
+          // Пересчитываем формулу при изменении date атрибута
+          _calculateFormula();
         }
       },
       child: InputDecorator(
@@ -1021,30 +1092,295 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   }
   
   void _calculateFormula() {
-    if (_selectedTemplate?.formula == null) return;
+    print('🔵 === НАЧАЛО РАСЧЕТА ФОРМУЛЫ ===');
+    print('🔵 _selectedTemplate: $_selectedTemplate');
+    print('🔵 _selectedTemplate?.formula: ${_selectedTemplate?.formula}');
     
-    // Простая реализация расчета для демонстрации
+    if (_selectedTemplate?.formula == null) {
+      print('🔴 Формула отсутствует, выход из расчета');
+      return;
+    }
+    
     try {
       final formula = _selectedTemplate!.formula!;
-      if (formula.contains('length') && formula.contains('width') && formula.contains('height')) {
-        final length = double.tryParse(_attributeValues['length']?.toString() ?? '0') ?? 0;
-        final width = double.tryParse(_attributeValues['width']?.toString() ?? '0') ?? 0;
-        final height = double.tryParse(_attributeValues['height']?.toString() ?? '0') ?? 0;
+      print('🔵 Расчет по формуле: $formula');
+      print('🔵 Доступные атрибуты: $_attributeValues');
+      
+      // Проверяем, есть ли все необходимые данные
+      if (_attributeValues.isEmpty) {
+        print('🔴 Нет данных атрибутов для расчета');
+        setState(() {
+          _calculatedValue = null;
+        });
+        return;
+      }
+      
+      // Заменяем переменные в формуле на их значения
+      String calculationFormula = formula;
+      
+      // Добавляем количество в формулу
+      final quantity = double.tryParse(_quantityController.text) ?? 1;
+      print('🔵 Количество: $quantity');
+      
+      // Сначала заменяем quantity если есть в формуле
+      calculationFormula = calculationFormula.replaceAll('quantity', quantity.toString());
+      
+      // Заменяем все переменные из атрибутов (сортируем по длине убывания чтобы избежать частичных замен)
+      final sortedKeys = _attributeValues.keys.toList()..sort((a, b) => b.length.compareTo(a.length));
+      
+      for (String key in sortedKeys) {
+        final value = _attributeValues[key];
+        final numValue = double.tryParse(value?.toString() ?? '0') ?? 0;
         
-        // Простой расчет для досок: length * width * height / 1000000
-        final result = length * width * height / 1000000;
+        // Используем границы слов для точной замены
+        final regex = RegExp('\\b$key\\b');
+        calculationFormula = calculationFormula.replaceAll(regex, numValue.toString());
+        print('🔵 Заменяем "$key" на $numValue');
+      }
+      
+      print('🔵 Формула после замены: $calculationFormula');
+      
+      // Проверяем, остались ли незамененные переменные (буквы)
+      if (RegExp(r'[a-zA-Z]').hasMatch(calculationFormula)) {
+        print('🔴 В формуле остались незамененные переменные: $calculationFormula');
+        setState(() {
+          _calculatedValue = null;
+        });
+        return;
+      }
+      
+      // Вычисляем результат
+      double result = _evaluateExpression(calculationFormula);
+      
+      // Проверяем результат на валидность
+      if (result.isNaN || result.isInfinite) {
+        print('🔴 Некорректный результат: $result');
+        setState(() {
+          _calculatedValue = null;
+        });
+        return;
+      }
         
         setState(() {
           _calculatedValue = result;
         });
-      }
-    } catch (e) {
-      // Игнорируем ошибки расчета
+      
+      print('🔵 ✅ Результат расчета: $result');
+      print('🔵 ✅ _calculatedValue установлен в: $_calculatedValue');
+      print('🔵 === КОНЕЦ РАСЧЕТА ФОРМУЛЫ ===');
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка расчета формулы: $e');
+      print('🔴 Stack trace: $stackTrace');
+      setState(() {
+        _calculatedValue = null;
+      });
+      print('🔴 _calculatedValue установлен в: null');
+      print('🔵 === КОНЕЦ РАСЧЕТА ФОРМУЛЫ (С ОШИБКОЙ) ===');
     }
+  }
+  
+  /// Синхронная версия расчета формулы (без setState)
+  double? _calculateFormulaSync() {
+    print('🔵 === СИНХРОННЫЙ РАСЧЕТ ФОРМУЛЫ ===');
+    print('🔵 _selectedTemplate: $_selectedTemplate');
+    print('🔵 _selectedTemplate?.formula: ${_selectedTemplate?.formula}');
+    
+    if (_selectedTemplate?.formula == null) {
+      print('🔴 Формула отсутствует, выход из синхронного расчета');
+      return null;
+    }
+    
+    try {
+      final formula = _selectedTemplate!.formula!;
+      print('🔵 Синхронный расчет по формуле: $formula');
+      print('🔵 Доступные атрибуты: $_attributeValues');
+      
+      // Проверяем, есть ли все необходимые данные
+      if (_attributeValues.isEmpty) {
+        print('🔴 Нет данных атрибутов для синхронного расчета');
+        return null;
+      }
+      
+      // Заменяем переменные в формуле на их значения
+      String calculationFormula = formula;
+      
+      // Добавляем количество в формулу
+      final quantity = double.tryParse(_quantityController.text) ?? 1;
+      print('🔵 Синхронное количество: $quantity');
+      
+      // Сначала заменяем quantity если есть в формуле
+      calculationFormula = calculationFormula.replaceAll('quantity', quantity.toString());
+      
+      // Заменяем все переменные из атрибутов
+      final sortedKeys = _attributeValues.keys.toList()..sort((a, b) => b.length.compareTo(a.length));
+      
+      for (String key in sortedKeys) {
+        final value = _attributeValues[key];
+        final numValue = double.tryParse(value?.toString() ?? '0') ?? 0;
+        
+        // Используем границы слов для точной замены
+        final regex = RegExp('\\b$key\\b');
+        calculationFormula = calculationFormula.replaceAll(regex, numValue.toString());
+        print('🔵 Синхронная замена "$key" на $numValue');
+      }
+      
+      print('🔵 Синхронная формула после замены: $calculationFormula');
+      
+      // Проверяем, остались ли незамененные переменные
+      if (RegExp(r'[a-zA-Z]').hasMatch(calculationFormula)) {
+        print('🔴 В синхронной формуле остались незамененные переменные: $calculationFormula');
+        return null;
+      }
+      
+      // Вычисляем результат
+      double result = _evaluateExpression(calculationFormula);
+      
+      // Проверяем результат на валидность
+      if (result.isNaN || result.isInfinite) {
+        print('🔴 Некорректный синхронный результат: $result');
+        return null;
+      }
+      
+      print('🔵 ✅ Синхронный результат расчета: $result');
+      print('🔵 === КОНЕЦ СИНХРОННОГО РАСЧЕТА ФОРМУЛЫ ===');
+      return result;
+    } catch (e, stackTrace) {
+      print('🔴 Ошибка синхронного расчета формулы: $e');
+      print('🔴 Stack trace: $stackTrace');
+      print('🔵 === КОНЕЦ СИНХРОННОГО РАСЧЕТА ФОРМУЛЫ (С ОШИБКОЙ) ===');
+      return null;
+    }
+  }
+  
+  /// Простой калькулятор для вычисления математических выражений
+  double _evaluateExpression(String expression) {
+    try {
+      // Убираем пробелы
+      expression = expression.replaceAll(' ', '');
+      
+      // Простая реализация для основных операций
+      // Поддерживает: +, -, *, /, (), числа
+      
+      // Заменяем деление на умножение на обратное число для простоты
+      expression = expression.replaceAll('/', '*1/');
+      
+      // Вычисляем выражение пошагово
+      double result = _parseExpression(expression);
+      
+      return result;
+    } catch (e) {
+      print('🔴 Ошибка вычисления выражения: $e');
+      return 0.0;
+    }
+  }
+  
+  /// Парсер математических выражений (улучшенная версия)
+  double _parseExpression(String expr) {
+    try {
+      // Убираем пробелы
+      expr = expr.replaceAll(' ', '');
+      print('🔵 Парсим выражение: $expr');
+      
+      // Если это просто число
+      if (double.tryParse(expr) != null) {
+        final result = double.parse(expr);
+        print('🔵 Простое число: $result');
+        return result;
+      }
+      
+      // Обрабатываем скобки сначала (простая версия)
+      while (expr.contains('(')) {
+        final start = expr.lastIndexOf('(');
+        final end = expr.indexOf(')', start);
+        if (end != -1) {
+          final subExpr = expr.substring(start + 1, end);
+          final subResult = _parseExpression(subExpr);
+          expr = expr.replaceRange(start, end + 1, subResult.toString());
+          print('🔵 Обработали скобки: $expr');
+        } else {
+          break;
+        }
+      }
+      
+      // Обрабатываем деление и умножение (приоритет выше)
+      expr = _evaluateMultiplicationAndDivision(expr);
+      print('🔵 После * и /: $expr');
+      
+      // Обрабатываем сложение и вычитание
+      expr = _evaluateAdditionAndSubtraction(expr);
+      print('🔵 После + и -: $expr');
+      
+      final result = double.tryParse(expr) ?? 0.0;
+      print('🔵 Финальный результат: $result');
+      return result;
+    } catch (e) {
+      print('🔴 Ошибка парсинга выражения: $e');
+      return 0.0;
+    }
+  }
+  
+  /// Обрабатывает умножение и деление (слева направо)
+  String _evaluateMultiplicationAndDivision(String expr) {
+    // Ищем операторы * и / и обрабатываем их слева направо
+    final regex = RegExp(r'(\d+(?:\.\d+)?)\s*([*/])\s*(\d+(?:\.\d+)?)');
+    
+    while (regex.hasMatch(expr)) {
+      final match = regex.firstMatch(expr)!;
+      final left = double.parse(match.group(1)!);
+      final operator = match.group(2)!;
+      final right = double.parse(match.group(3)!);
+      
+      double result;
+      if (operator == '*') {
+        result = left * right;
+      } else {
+        result = right != 0 ? left / right : 0;
+      }
+      
+      expr = expr.replaceFirst(regex, result.toString());
+      print('🔵 $left $operator $right = $result, новое выражение: $expr');
+    }
+    
+    return expr;
+  }
+  
+  /// Обрабатывает сложение и вычитание (слева направо)
+  String _evaluateAdditionAndSubtraction(String expr) {
+    // Ищем операторы + и - и обрабатываем их слева направо
+    final regex = RegExp(r'(\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)');
+    
+    while (regex.hasMatch(expr)) {
+      final match = regex.firstMatch(expr)!;
+      final left = double.parse(match.group(1)!);
+      final operator = match.group(2)!;
+      final right = double.parse(match.group(3)!);
+      
+      double result;
+      if (operator == '+') {
+        result = left + right;
+      } else {
+        result = left - right;
+      }
+      
+      expr = expr.replaceFirst(regex, result.toString());
+      print('🔵 $left $operator $right = $result, новое выражение: $expr');
+    }
+    
+    return expr;
   }
   
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Принудительно пересчитываем объем перед сохранением
+    _calculateFormula();
+    
+    // Проверяем значение после расчета
+    print('🔵 После _calculateFormula() - _calculatedValue: $_calculatedValue');
+    
+    // Дополнительно: принудительно пересчитываем объем синхронно
+    double? calculatedVolume = _calculateFormulaSync();
+    print('🔵 Синхронный расчет объема: $calculatedVolume');
     
     setState(() {
       _isLoading = true;
@@ -1055,6 +1391,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       
       if (_isEditing) {
         // Обновление товара
+        // Используем синхронный расчет или fallback
+        final volumeToSend = calculatedVolume ?? _calculatedValue ?? (double.tryParse(_quantityController.text) ?? 0.0);
+        print('🔵 Обновление товара - синхронный объем: $calculatedVolume');
+        print('🔵 Обновление товара - _calculatedValue: $_calculatedValue');
+        print('🔵 Обновление товара - объем для отправки: $volumeToSend');
+        
         final request = UpdateProductRequest(
           productTemplateId: _selectedTemplate?.id,
           warehouseId: _selectedWarehouseId ?? widget.product!.warehouseId,
@@ -1067,6 +1409,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
           arrivalDate: _arrivalDate,
           isActive: _isActive,
+          calculatedVolume: volumeToSend, // Передаем рассчитанный объем или fallback
         );
         
         try {
@@ -1099,6 +1442,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           return;
         }
         
+        // Используем синхронный расчет или fallback
+        final volumeToSend = calculatedVolume ?? _calculatedValue ?? (double.tryParse(_quantityController.text) ?? 0.0);
+        print('🔵 Создание товара - синхронный объем: $calculatedVolume');
+        print('🔵 Создание товара - _calculatedValue: $_calculatedValue');
+        print('🔵 Создание товара - объем для отправки: $volumeToSend');
+        
         final request = CreateProductRequest(
           productTemplateId: _selectedTemplate!.id,
           warehouseId: _selectedWarehouseId!,
@@ -1111,6 +1460,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           transportNumber: _transportNumberController.text.trim().isEmpty ? null : _transportNumberController.text.trim(),
           arrivalDate: _arrivalDate,
           isActive: _isActive,
+          calculatedVolume: volumeToSend, // Передаем рассчитанный объем или fallback
         );
         
         try {

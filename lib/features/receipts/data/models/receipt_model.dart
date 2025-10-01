@@ -14,7 +14,7 @@ class ReceiptModel with _$ReceiptModel {
     @JsonKey(name: 'producer_id', fromJson: _parseId) int? producerId,
     required Map<String, dynamic> attributes,
     @JsonKey(name: 'calculated_volume', fromJson: _parseCalculatedVolume) double? calculatedVolume,
-    @JsonKey(fromJson: _parseQuantity) required int quantity,
+    @JsonKey(name: 'quantity', fromJson: _parseQuantity) required int quantity,
     @JsonKey(fromJson: _parseStatus) required ReceiptStatus status,
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date', fromJson: _parseDate) DateTime? shippingDate,
@@ -59,14 +59,39 @@ class ReceiptModel with _$ReceiptModel {
 
 // Helper parsing functions
 int _parseQuantity(dynamic value) {
-  if (value == null) return 0;
-  if (value is int) return value;
-  if (value is double) return value.toInt();
-  if (value is String) {
-    final parsed = int.tryParse(value);
-    if (parsed != null) return parsed;
+  print('🔵 _parseQuantity: Получено значение: $value, тип: ${value.runtimeType}');
+  if (value == null) {
+    print('🔴 _parseQuantity: Значение null, возвращаем 0');
     return 0;
   }
+  if (value is int) {
+    print('🟢 _parseQuantity: Значение int = $value');
+    return value;
+  }
+  if (value is double) {
+    print('🟢 _parseQuantity: Значение double = $value, преобразуем в int');
+    return value.toInt();
+  }
+  if (value is String) {
+    // Сначала пробуем парсить как int
+    final parsedInt = int.tryParse(value);
+    if (parsedInt != null) {
+      print('🟢 _parseQuantity: String "$value" успешно распарсен как int = $parsedInt');
+      return parsedInt;
+    }
+    
+    // Если не получилось, пробуем как double (для строк типа "23233.000")
+    final parsedDouble = double.tryParse(value);
+    if (parsedDouble != null) {
+      final result = parsedDouble.toInt();
+      print('🟢 _parseQuantity: String "$value" распарсен как double = $parsedDouble, преобразован в int = $result');
+      return result;
+    }
+    
+    print('🔴 _parseQuantity: String "$value" не удалось распарсить, возвращаем 0');
+    return 0;
+  }
+  print('🔴 _parseQuantity: Неизвестный тип ${value.runtimeType}, возвращаем 0');
   return 0;
 }
 
