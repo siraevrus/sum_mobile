@@ -81,7 +81,14 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
         }
       }
       
-      return InventoryStocksResponse.fromJson(response.data);
+      print('🔍 Парсинг InventoryStocksResponse из: ${response.data}');
+      final result = InventoryStocksResponse.fromJson(response.data);
+      print('🔍 Результат парсинга: ${result.data.length} товаров');
+      for (int i = 0; i < result.data.length && i < 3; i++) {
+        final stock = result.data[i];
+        print('🔍 Товар $i: ${stock.name}, correctionStatus: ${stock.correctionStatus}');
+      }
+      return result;
     } catch (e) {
       print('🔴 Ошибка получения остатков: $e');
       throw _handleError(e);
