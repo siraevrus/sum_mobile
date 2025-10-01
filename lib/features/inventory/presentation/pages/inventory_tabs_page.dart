@@ -607,7 +607,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _getDisplayName(stock),
+              stock.name,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -646,27 +646,32 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
                     ),
                   ),
                 ),
+                
+                // Статус корректировки
+                if (stock.correctionStatus != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getCorrectionStatusColor(stock.correctionStatus!),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getCorrectionStatusText(stock.correctionStatus!),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _getCorrectionStatusTextColor(stock.correctionStatus!),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _getDisplayName(InventoryStockModel stock) {
-    print('🔍 Проверка correction_status для товара: ${stock.name}');
-    print('🔍 correction_status значение: ${stock.correctionStatus}');
-    print('🔍 correction_status тип: ${stock.correctionStatus.runtimeType}');
-    print('🔍 correction_status == "revised": ${stock.correctionStatus == 'revised'}');
-    
-    if (stock.correctionStatus == 'revised') {
-      print('✅ Добавляем символы для товара: ${stock.name}');
-      return '‼️🟢 ${stock.name}';
-    }
-    
-    print('❌ Символы не добавляются для товара: ${stock.name}');
-    return stock.name;
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -739,5 +744,41 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         ],
       ),
     );
+  }
+
+  /// Получить цвет фона для статуса корректировки
+  Color _getCorrectionStatusColor(String status) {
+    switch (status) {
+      case 'revised':
+        return Colors.red.shade100; // Красный фон для "Требует корректировки"
+      case 'corrected':
+        return Colors.yellow.shade100; // Желтый фон для "Учтена корректировка"
+      default:
+        return Colors.grey.shade100;
+    }
+  }
+
+  /// Получить текст для статуса корректировки
+  String _getCorrectionStatusText(String status) {
+    switch (status) {
+      case 'revised':
+        return 'Требует корректировки';
+      case 'corrected':
+        return 'Учтена корректировка';
+      default:
+        return status;
+    }
+  }
+
+  /// Получить цвет текста для статуса корректировки
+  Color _getCorrectionStatusTextColor(String status) {
+    switch (status) {
+      case 'revised':
+        return Colors.red.shade800; // Красный текст
+      case 'corrected':
+        return Colors.yellow.shade800; // Темно-желтый текст
+      default:
+        return Colors.grey.shade800;
+    }
   }
 }

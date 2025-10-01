@@ -66,29 +66,7 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       print('📥 Ответ API товаров (поступление): ${response.data}');
       
-      // Дополнительная отладка для проверки поля correction
-      if (response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        if (data['data'] is List) {
-          final List<dynamic> products = data['data'] as List;
-          print('🔍 Количество товаров в ответе: ${products.length}');
-          for (int i = 0; i < products.length && i < 3; i++) {
-            final product = products[i] as Map<String, dynamic>;
-            print('🔍 Товар $i: ${product['name']}');
-            print('🔍 correction в API: ${product['correction']}');
-            print('🔍 correction тип: ${product['correction'].runtimeType}');
-          }
-        }
-      }
-      
-      print('🔍 Парсинг InventoryStocksResponse из: ${response.data}');
-      final result = InventoryStocksResponse.fromJson(response.data);
-      print('🔍 Результат парсинга: ${result.data.length} товаров');
-      for (int i = 0; i < result.data.length && i < 3; i++) {
-        final stock = result.data[i];
-        print('🔍 Товар $i: ${stock.name}, correctionStatus: ${stock.correctionStatus}');
-      }
-      return result;
+      return InventoryStocksResponse.fromJson(response.data);
     } catch (e) {
       print('🔴 Ошибка получения остатков: $e');
       throw _handleError(e);
