@@ -42,52 +42,7 @@ class ProductInflowModel with _$ProductInflowModel {
     ProducerReference? producer,
   }) = _ProductInflowModel;
 
-  factory ProductInflowModel.fromJson(Map<String, dynamic> json) => _productInflowModelFromJsonSafe(json);
-}
-
-ProductInflowModel _productInflowModelFromJsonSafe(Map<String, dynamic> json) {
-  return ProductInflowModel(
-    id: json['id'] as int,
-    productTemplateId: json['product_template_id'] as int,
-    warehouseId: json['warehouse_id'] as int,
-    createdBy: json['created_by'] as int,
-    name: json['name'] as String?,
-    description: json['description'] as String?,
-    attributes: json['attributes'] as Map<String, dynamic>? ?? {},
-    calculatedVolume: json['calculated_volume'] as String?,
-    quantity: json['quantity'] as String,
-    soldQuantity: json['sold_quantity'] as int? ?? 0,
-    transportNumber: json['transport_number'] as String?,
-    producerId: json['producer_id'] as int?,
-    arrivalDate: json['arrival_date'] as String?,
-    status: json['status'] as String,
-    isActive: (json['is_active'] as bool?) ?? true,
-    shippingLocation: json['shipping_location'] as String?,
-    shippingDate: json['shipping_date'] as String?,
-    expectedArrivalDate: json['expected_arrival_date'] as String?,
-    actualArrivalDate: json['actual_arrival_date'] as String?,
-    documentPath: (json['document_path'] as List<dynamic>?)?.cast<String>() ?? [],
-    notes: json['notes'] as String?,
-    correction: json['correction'] as String?,
-    correctionStatus: json['correction_status'] as String?,
-    revisedAt: json['revised_at'] as String?,
-    createdAt: json['created_at'] as String,
-    updatedAt: json['updated_at'] as String,
-    
-    // Связанные объекты
-    template: json['template'] != null 
-        ? ProductTemplateReference.fromJson(json['template'] as Map<String, dynamic>)
-        : null,
-    warehouse: json['warehouse'] != null 
-        ? WarehouseReference.fromJson(json['warehouse'] as Map<String, dynamic>)
-        : null,
-    creator: json['creator'] != null 
-        ? UserReference.fromJson(json['creator'] as Map<String, dynamic>)
-        : null,
-    producer: json['producer'] != null 
-        ? ProducerReference.fromJson(json['producer'] as Map<String, dynamic>)
-        : null,
-  );
+  factory ProductInflowModel.fromJson(Map<String, dynamic> json) => _$ProductInflowModelFromJson(json);
 }
 
 /// Фильтры для товаров
