@@ -15,7 +15,6 @@ class RequestModel with _$RequestModel {
     @JsonKey(name: 'priority') required RequestPriority priority,
     required String status,
     WarehouseReference? warehouse,
-    @JsonKey(name: 'product_template') ProductTemplateReference? productTemplate,
     UserReference? user,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
@@ -36,7 +35,6 @@ RequestModel _requestModelFromJsonSafe(Map<String, dynamic> json) {
     ),
     status: json['status'] as String,
     warehouse: json['warehouse'] != null ? WarehouseReference.fromJson(json['warehouse'] as Map<String, dynamic>) : null,
-    productTemplate: json['product_template'] != null ? ProductTemplateReference.fromJson(json['product_template'] as Map<String, dynamic>) : null,
     user: json['user'] != null ? UserReference.fromJson(json['user'] as Map<String, dynamic>) : null,
     createdAt: json['created_at'] as String,
     updatedAt: json['updated_at'] as String,
@@ -98,7 +96,6 @@ enum RequestPriority {
 class CreateRequestRequest with _$CreateRequestRequest {
   const factory CreateRequestRequest({
     @JsonKey(name: 'warehouse_id') required int warehouseId,
-    @JsonKey(name: 'product_template_id') required int productTemplateId,
     required String title,
     required double quantity,
     required RequestPriority priority,
@@ -116,7 +113,6 @@ class CreateRequestRequest with _$CreateRequestRequest {
 class UpdateRequestRequest with _$UpdateRequestRequest {
   const factory UpdateRequestRequest({
     @JsonKey(name: 'warehouse_id') int? warehouseId,
-    @JsonKey(name: 'product_template_id') int? productTemplateId,
     String? title,
     double? quantity,
     RequestPriority? priority,

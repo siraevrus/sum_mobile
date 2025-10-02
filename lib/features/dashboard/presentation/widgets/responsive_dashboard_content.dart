@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/dashboard_stats_cards.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-import 'package:sum_warehouse/features/dashboard/presentation/widgets/popular_products_card.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/providers/admin_stats_provider.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';

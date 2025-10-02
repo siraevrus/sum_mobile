@@ -5,10 +5,7 @@ import 'package:sum_warehouse/features/requests/data/datasources/requests_remote
 import 'package:sum_warehouse/features/requests/domain/entities/request_entity.dart';
 import 'package:sum_warehouse/shared/models/request_model.dart' as shared_models;
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
-import 'package:sum_warehouse/features/products/data/datasources/product_template_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
-import 'package:sum_warehouse/features/products/data/models/product_template_model.dart';
-import 'package:sum_warehouse/features/products/domain/entities/product_template_entity.dart';
 
 /// Экран создания/редактирования запроса
 class RequestFormPage extends ConsumerStatefulWidget {
@@ -32,11 +29,9 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
   bool _isLoading = false;
   String _selectedStatusCode = 'pending';
   int? _selectedWarehouseId;
-  int? _selectedTemplateId;
   
   // Данные из API
   List<WarehouseModel> _warehouses = [];
-  List<ProductTemplateModel> _productTemplates = [];
   
   bool get _isEditing => widget.request != null;
   
@@ -64,7 +59,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
       _selectedStatusCode = request.status;
       // Безопасно получаем ID из вложенных объектов
       _selectedWarehouseId = request.warehouse?.id;
-      _selectedTemplateId = request.productTemplate?.id;
     } else {
       // Автогенерация заголовка для нового запроса
       _generateTitle();
@@ -85,10 +79,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
       
-      // Загружаем шаблоны товаров
-      final templatesDataSource = ref.read(productTemplateRemoteDataSourceProvider);
-      final templatesResponse = await templatesDataSource.getProductTemplates(perPage: 100);
-      _productTemplates = templatesResponse.data;
       
       
       setState(() {});
@@ -172,8 +162,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         _buildWarehouseDropdown(),
         const SizedBox(height: 16),
 
-        _buildProductTemplateDropdown(),
-        const SizedBox(height: 16),
 
         _buildTextField(
           controller: _quantityController,
@@ -293,36 +281,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
     );
   }
   
-  Widget _buildProductTemplateDropdown() {
-    return DropdownButtonFormField<int>(
-
-      value: _selectedTemplateId,
-      decoration: InputDecoration(
-        labelText: 'Шаблон товара *',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-        labelStyle: TextStyle(color: Colors.grey.shade500),
-      ),
-      style: const TextStyle(color: Colors.black87),
-      dropdownColor: Colors.white,
-      items: _productTemplates.map((template) => DropdownMenuItem(
-        value: template.id,
-        child: Text(template.name),
-      )).toList(),
-      onChanged: (templateId) {
-        setState(() {
-          _selectedTemplateId = templateId;
-        });
-      },
-      validator: (value) {
-        if (value == null) {
-          return 'Выберите шаблон товара';
-        }
-        return null;
-      },
-    );
-  }
   
   Widget _buildStatusDropdown() {
     return DropdownButtonFormField<String>(
@@ -401,7 +359,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         // Обновление существующего запроса
         final updateRequest = shared_models.UpdateRequestRequest(
           warehouseId: _selectedWarehouseId!,
-          productTemplateId: _selectedTemplateId!,
           title: _titleController.text,
           quantity: int.parse(_quantityController.text).toDouble(),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -412,7 +369,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         // Создание нового запроса
         final createRequest = shared_models.CreateRequestRequest(
           warehouseId: _selectedWarehouseId!,
-          productTemplateId: _selectedTemplateId!,
           title: _titleController.text,
           quantity: int.parse(_quantityController.text).toDouble(),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,

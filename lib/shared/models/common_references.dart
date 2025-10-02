@@ -57,10 +57,23 @@ class ProductTemplateReference with _$ProductTemplateReference {
   const factory ProductTemplateReference({
     required int id,
     String? name,
+    String? unit,
   }) = _ProductTemplateReference;
 
   factory ProductTemplateReference.fromJson(Map<String, dynamic> json) =>
       _$ProductTemplateReferenceFromJson(json);
+}
+
+/// Ссылка на производителя
+@freezed
+class ProducerReference with _$ProducerReference {
+  const factory ProducerReference({
+    required int id,
+    String? name,
+  }) = _ProducerReference;
+
+  factory ProducerReference.fromJson(Map<String, dynamic> json) =>
+      _$ProducerReferenceFromJson(json);
 }
 
 

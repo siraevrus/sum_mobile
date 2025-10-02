@@ -158,6 +158,14 @@ class ModernSidebar extends StatelessWidget {
                     section: 'producers',
                     isSelected: selectedSection == 'producers',
                   ),
+                // Поступление товаров - админ и оператор
+                if (_hasAccess(['admin', 'operator']))
+                  _buildMenuItem(
+                    icon: Icons.input,
+                    title: 'Поступление товаров',
+                    section: 'products-inflow',
+                    isSelected: selectedSection == 'products-inflow',
+                  ),
                 // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                 if (_hasAccess(['admin', 'warehouse_worker', 'sales_manager']))
                   _buildMenuItem(

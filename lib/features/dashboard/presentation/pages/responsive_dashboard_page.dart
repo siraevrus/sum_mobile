@@ -13,6 +13,7 @@ import 'package:sum_warehouse/features/inventory/presentation/pages/inventory_ta
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
+import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
 class ResponsiveDashboardPage extends ConsumerWidget {
@@ -285,6 +286,14 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       title: 'Остатки на складе',
                       section: 'inventory',
                     ),
+                  // Поступление товаров - админ и оператор
+                  if (_hasAccess(user, ['admin', 'operator']))
+                    _buildDrawerMenuItem(
+                      context,
+                      icon: Icons.input,
+                      title: 'Поступление товаров',
+                      section: 'products-inflow',
+                    ),
                   // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                   if (_hasAccess(user, ['admin', 'warehouse_worker', 'sales_manager']))
                     _buildDrawerMenuItem(
@@ -402,6 +411,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Компании';
       case 'inventory':
         return 'Остатки на складе';
+      case 'products-inflow':
+        return 'Поступление товаров';
       default:
         return 'Инфопанель';
     }
@@ -427,6 +438,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const CompaniesListPage();
       case 'inventory':
         return const InventoryTabsPage();
+      case 'products-inflow':
+        return const ProductsInflowListPage();
       default:
         return ResponsiveDashboardContent(
           onShowAllProductsPressed: () => context.go('/inventory'),

@@ -253,7 +253,7 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
           ),
         ),
         Text(
-          'Шаблон: ${request.productTemplate?.name ?? 'ID ${request.productTemplate?.id}'}',
+          'Шаблон: Не указан',
           style: const TextStyle(
             fontSize: 14,
             color: Colors.black,
@@ -313,7 +313,7 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
         Expanded(
           flex: 2,
           child: Text(
-            request.productTemplate?.name ?? 'ID ${request.productTemplate?.id}',
+            'Не указан',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/router/app_router.dart';
 import 'package:sum_warehouse/core/theme/app_theme.dart';
-import 'package:sum_warehouse/shared/providers/app_data_provider.dart';
 
 void main() {
   runApp(
@@ -21,7 +20,6 @@ class SumWarehouseApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     
     // Запускаем предзагрузку данных при старте приложения
-    ref.read(appDataPreloaderProvider);
     
     return MaterialApp.router(
       title: 'Sum Warehouse',
