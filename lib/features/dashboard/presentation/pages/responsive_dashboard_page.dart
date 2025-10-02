@@ -5,7 +5,6 @@ import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/modern_app_bar.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/modern_sidebar.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/responsive_dashboard_content.dart';
-import 'package:sum_warehouse/features/products/presentation/pages/products_list_page.dart';
 import 'package:sum_warehouse/features/sales/presentation/pages/sales_list_page.dart';
 import 'package:sum_warehouse/features/requests/presentation/pages/requests_list_page.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouses_list_page.dart';
@@ -389,8 +388,6 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     switch (section) {
       case 'dashboard':
         return 'Инфопанель';
-      case 'products':
-        return 'Поступление товаров';
       case 'warehouses':
         return 'Склад';
       case 'sales':
@@ -414,10 +411,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     switch (section) {
       case 'dashboard':
         return ResponsiveDashboardContent(
-          onShowAllProductsPressed: () => context.go('/products'),
+          onShowAllProductsPressed: () => context.go('/inventory'),
         );
-      case 'products':
-        return const ProductsListPage();
       case 'warehouses':
         return const WarehousesListPage();
       case 'sales':
@@ -434,7 +429,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const InventoryTabsPage();
       default:
         return ResponsiveDashboardContent(
-          onShowAllProductsPressed: () => context.go('/products'),
+          onShowAllProductsPressed: () => context.go('/inventory'),
         );
     }
   }
@@ -461,7 +456,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     final role = _getRoleCode(user.role);
     // Админ видит инфопанель по умолчанию, остальные — первый доступный раздел
     if (role == 'admin') return 'dashboard';
-    // Для sales менеджера убираем 'products' и 'receipts', открываем 'inventory' если доступен
+    // Для sales менеджера открываем 'inventory' если доступен
     if (role == 'sales_manager') {
       if (_hasAccess(user, ['admin', 'operator', 'warehouse_worker', 'sales_manager'])) return 'inventory';
       return 'requests';

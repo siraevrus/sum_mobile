@@ -111,11 +111,6 @@ GoRouter router(RouterRef ref) {
         builder: (context, state) => const ResponsiveDashboardPage(),
       ),
       GoRoute(
-        path: '/products',
-        name: 'products',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products'),
-      ),
-      GoRoute(
         path: '/warehouses',
         name: 'warehouses',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'warehouses'),
