@@ -61,7 +61,7 @@ ProductInflowModel _productInflowModelFromJsonSafe(Map<String, dynamic> json) {
     producerId: json['producer_id'] as int?,
     arrivalDate: json['arrival_date'] as String?,
     status: json['status'] as String,
-    isActive: json['is_active'] as bool? ?? true,
+    isActive: (json['is_active'] as bool?) ?? true,
     shippingLocation: json['shipping_location'] as String?,
     shippingDate: json['shipping_date'] as String?,
     expectedArrivalDate: json['expected_arrival_date'] as String?,

@@ -25,6 +25,12 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
   Future<PaginatedResponse<ProductInflowModel>> getProducts([ProductInflowFilters? filters]) async {
     try {
       final queryParams = filters?.toQueryParams() ?? {'page': 1, 'per_page': 15};
+      
+      // Добавляем статус in_stock по умолчанию для раздела "Поступление товаров"
+      if (!queryParams.containsKey('status')) {
+        queryParams['status'] = 'in_stock';
+      }
+      
       // Добавляем include для получения связанных объектов
       queryParams['include'] = 'template,warehouse,creator,producer';
       

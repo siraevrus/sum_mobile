@@ -79,7 +79,6 @@ class ProductsInflow extends _$ProductsInflow {
   Future<void> searchProducts(String query) async {
     final filters = ProductInflowFilters(
       search: query.isNotEmpty ? query : null,
-      status: 'in_stock', // Фильтруем только товары со статусом in_stock
       page: 1,
     );
     await loadProducts(filters);
@@ -87,8 +86,7 @@ class ProductsInflow extends _$ProductsInflow {
 
   /// Фильтрация товаров
   Future<void> filterProducts(ProductInflowFilters filters) async {
-    final filteredFilters = filters.copyWith(status: 'in_stock');
-    await loadProducts(filteredFilters);
+    await loadProducts(filters);
   }
 
   /// Создание товара

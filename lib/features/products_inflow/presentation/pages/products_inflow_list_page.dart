@@ -200,7 +200,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       search: _searchQuery.isNotEmpty ? _searchQuery : null,
       warehouseId: _selectedWarehouseId,
       producerId: _selectedProducerId,
-      status: 'in_stock',
       page: 1,
     );
     ref.read(productsInflowProvider.notifier).filterProducts(filters);
