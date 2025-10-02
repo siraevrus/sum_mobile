@@ -46,6 +46,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
     String? search,
   }) async {
     try {
+      print('🔵 WarehousesRemoteDataSource: getWarehouses вызван с параметрами: page=$page, perPage=$perPage');
       final queryParams = <String, dynamic>{
         'page': page,
         'per_page': perPage,
@@ -54,8 +55,10 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
       if (companyId != null) queryParams['company_id'] = companyId;
       if (isActive != null) queryParams['is_active'] = isActive;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-
+      
+      print('🔵 WarehousesRemoteDataSource: Отправляем запрос на /warehouses с параметрами: $queryParams');
       final response = await _dio.get('/warehouses', queryParameters: queryParams);
+      print('🔵 WarehousesRemoteDataSource: Получен ответ: ${response.statusCode}');
       
       return PaginatedResponse<WarehouseModel>.fromJson(
         response.data,

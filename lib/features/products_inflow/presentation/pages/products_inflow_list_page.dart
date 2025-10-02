@@ -56,11 +56,18 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          print('🔵 ProductsInflowListPage: Нажата кнопка + (добавить товар)');
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => const ProductInflowFormPage(),
+              builder: (context) {
+                print('🔵 ProductsInflowListPage: Переход к ProductInflowFormPage');
+                return const ProductInflowFormPage();
+              },
             ),
-          ).then((_) => setState(() {}));
+          ).then((_) {
+            print('🔵 ProductsInflowListPage: Возврат из ProductInflowFormPage, обновляем список');
+            setState(() {});
+          });
         },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

@@ -29,11 +29,16 @@ class ProducersNotifier extends StateNotifier<AsyncValue<List<ProducerEntity>>> 
   ProducersNotifier(this._repository) : super(const AsyncValue.loading());
 
   Future<void> loadProducers() async {
+    print('🔵 ProducersNotifier: loadProducers вызван');
     state = const AsyncValue.loading();
     try {
+      print('🔵 ProducersNotifier: Загружаем производителей из repository...');
       final producers = await _repository.getProducers();
+      print('🔵 ProducersNotifier: Производители загружены: ${producers.length} шт');
       state = AsyncValue.data(producers);
     } catch (error, stackTrace) {
+      print('🔴 ProducersNotifier: Ошибка загрузки производителей: $error');
+      print('🔴 ProducersNotifier: Stack trace: $stackTrace');
       state = AsyncValue.error(error, stackTrace);
     }
   }

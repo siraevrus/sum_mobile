@@ -50,8 +50,10 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   @override
   void initState() {
     super.initState();
+    print('🔵 ProductInflowFormPage: initState начат');
     _initializeForm();
     _loadData();
+    print('🔵 ProductInflowFormPage: initState завершен');
   }
 
   @override
@@ -78,22 +80,30 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   }
 
   Future<void> _loadData() async {
+    print('🔵 ProductInflowFormPage: _loadData начат');
     setState(() => _isLoading = true);
 
     try {
       // Загружаем склады
+      print('🔵 ProductInflowFormPage: Загружаем склады...');
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
+      print('🔵 ProductInflowFormPage: Склады загружены: ${_warehouses.length} шт');
 
       // Загружаем производителей
+      print('🔵 ProductInflowFormPage: Загружаем производителей...');
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
         _producers = (producersState.value ?? []).cast<ProducerModel>();
+        print('🔵 ProductInflowFormPage: Производители загружены: ${_producers.length} шт');
+      } else {
+        print('🔵 ProductInflowFormPage: Производители не загружены');
       }
 
       // Загружаем шаблоны товаров
+      print('🔵 ProductInflowFormPage: Загружаем шаблоны товаров...');
       final productsInflowDataSource = ref.read(productsInflowRemoteDataSourceProvider);
       final templatesResponse = await productsInflowDataSource.getProducts(ProductInflowFilters(perPage: 100));
       _productTemplates = templatesResponse.data.map((e) => ProductTemplateReference(
@@ -101,10 +111,13 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         name: e.template?.name, 
         unit: e.template?.unit
       )).toList();
+      print('🔵 ProductInflowFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
 
       setState(() {});
+      print('🔵 ProductInflowFormPage: setState вызван, _isLoading = false');
     } catch (e) {
-      print('Ошибка загрузки данных: $e');
+      print('🔴 ProductInflowFormPage: Ошибка загрузки данных: $e');
+      print('🔴 ProductInflowFormPage: Stack trace: ${StackTrace.current}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка загрузки данных: $e')),
@@ -112,6 +125,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       }
     } finally {
       setState(() => _isLoading = false);
+      print('🔵 ProductInflowFormPage: _loadData завершен, _isLoading = false');
     }
   }
 
@@ -147,6 +161,11 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('🔵 ProductInflowFormPage: build вызван, _isLoading = $_isLoading');
+    print('🔵 ProductInflowFormPage: _warehouses.length = ${_warehouses.length}');
+    print('🔵 ProductInflowFormPage: _producers.length = ${_producers.length}');
+    print('🔵 ProductInflowFormPage: _productTemplates.length = ${_productTemplates.length}');
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редактирование товара' : 'Создание товара'),
