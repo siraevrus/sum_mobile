@@ -158,22 +158,6 @@ class ModernSidebar extends StatelessWidget {
                     section: 'producers',
                     isSelected: selectedSection == 'producers',
                   ),
-                // Поступление товаров - админ и оператор (скрываем для роли sales)
-                if (_hasAccess(['admin', 'operator']))
-                  _buildMenuItem(
-                    icon: Icons.inventory,
-                    title: 'Поступление товаров',
-                    section: 'products',
-                    isSelected: selectedSection == 'products',
-                  ),
-                // Товары в пути - админ, оператор, работник склада, менеджер по продажам
-                if (_hasAccess(['admin', 'operator', 'warehouse_worker', 'sales_manager']))
-                  _buildMenuItem(
-                    icon: Icons.local_shipping,
-                    title: 'Товары В Пути',
-                    section: 'receipts',
-                    isSelected: selectedSection == 'receipts',
-                  ),
                 // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                 if (_hasAccess(['admin', 'warehouse_worker', 'sales_manager']))
                   _buildMenuItem(
@@ -197,14 +181,6 @@ class ModernSidebar extends StatelessWidget {
                     title: 'Реализация',
                     section: 'sales',
                     isSelected: selectedSection == 'sales',
-                  ),
-                // Приемка - админ, работник склада
-                if (_hasAccess(['admin', 'warehouse_worker']))
-                  _buildMenuItem(
-                    icon: Icons.inbox,
-                    title: 'Приемка',
-                    section: 'reception',
-                    isSelected: selectedSection == 'reception',
                   ),
               ],
             ),

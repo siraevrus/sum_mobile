@@ -151,34 +151,9 @@ GoRouter router(RouterRef ref) {
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'inventory'),
       ),
       GoRoute(
-        path: '/products-in-transit',
-        name: 'products-in-transit',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
-      ),
-      GoRoute(
-        path: '/product-in-transit',
-        name: 'product-in-transit',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
-      ),
-      GoRoute(
         path: '/debug-products-api',
         name: 'debug-products-api',
         builder: (context, state) => const DebugProductsApiPage(),
-      ),
-      GoRoute(
-        path: '/reception',
-        name: 'reception',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'reception'),
-      ),
-      GoRoute(
-        path: '/receipts',
-        name: 'receipts',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'receipts'),
-      ),
-      GoRoute(
-        path: '/receipts-for-receipt',
-        name: 'receipts-for-receipt',
-        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'receipts-for-receipt'),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
