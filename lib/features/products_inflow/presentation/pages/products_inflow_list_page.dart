@@ -348,7 +348,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                   children: [
                     Expanded(
                       child: Text(
-                        product.name,
+                        product.name ?? 'Без названия',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

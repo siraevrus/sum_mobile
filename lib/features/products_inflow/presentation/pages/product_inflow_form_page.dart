@@ -69,7 +69,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   void _initializeForm() {
     if (_isEditing) {
       final product = widget.product!;
-      _nameController.text = product.name;
+      _nameController.text = product.name ?? '';
       _descriptionController.text = product.description ?? '';
       _quantityController.text = product.quantity;
       _calculatedVolumeController.text = product.calculatedVolume ?? '';

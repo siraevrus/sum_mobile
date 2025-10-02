@@ -16,7 +16,7 @@ class ProductInflowDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name),
+        title: Text(product.name ?? 'Без названия'),
         actions: [
           IconButton(
             onPressed: () {
@@ -40,7 +40,7 @@ class ProductInflowDetailPage extends ConsumerWidget {
             _buildSection(
               title: 'Основная информация',
               children: [
-                _buildInfoRow('Название', product.name),
+                _buildInfoRow('Название', product.name ?? 'Без названия'),
                 if (product.description != null && product.description!.isNotEmpty)
                   _buildInfoRow('Описание', product.description!),
                 _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
