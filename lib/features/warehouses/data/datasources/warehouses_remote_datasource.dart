@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 import 'package:sum_warehouse/core/error/app_exceptions.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
@@ -331,29 +332,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
 
   /// Обработка ошибок
   AppException _handleError(dynamic error) {
-    if (error is DioException) {
-      if (error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.sendTimeout ||
-          error.type == DioExceptionType.receiveTimeout) {
-        return NetworkException('Превышено время ожидания сети.');
-      } else if (error.type == DioExceptionType.connectionError) {
-        return NetworkException('Ошибка подключения к сети.');
-      } else if (error.response != null) {
-        final statusCode = error.response!.statusCode;
-        final message = error.response!.data['message'] ?? 'Произошла ошибка на сервере.';
-        if (statusCode == 404) {
-          return ServerException('Склад не найден.');
-        } else if (statusCode == 422) {
-          return ValidationException('Ошибка валидации: $message', 
-            error.response!.data['errors'] ?? {});
-        } else if (statusCode == 403) {
-          return ServerException('Нет доступа к данному складу.');
-        } else {
-          return ServerException(message);
-        }
-      }
-    }
-    return UnknownException(error.toString());
+    return ErrorHandler.handleError(error);
   }
 }
 

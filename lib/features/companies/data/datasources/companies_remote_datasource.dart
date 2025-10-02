@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 
@@ -200,9 +201,9 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
   Future<void> archiveCompany(int id) async {
     try {
       await _dio.post('/companies/$id/archive');
-    } on DioException catch (e) {
-      print('⚠️ API /companies/$id/archive не работает: ${e.response?.statusCode} - ${e.message}.');
-      throw Exception('Ошибка архивирования компании: ${e.message}');
+    } catch (e) {
+      print('⚠️ API /companies/$id/archive не работает');
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -210,9 +211,9 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
   Future<void> restoreCompany(int id) async {
     try {
       await _dio.post('/companies/$id/restore');
-    } on DioException catch (e) {
-      print('⚠️ API /companies/$id/restore не работает: ${e.response?.statusCode} - ${e.message}.');
-      throw Exception('Ошибка восстановления компании: ${e.message}');
+    } catch (e) {
+      print('⚠️ API /companies/$id/restore не работает');
+      throw ErrorHandler.handleError(e);
     }
   }
   

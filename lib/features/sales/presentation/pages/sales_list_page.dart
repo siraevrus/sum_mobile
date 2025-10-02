@@ -61,11 +61,11 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
                 const SizedBox(width: 16),
                 IconButton(
                   onPressed: () => setState(() => _showFilters = !_showFilters),
-                  icon: Icon(
-                    _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                  icon: const Icon(
+                    Icons.filter_list,
                     color: AppColors.primary,
                   ),
-                  tooltip: _showFilters ? 'Скрыть фильтры' : 'Показать фильтры',
+                  tooltip: 'Фильтры',
                 ),
               ],
             ),

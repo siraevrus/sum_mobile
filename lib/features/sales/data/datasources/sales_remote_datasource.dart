@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 import 'package:sum_warehouse/core/error/app_exceptions.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
 import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 
@@ -218,48 +219,7 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
 
   /// Обработка ошибок
   AppException _handleError(dynamic error) {
-    if (error is DioException) {
-      if (error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.sendTimeout ||
-          error.type == DioExceptionType.receiveTimeout) {
-        return NetworkException('Превышено время ожидания сети.');
-      } else if (error.type == DioExceptionType.connectionError) {
-        return NetworkException('Ошибка подключения к сети.');
-      } else if (error.response != null) {
-        final statusCode = error.response!.statusCode;
-        final message = error.response!.data['message'] ?? 
-            'Произошла ошибка на сервере.';
-        
-        if (statusCode == 404) {
-          return ServerException('Продажа не найдена.');
-        } else if (statusCode == 422) {
-          // Normalize errors to Map<String, List<String>>
-          final rawErrors = error.response!.data['errors'];
-          final Map<String, List<String>> normalizedErrors = {};
-          
-          if (rawErrors is Map) {
-            rawErrors.forEach((key, value) {
-              if (value is List) {
-                normalizedErrors[key.toString()] = 
-                    value.map((e) => e.toString()).toList();
-              } else if (value == null) {
-                normalizedErrors[key.toString()] = [];
-              } else {
-                normalizedErrors[key.toString()] = [value.toString()];
-              }
-            });
-          }
-
-          return ValidationException('Ошибка валидации: $message', 
-              normalizedErrors);
-        } else if (statusCode == 400 && message.contains('остаток')) {
-          return ServerException('Недостаточный остаток товара на складе.');
-        } else {
-          return ServerException(message);
-        }
-      }
-    }
-    return UnknownException(error.toString());
+    return ErrorHandler.handleError(error);
   }
 }
 

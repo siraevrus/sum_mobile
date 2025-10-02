@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/features/auth/data/models/user_model.dart';
-import 'package:sum_warehouse/shared/models/api_response_model.dart';
 
 part 'auth_remote_datasource.g.dart';
 
@@ -56,31 +56,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🟢 AuthRemoteDataSource: Получен ответ от API: ${response.statusCode}');
       
       return AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка DIO: ${e.response?.statusCode} - ${e.message}');
-      
-      if (e.response?.statusCode == 401) {
-        final errorMessage = e.response?.data['message'] ?? 'Неверные учетные данные';
-        throw AuthException(errorMessage);
-      }
-      
-      if (e.response?.statusCode == 422) {
-        final errorData = e.response?.data;
-        if (errorData != null) {
-          final apiError = ApiErrorModel.fromJson(errorData);
-          throw ValidationException(
-            apiError.message,
-            apiError.errors ?? {},
-          );
-        }
-      }
-      
-      throw NetworkException(
-        'Ошибка сети: ${e.message}',
-      );
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Неожиданная ошибка: $e');
-      throw NetworkException('Неожиданная ошибка: $e');
+      print('🔴 AuthRemoteDataSource: Ошибка: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -110,17 +88,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🟢 AuthRemoteDataSource: Получены данные пользователя');
       
       return UserModel.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка получения пользователя: ${e.response?.statusCode} - ${e.message}');
-      
-      if (e.response?.statusCode == 401) {
-        throw AuthException('Токен недействителен');
-      }
-      
-      throw NetworkException('Ошибка получения пользователя: ${e.message}');
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Неожиданная ошибка получения пользователя: $e');
-      throw NetworkException('Неожиданная ошибка: $e');
+      print('🔴 AuthRemoteDataSource: Ошибка получения пользователя: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -149,18 +119,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       // API возвращает объект с message и user
       final responseData = response.data as Map<String, dynamic>;
       return UserModel.fromJson(responseData['user'] as Map<String, dynamic>);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 422) {
-        final errorData = e.response?.data;
-        if (errorData != null) {
-          final apiError = ApiErrorModel.fromJson(errorData);
-          throw ValidationException(
-            apiError.message,
-            apiError.errors ?? {},
-          );
-        }
-      }
-      throw NetworkException('Ошибка обновления профиля: ${e.message}');
+    } catch (e) {
+      print('🔴 AuthRemoteDataSource: Ошибка обновления профиля: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 }
@@ -171,31 +132,3 @@ AuthRemoteDataSource authRemoteDataSource(AuthRemoteDataSourceRef ref) {
   final dio = ref.watch(dioClientProvider);
   return AuthRemoteDataSourceImpl(dio);
 }
-
-/// Кастомные исключения
-class AuthException implements Exception {
-  final String message;
-  const AuthException(this.message);
-  
-  @override
-  String toString() => 'AuthException: $message';
-}
-
-class NetworkException implements Exception {
-  final String message;
-  const NetworkException(this.message);
-  
-  @override
-  String toString() => 'NetworkException: $message';
-}
-
-class ValidationException implements Exception {
-  final String message;
-  final Map<String, List<String>> errors;
-  const ValidationException(this.message, this.errors);
-  
-  @override
-  String toString() => 'ValidationException: $message';
-}
-
-

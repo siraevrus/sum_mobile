@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/error/app_exceptions.dart';
+import '../../../../core/error/error_handler.dart';
 import '../../../../shared/models/inventory_models.dart';
 import '../../../../shared/models/product_model.dart';
 
@@ -155,33 +156,7 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   AppException _handleError(dynamic error) {
-    if (error is DioException) {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return const NetworkException('Превышено время ожидания');
-        case DioExceptionType.badResponse:
-          final statusCode = error.response?.statusCode;
-          final message = error.response?.data?['message'] ?? 'Ошибка сервера';
-          
-          if (statusCode == 401) {
-            return const AuthException('Требуется авторизация');
-          } else if (statusCode == 403) {
-            return const AuthException('Доступ запрещен');
-          } else if (statusCode == 404) {
-            return const ServerException('Ресурс не найден', 404);
-          } else {
-            return ServerException('$statusCode: $message', statusCode);
-          }
-        case DioExceptionType.cancel:
-          return const NetworkException('Запрос отменен');
-        default:
-          return const NetworkException('Ошибка сети');
-      }
-    }
-    
-    return UnknownException(error.toString());
+    return ErrorHandler.handleError(error);
   }
 }
 

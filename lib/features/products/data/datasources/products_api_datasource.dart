@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/product_model.dart';
 import 'package:sum_warehouse/shared/models/popular_products_model.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
@@ -229,33 +230,7 @@ class ProductsApiDataSourceImpl implements ProductsApiDataSource {
 
   /// Обработка ошибок API
   Exception _handleError(dynamic error) {
-    if (error is DioException) {
-      switch (error.response?.statusCode) {
-        case 401:
-          return Exception('Необходима авторизация');
-        case 403:
-          return Exception('Доступ запрещен');
-        case 404:
-          return Exception('Товар не найден');
-        case 422:
-          final errorData = error.response?.data;
-          if (errorData != null) {
-            try {
-              final apiError = ApiErrorModel.fromJson(errorData);
-              return Exception(apiError.message);
-            } catch (_) {
-              return Exception('Ошибка валидации данных');
-            }
-          }
-          return Exception('Ошибка валидации данных');
-        case 500:
-          return Exception('Внутренняя ошибка сервера');
-        default:
-          return Exception('Ошибка сети: ${error.message}');
-      }
-    }
-    
-    return Exception('Неизвестная ошибка: $error');
+    return ErrorHandler.handleError(error);
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/dashboard_stats.dart';
 
 part 'dashboard_remote_datasource.g.dart';
@@ -63,13 +64,9 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         latestSales: latestSalesList,
         lastUpdated: DateTime.now(),
       );
-    } on DioException catch (e) {
-      print('🔴 Dashboard: Ошибка получения статистики: ${e.response?.statusCode} - ${e.message}');
-      print('🔴 Response data: ${e.response?.data}');
-      throw Exception('Нет данных статистики: ${e.message}');
     } catch (e) {
-      print('🔴 Dashboard: Общая ошибка: $e');
-      throw Exception('Ошибка обработки данных: $e');
+      print('🔴 Dashboard: Ошибка получения статистики: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -93,8 +90,8 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           occupancyRate: 0.0,  // Пока нет данных в API
         );
       }).toList();
-    } on DioException catch (e) {
-      throw Exception('Нет данных о складах');
+    } catch (e) {
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -129,8 +126,8 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         amount: entry.value,
         quantity: 0, // TODO: добавить количество если будет в API
       )).toList();
-    } on DioException catch (e) {
-      throw Exception('Нет данных о продажах');
+    } catch (e) {
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -154,8 +151,8 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           currentStock: product['quantity'] ?? 0,
         );
       }).toList();
-    } on DioException catch (e) {
-      throw Exception('Нет данных о топ товарах');
+    } catch (e) {
+      throw ErrorHandler.handleError(e);
     }
   }
   
@@ -183,8 +180,8 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           status: 'success',
         );
       }).toList();
-    } on DioException catch (e) {
-      throw Exception('Нет данных о последних активностях');
+    } catch (e) {
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -300,7 +297,7 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       );
     } catch (e) {
       print('🔴 Revenue: Общая ошибка: $e');
-      throw Exception('Ошибка обработки данных о выручке: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
   

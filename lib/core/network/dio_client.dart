@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sum_warehouse/core/constants/app_constants.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/features/auth/data/datasources/auth_local_datasource.dart';
 
 part 'dio_client.g.dart';
@@ -29,6 +30,7 @@ Dio dioClient(DioClientRef ref) {
       compact: true,
     ),
     AuthInterceptor(ref),
+    ErrorHandlerInterceptor(),
   ]);
   
   return dio;
@@ -80,5 +82,28 @@ class AuthInterceptor extends Interceptor {
     } catch (e) {
       // Игнорируем ошибки очистки
     }
+  }
+}
+
+/// Interceptor для обработки сетевых ошибок
+class ErrorHandlerInterceptor extends Interceptor {
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    // Логируем ошибку для отладки
+    print('🔴 Network Error: ${err.type} - ${err.message}');
+    
+    // Преобразуем DioException в AppException через ErrorHandler
+    final appException = ErrorHandler.handleError(err);
+    
+    // Создаем новую DioException с понятным сообщением
+    final newError = DioException(
+      requestOptions: err.requestOptions,
+      response: err.response,
+      type: err.type,
+      error: appException,
+      message: appException.message,
+    );
+    
+    handler.next(newError);
   }
 }

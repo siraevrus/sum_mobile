@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:sum_warehouse/core/error/error_handler.dart';
 import 'package:sum_warehouse/shared/models/producer_model.dart';
 
 abstract class ProducersRemoteDataSource {
@@ -28,7 +29,7 @@ class ProducersRemoteDataSourceImpl implements ProducersRemoteDataSource {
         throw Exception('Failed to load producers: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error loading producers: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -46,7 +47,7 @@ class ProducersRemoteDataSourceImpl implements ProducersRemoteDataSource {
         throw Exception('Failed to load producer: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error loading producer: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -68,7 +69,7 @@ class ProducersRemoteDataSourceImpl implements ProducersRemoteDataSource {
         throw Exception('Failed to create producer: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error creating producer: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -92,7 +93,7 @@ class ProducersRemoteDataSourceImpl implements ProducersRemoteDataSource {
         throw Exception('Failed to update producer: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error updating producer: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -109,7 +110,7 @@ class ProducersRemoteDataSourceImpl implements ProducersRemoteDataSource {
         throw Exception('Failed to delete producer: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error deleting producer: $e');
+      throw ErrorHandler.handleError(e);
     }
   }
 }

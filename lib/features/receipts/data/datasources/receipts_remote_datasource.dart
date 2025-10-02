@@ -4,6 +4,7 @@ import '../models/receipt_model.dart';
 import '../models/receipt_input_model.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/error/app_exceptions.dart';
+import '../../../../core/error/error_handler.dart';
 
 part 'receipts_remote_datasource.g.dart';
 
@@ -259,40 +260,7 @@ class ReceiptsRemoteDataSourceImpl implements ReceiptsRemoteDataSource {
   }
 
   AppException _handleError(dynamic error) {
-    if (error is DioException) {
-      if (error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.sendTimeout ||
-          error.type == DioExceptionType.receiveTimeout) {
-        return NetworkException('Превышено время ожидания сети.');
-      } else if (error.type == DioExceptionType.connectionError) {
-        return NetworkException('Ошибка подключения к сети.');
-      } else if (error.response != null) {
-        final statusCode = error.response!.statusCode;
-        final responseData = error.response!.data;
-        String message = 'Произошла ошибка на сервере.';
-        
-        if (responseData is Map<String, dynamic>) {
-          message = responseData['message'] ?? message;
-        }
-        
-        switch (statusCode) {
-          case 401:
-            return ServerException('Необходима авторизация. Попробуйте войти в систему снова.');
-          case 403:
-            return ServerException('Нет доступа к этому ресурсу.');
-          case 404:
-            return ServerException('Ресурс не найден. Возможно, API не поддерживает этот эндпоинт.');
-          case 422:
-            final errors = responseData is Map<String, dynamic> ? responseData['errors'] : {};
-            return ValidationException('Ошибка валидации: $message', errors);
-          case 500:
-            return ServerException('Внутренняя ошибка сервера.');
-          default:
-            return ServerException(message);
-        }
-      }
-    }
-    return UnknownException(error.toString());
+    return ErrorHandler.handleError(error);
   }
 }
 
