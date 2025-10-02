@@ -26,7 +26,7 @@ class ProductsInTransitError extends ProductsInTransitState {
   ProductsInTransitError(this.message);
 }
 
-/// Provider для товаров в пути (статус for_receipt)
+/// Provider для товаров в пути (статус in_stock)
 @riverpod
 class ProductsInTransit extends _$ProductsInTransit {
   @override
@@ -46,7 +46,7 @@ class ProductsInTransit extends _$ProductsInTransit {
       
       // Создаем фильтры для товаров в пути
       final transitFilters = ProductFilters(
-        status: 'for_receipt', // Фильтруем только товары со статусом for_receipt
+        status: 'in_stock', // Фильтруем только товары со статусом in_stock
         search: filters?.search,
         warehouseId: filters?.warehouseId,
         templateId: filters?.templateId,
@@ -100,7 +100,7 @@ class ProductsInTransit extends _$ProductsInTransit {
   Future<void> searchProducts(String query) async {
     final filters = ProductFilters(
       search: query.isNotEmpty ? query : null,
-      status: 'for_receipt',
+      status: 'in_stock',
       page: 1,
     );
     await loadProductsInTransit(filters);
@@ -108,7 +108,7 @@ class ProductsInTransit extends _$ProductsInTransit {
 
   /// Фильтрация товаров в пути
   Future<void> filterProducts(ProductFilters filters) async {
-    final transitFilters = filters.copyWith(status: 'for_receipt');
+    final transitFilters = filters.copyWith(status: 'in_stock');
     await loadProductsInTransit(transitFilters);
   }
 
@@ -120,8 +120,8 @@ class ProductsInTransit extends _$ProductsInTransit {
       
       final apiDataSource = ref.read(productsApiDataSourceProvider);
       
-      // Убеждаемся, что статус установлен в for_receipt
-      final transitRequest = request.copyWith(status: 'for_receipt');
+      // Убеждаемся, что статус установлен в in_stock
+      final transitRequest = request.copyWith(status: 'in_stock');
       
       final newProduct = await apiDataSource.createProduct(transitRequest);
       

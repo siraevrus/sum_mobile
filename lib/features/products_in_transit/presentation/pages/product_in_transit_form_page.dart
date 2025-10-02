@@ -1424,7 +1424,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           shippingDate: _selectedShippingDate,
           expectedArrivalDate: _selectedExpectedArrivalDate,
           isActive: _isActive,
-          status: 'for_receipt',
+          status: 'in_stock',
           calculatedVolume: volumeToSend, // Передаем рассчитанный объем
         );
 
@@ -1463,7 +1463,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           shippingDate: _selectedShippingDate,
           expectedArrivalDate: _selectedExpectedArrivalDate,
           isActive: _isActive,
-          status: 'for_receipt',
+          status: 'in_stock',
           calculatedVolume: volumeToSend, // Передаем рассчитанный объем
         );
 
