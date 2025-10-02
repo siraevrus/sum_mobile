@@ -57,8 +57,7 @@ class CreateSale extends _$CreateSale {
     state = result;
     
     if (result.hasValue) {
-      // Обновляем список продаж после создания
-      ref.invalidate(salesListProvider);
+      // Не инвалидируем здесь - это будет сделано в UI
       return result.value!;
     } else {
       throw result.error!;
@@ -82,9 +81,7 @@ class UpdateSale extends _$UpdateSale {
     state = result;
     
     if (result.hasValue) {
-      // Обновляем список продаж и детали после обновления
-      ref.invalidate(salesListProvider);
-      ref.invalidate(saleDetailProvider);
+      // Не инвалидируем здесь - это будет сделано в UI
       return result.value!;
     } else {
       throw result.error!;

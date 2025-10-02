@@ -35,6 +35,11 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           Expanded(child: _buildSalesList()),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToCreateSale,
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
@@ -175,7 +180,12 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       MaterialPageRoute(
         builder: (context) => const SaleFormPage(),
       ),
-    ).then((_) => ref.invalidate(salesListProvider));
+    ).then((result) {
+      // Обновляем список только если форма была закрыта с результатом
+      if (result == true || result == null) {
+        ref.invalidate(salesListProvider);
+      }
+    });
   }
 
   void _navigateToSaleDetail(SaleModel sale) {
@@ -194,7 +204,12 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       MaterialPageRoute(
         builder: (context) => SaleFormPage(sale: sale),
       ),
-    ).then((_) => ref.invalidate(salesListProvider));
+    ).then((result) {
+      // Обновляем список только если форма была закрыта с результатом
+      if (result == true || result == null) {
+        ref.invalidate(salesListProvider);
+      }
+    });
   }
 
   Future<void> _cancelSale(SaleModel sale) async {
