@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/products_inflow/data/datasources/products
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/features/producers/domain/entities/producer_entity.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
@@ -96,7 +97,15 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
-        _producers = (producersState.value ?? []).cast<ProducerModel>();
+        // Конвертируем ProducerEntity в ProducerModel
+        _producers = (producersState.value ?? []).map((entity) => ProducerModel(
+          id: entity.id,
+          name: entity.name,
+          region: entity.region,
+          productsCount: entity.productsCount,
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt,
+        )).toList();
         print('🔵 ProductInflowFormPage: Производители загружены: ${_producers.length} шт');
       } else {
         print('🔵 ProductInflowFormPage: Производители не загружены');
