@@ -4,6 +4,8 @@ import 'package:sum_warehouse/features/products_inflow/data/models/product_inflo
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_detail_page.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
+import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 
@@ -152,10 +154,16 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     filled: true,
                     fillColor: Colors.grey.shade50,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Все склады')),
-                    DropdownMenuItem(value: 1, child: Text('Основной склад')),
-                    DropdownMenuItem(value: 2, child: Text('Склад №2')),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Все склады')),
+                    ...ref.watch(warehousesProvider).when(
+                      data: (warehouses) => warehouses.map((warehouse) => DropdownMenuItem(
+                        value: warehouse.id,
+                        child: Text(warehouse.name),
+                      )).toList(),
+                      loading: () => [],
+                      error: (e, st) => [],
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -175,10 +183,16 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     filled: true,
                     fillColor: Colors.grey.shade50,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Все производители')),
-                    DropdownMenuItem(value: 1, child: Text('ООО Лесопилка')),
-                    DropdownMenuItem(value: 2, child: Text('Лесозавод №1')),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Все производители')),
+                    ...ref.watch(producersProvider).when(
+                      data: (producers) => producers.map((producer) => DropdownMenuItem(
+                        value: producer.id,
+                        child: Text(producer.name),
+                      )).toList(),
+                      loading: () => [],
+                      error: (e, st) => [],
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
