@@ -247,24 +247,24 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
         Text(
           'Количество: ${request.quantity}',
           style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFFBBBBBB),
+            fontSize: 14,
+            color: Colors.black,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
           'Шаблон: ${request.productTemplate?.name ?? 'ID ${request.productTemplate?.id}'}',
           style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFFBBBBBB),
+            fontSize: 14,
+            color: Colors.black,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
           'Склад: ${request.warehouse?.name ?? 'ID ${request.warehouse?.id}'}',
           style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFFBBBBBB),
+            fontSize: 14,
+            color: Colors.black,
             fontWeight: FontWeight.w500,
           ),
         ),

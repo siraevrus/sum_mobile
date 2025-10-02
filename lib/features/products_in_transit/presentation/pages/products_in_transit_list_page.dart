@@ -658,8 +658,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
             child: Text(
               '$label:',
               style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFFBBBBBB),
+                fontSize: 14,
+                color: Colors.black,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -668,7 +668,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),

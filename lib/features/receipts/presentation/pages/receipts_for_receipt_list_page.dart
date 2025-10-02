@@ -201,8 +201,8 @@ class _ReceiptsForReceiptListPageState extends ConsumerState<ReceiptsForReceiptL
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFFBBBBBB),
+            fontSize: 14,
+            color: Colors.black,
             fontWeight: FontWeight.w500,
           ),
         ),

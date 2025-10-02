@@ -539,9 +539,9 @@ class _ReceiptDetailPageState extends ConsumerState<ReceiptDetailPage> {
             child: Text(
               '$label:',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFFBBBBBB),
+                color: Colors.black,
               ),
             ),
           ),

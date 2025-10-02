@@ -368,8 +368,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
               '$label:',
               style: const TextStyle(
                 fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: Color(0xFFBBBBBB),
+                fontSize: 14,
+                color: Colors.black,
               ),
             ),
           ),
