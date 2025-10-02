@@ -288,7 +288,8 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
             itemBuilder: (context, index) {
               if (index == products.data.length) {
                 // Показать индикатор загрузки если есть следующая страница
-                final hasNextPage = products.pagination.currentPage < products.pagination.lastPage;
+                final hasNextPage = products.pagination?.currentPage != null && 
+                    products.pagination!.currentPage < products.pagination!.lastPage;
                 
                 if (hasNextPage) {
                   // Загружаем следующую страницу

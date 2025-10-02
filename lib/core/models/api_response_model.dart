@@ -26,7 +26,7 @@ class PaginatedResponse<T> with _$PaginatedResponse<T> {
   const factory PaginatedResponse({
     bool? success,
     required List<T> data,
-    required PaginationModel pagination,
+    PaginationModel? pagination,
     String? message,
   }) = _PaginatedResponse<T>;
 

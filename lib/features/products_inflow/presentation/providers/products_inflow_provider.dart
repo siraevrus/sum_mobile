@@ -47,8 +47,8 @@ class ProductsInflow extends _$ProductsInflow {
     if (state is! ProductsInflowLoaded) return;
     
     final currentState = state as ProductsInflowLoaded;
-    final currentPage = currentState.products.pagination.currentPage;
-    final lastPage = currentState.products.pagination.lastPage;
+    final currentPage = currentState.products.pagination?.currentPage ?? 1;
+    final lastPage = currentState.products.pagination?.lastPage ?? 1;
     
     if (currentPage >= lastPage) return;
     
