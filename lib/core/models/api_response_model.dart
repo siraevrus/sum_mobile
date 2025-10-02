@@ -24,7 +24,7 @@ class ApiResponse<T> with _$ApiResponse<T> {
 @Freezed(genericArgumentFactories: true)
 class PaginatedResponse<T> with _$PaginatedResponse<T> {
   const factory PaginatedResponse({
-    required bool success,
+    bool? success,
     required List<T> data,
     required PaginationModel pagination,
     String? message,
