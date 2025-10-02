@@ -190,7 +190,7 @@ class Auth extends _$Auth {
       await localDataSource.removeToken();
       await localDataSource.removeUserData();
       
-      // Вызываем logout на сервере (в dev режиме - мок)
+      // Вызываем logout на сервере
       final logoutUseCase = ref.read(logoutUseCaseProvider);
       await logoutUseCase.call();
       

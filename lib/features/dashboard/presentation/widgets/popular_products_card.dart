@@ -278,38 +278,4 @@ class PopularProductsCard extends ConsumerWidget {
     return amount.toStringAsFixed(0);
   }
 
-  List<PopularProductModel> _getMockPopularProductsApi() {
-    return [
-      const PopularProductModel(
-        id: 1,
-        totalSales: 45,
-        totalRevenue: 67500.00,
-        name: 'Кирпич керамический (500 шт.)',
-      ),
-      const PopularProductModel(
-        id: 2,
-        totalSales: 38,
-        totalRevenue: 45600.00,
-        name: 'Цемент М400 (25 кг)',
-      ),
-      const PopularProductModel(
-        id: 3,
-        totalSales: 32,
-        totalRevenue: 89600.00,
-        name: 'Профиль металлический',
-      ),
-      const PopularProductModel(
-        id: 4,
-        totalSales: 28,
-        totalRevenue: 123400.00,
-        name: 'Плитка керамическая',
-      ),
-      const PopularProductModel(
-        id: 5,
-        totalSales: 24,
-        totalRevenue: 156800.00,
-        name: 'Арматура стальная',
-      ),
-    ];
-  }
 }

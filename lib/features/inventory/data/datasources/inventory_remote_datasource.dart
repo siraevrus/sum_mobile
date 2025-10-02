@@ -90,11 +90,11 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       return [];
     } on DioException catch (e) {
       print('⚠️ API /stocks не работает: ${e.response?.statusCode} - ${e.message}');
-      // Возвращаем mock данные для тестирования
-      return _getMockStocks();
+      // Обрабатываем ошибку
+      throw ErrorHandler.handleError(e);
     } catch (e) {
       print('⚠️ Ошибка парсинга stocks: $e');
-      return _getMockStocks();
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -109,12 +109,8 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       return StockModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       print('⚠️ API /stocks/$stockId не работает: ${e.response?.statusCode} - ${e.message}');
-      // Возвращаем первый mock остаток
-      final mockStocks = _getMockStocks();
-      if (mockStocks.isNotEmpty) {
-        return mockStocks.first;
-      }
-      throw Exception('Остаток не найден');
+      // Обрабатываем ошибку
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -185,81 +181,6 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     */
   }
 
-  /// Мок данные для остатков 
-  List<StockModel> _getMockStocks() {
-    return [
-      StockModel(
-        id: '1',
-        productTemplateId: 23,
-        warehouseId: 12,
-        producer: 'ООО "СтройМатериалы"',
-        name: 'Пиломатериалы: 55x55x55, Ель',
-        availableQuantity: 14.0,
-        availableVolume: 2329.25,
-        itemsCount: 1,
-        firstArrival: DateTime.now().subtract(const Duration(days: 10)),
-        lastArrival: DateTime.now().subtract(const Duration(days: 2)),
-        template: null,
-        warehouse: null,
-      ),
-      StockModel(
-        id: '2',
-        productTemplateId: 24,
-        warehouseId: 12,
-        producer: 'Металлургический завод',
-        name: 'Арматура: 11x22мм',
-        availableQuantity: 22.0,
-        availableVolume: 53.24,
-        itemsCount: 1,
-        firstArrival: DateTime.now().subtract(const Duration(days: 5)),
-        lastArrival: DateTime.now().subtract(const Duration(days: 1)),
-        template: null,
-        warehouse: null,
-      ),
-      StockModel(
-        id: '3',
-        productTemplateId: 25,
-        warehouseId: 12,
-        producer: 'Люкс Строй',
-        name: 'Арматура: 11x11мм',
-        availableQuantity: 13.0,
-        availableVolume: 1.43,
-        itemsCount: 1,
-        firstArrival: DateTime.now().subtract(const Duration(days: 7)),
-        lastArrival: DateTime.now().subtract(const Duration(days: 7)),
-        template: null,
-        warehouse: null,
-      ),
-      StockModel(
-        id: '4',
-        productTemplateId: 26,
-        warehouseId: 12,
-        producer: 'Супер Строй',
-        name: 'Пиломатериалы: 22x22x22, Ель',
-        availableQuantity: 10.0,
-        availableVolume: 106.48,
-        itemsCount: 1,
-        firstArrival: DateTime.now().subtract(const Duration(days: 3)),
-        lastArrival: DateTime.now().subtract(const Duration(days: 3)),
-        template: null,
-        warehouse: null,
-      ),
-      StockModel(
-        id: '5',
-        productTemplateId: 27,
-        warehouseId: 12,
-        producer: 'Пушкин Металл',
-        name: 'Арматура: 22x22мм',
-        availableQuantity: 131.0,
-        availableVolume: 687.28,
-        itemsCount: 2,
-        firstArrival: DateTime.now().subtract(const Duration(days: 15)),
-        lastArrival: DateTime.now().subtract(const Duration(days: 1)),
-        template: null,
-        warehouse: null,
-      ),
-    ];
-  }
 }
 
 

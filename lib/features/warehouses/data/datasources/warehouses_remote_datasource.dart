@@ -62,13 +62,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
         (json) => WarehouseModel.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      print('⚠️ API /warehouses не работает: $e. Используем тестовые данные.');
-      // Возвращаем тестовые данные при ошибке
-      return PaginatedResponse<WarehouseModel>(
-        data: [],
-        links: const PaginationLinks(first: null, last: null, prev: null, next: null),
-        meta: const PaginationMeta(currentPage: 1, lastPage: 1, perPage: 15, total: 4),
-      );
+      throw ErrorHandler.handleError(e);
     }
   }
 
@@ -144,16 +138,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
       
       throw Exception('Неверный формат ответа API');
     } catch (e) {
-      print('⚠️ API /warehouses/$id/stats не работает: $e. Используем тестовые данные.');
-      // Возвращаем тестовые данные
-      return WarehouseStats(
-        productsCount: 250,
-        employeesCount: 12,
-        totalQuantity: 5420.0,
-        totalValue: 2450000.0,
-        lowStockItems: 5,
-        outOfStockItems: 2,
-      );
+      throw _handleError(e);
     }
   }
 
@@ -241,94 +226,10 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
       
       throw Exception('Неверный формат ответа API');
     } catch (e) {
-      print('⚠️ API /warehouses/stats не работает: $e. Используем тестовые данные.');
-      // Возвращаем тестовые данные
-      return WarehousesStatsResponse(
-        success: true,
-        data: WarehousesStatsModel(
-          totalWarehouses: 12,
-          activeWarehouses: 10,
-          totalProducts: 5420,
-          totalValue: 15680000.0,
-          totalEmployees: 48,
-          capacityUtilization: 78.5,
-        ),
-      );
+      throw _handleError(e);
     }
   }
 
-  /// Мок данные для демонстрации
-  List<WarehouseModel> _getMockWarehouses() {
-    return [
-      WarehouseModel(
-        id: 1,
-        name: 'Склад №1 - Центральный',
-        address: 'г. Москва, ул. Промышленная, д. 15',
-        companyId: 1,
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-15T10:30:00Z',
-        company: CompanyReference(id: 1, name: 'ООО "СтройМатериалы"'),
-        productsCount: 250,
-        employeesCount: 12,
-        employees: [
-          EmployeeReference(id: 1, name: 'Иван Петров', role: 'Кладовщик'),
-          EmployeeReference(id: 2, name: 'Анна Сидорова', role: 'Менеджер'),
-          EmployeeReference(id: 3, name: 'Петр Иванов', role: 'Грузчик'),
-        ],
-      ),
-      WarehouseModel(
-        id: 2,
-        name: 'Склад №2 - Южный',
-        address: 'г. Краснодар, пр. Строителей, д. 28',
-        companyId: 1,
-        isActive: true,
-        createdAt: '2024-01-02T00:00:00Z',
-        updatedAt: '2024-01-14T14:20:00Z',
-        company: CompanyReference(id: 1, name: 'ООО "СтройМатериалы"'),
-        productsCount: 180,
-        employeesCount: 8,
-        employees: [
-          EmployeeReference(id: 4, name: 'Мария Козлова', role: 'Кладовщик'),
-          EmployeeReference(id: 5, name: 'Сергей Волков', role: 'Грузчик'),
-        ],
-      ),
-      WarehouseModel(
-        id: 3,
-        name: 'Склад №3 - Западный',
-        address: 'г. Санкт-Петербург, наб. Обводного канала, д. 118',
-        companyId: 2,
-        isActive: true,
-        createdAt: '2024-01-03T00:00:00Z',
-        updatedAt: '2024-01-13T09:15:00Z',
-        company: CompanyReference(id: 2, name: 'ЗАО "МетСнаб"'),
-        productsCount: 320,
-        employeesCount: 15,
-        employees: [
-          EmployeeReference(id: 6, name: 'Александр Новиков', role: 'Заведующий складом'),
-          EmployeeReference(id: 7, name: 'Елена Морозова', role: 'Кладовщик'),
-          EmployeeReference(id: 8, name: 'Денис Орлов', role: 'Грузчик'),
-          EmployeeReference(id: 9, name: 'Ольга Белова', role: 'Учетчик'),
-          EmployeeReference(id: 10, name: 'Михаил Соколов', role: 'Грузчик'),
-        ],
-      ),
-      WarehouseModel(
-        id: 4,
-        name: 'Склад №4 - Архив',
-        address: 'г. Москва, ул. Складская, д. 45',
-        companyId: 1,
-        isActive: false,
-        createdAt: '2024-01-04T00:00:00Z',
-        updatedAt: '2024-01-10T16:00:00Z',
-        company: CompanyReference(id: 1, name: 'ООО "СтройМатериалы"'),
-        productsCount: 50,
-        employeesCount: 2,
-        employees: [
-          EmployeeReference(id: 11, name: 'Виктор Леонов', role: 'Архивариус'),
-        ],
-      ),
-    ];
-  }
 
   /// Обработка ошибок
   AppException _handleError(dynamic error) {

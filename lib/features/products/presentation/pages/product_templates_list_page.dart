@@ -24,8 +24,8 @@ class _ProductTemplatesListPageState extends ConsumerState<ProductTemplatesListP
 
   @override
   Widget build(BuildContext context) {
-    // Mock данные пока нет провайдера
-    final templates = _getMockTemplates();
+    // Пустой список пока нет провайдера
+    final templates = <ProductTemplateEntity>[];
 
     return Scaffold(
       
@@ -328,7 +328,7 @@ class _ProductTemplatesListPageState extends ConsumerState<ProductTemplatesListP
                   
                   // Количество товаров по шаблону
                   Text(
-                    '15 товаров', // Mock данные
+                    '0 товаров', // Будет заполнено после подключения API
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 11,
@@ -443,127 +443,4 @@ class _ProductTemplatesListPageState extends ConsumerState<ProductTemplatesListP
     }
   }
   
-  List<ProductTemplateEntity> _getMockTemplates() {
-    return [
-      const ProductTemplateEntity(
-        id: 1,
-        name: 'Доски обрезные',
-        unit: 'м³',
-        description: 'Доски обрезные различных размеров',
-        formula: 'length * width * height / 1000000',
-        attributes: [
-          TemplateAttributeEntity(
-            id: 1,
-            productTemplateId: 1,
-            name: 'Длина',
-            variable: 'length',
-            type: AttributeType.number,
-            defaultValue: '6000',
-            unit: 'мм',
-            isRequired: true,
-            isInFormula: true,
-            sortOrder: 1,
-          ),
-          TemplateAttributeEntity(
-            id: 2,
-            productTemplateId: 1,
-            name: 'Ширина',
-            variable: 'width',
-            type: AttributeType.number,
-            defaultValue: '150',
-            unit: 'мм',
-            isRequired: true,
-            isInFormula: true,
-            sortOrder: 2,
-          ),
-          TemplateAttributeEntity(
-            id: 3,
-            productTemplateId: 1,
-            name: 'Толщина',
-            variable: 'height',
-            type: AttributeType.number,
-            defaultValue: '25',
-            unit: 'мм',
-            isRequired: true,
-            isInFormula: true,
-            sortOrder: 3,
-          ),
-          TemplateAttributeEntity(
-            id: 4,
-            productTemplateId: 1,
-            name: 'Сорт',
-            variable: 'grade',
-            type: AttributeType.select,
-            defaultValue: '1',
-            isRequired: true,
-            selectOptions: ['1', '2', '3', '4'],
-            sortOrder: 4,
-          ),
-        ],
-        isActive: true,
-      ),
-      const ProductTemplateEntity(
-        id: 2,
-        name: 'Кирпич строительный',
-        unit: 'шт',
-        description: 'Кирпич керамический строительный',
-        attributes: [
-          TemplateAttributeEntity(
-            id: 5,
-            productTemplateId: 2,
-            name: 'Размер',
-            variable: 'size',
-            type: AttributeType.select,
-            defaultValue: '250x120x65',
-            selectOptions: ['250x120x65', '250x120x88'],
-            isRequired: true,
-            sortOrder: 1,
-          ),
-          TemplateAttributeEntity(
-            id: 6,
-            productTemplateId: 2,
-            name: 'Марка прочности',
-            variable: 'strength',
-            type: AttributeType.select,
-            defaultValue: 'М150',
-            selectOptions: ['М100', 'М125', 'М150', 'М175', 'М200'],
-            isRequired: true,
-            sortOrder: 2,
-          ),
-        ],
-        isActive: true,
-      ),
-      const ProductTemplateEntity(
-        id: 3,
-        name: 'Цемент',
-        unit: 'т',
-        description: 'Цемент портландский',
-        attributes: [
-          TemplateAttributeEntity(
-            id: 7,
-            productTemplateId: 3,
-            name: 'Марка',
-            variable: 'grade',
-            type: AttributeType.select,
-            defaultValue: 'М400',
-            selectOptions: ['М300', 'М400', 'М500'],
-            isRequired: true,
-            sortOrder: 1,
-          ),
-          TemplateAttributeEntity(
-            id: 8,
-            productTemplateId: 3,
-            name: 'Упаковка',
-            variable: 'packaging',
-            type: AttributeType.select,
-            defaultValue: 'мешок 50кг',
-            selectOptions: ['мешок 25кг', 'мешок 50кг', 'биг-бэг 1т'],
-            isRequired: true,
-            sortOrder: 2,
-          ),
-        ],
-        isActive: false,
-      ),
-    ];
-  }
 }

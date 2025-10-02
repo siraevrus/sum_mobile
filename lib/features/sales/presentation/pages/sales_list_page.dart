@@ -5,7 +5,6 @@ import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 import 'package:sum_warehouse/features/sales/presentation/pages/sale_form_page.dart';
 import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/sales/presentation/widgets/sale_card.dart';
-import 'package:sum_warehouse/features/sales/presentation/widgets/sales_filter_widget.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Страница списка продаж
@@ -18,7 +17,6 @@ class SalesListPage extends ConsumerStatefulWidget {
 
 class _SalesListPageState extends ConsumerState<SalesListPage> {
   final ScrollController _scrollController = ScrollController();
-  bool _showFilters = false;
   String? _searchQuery;
 
   @override
@@ -33,84 +31,37 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          _buildSearchAndFilters(),
+          _buildSearchSection(),
           Expanded(child: _buildSalesList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToCreateSale(),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
-  Widget _buildSearchAndFilters() {
+  Widget _buildSearchSection() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE9ECEF))),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(child: _buildSearchField()),
-                const SizedBox(width: 16),
-                IconButton(
-                  onPressed: () => setState(() => _showFilters = !_showFilters),
-                  icon: const Icon(
-                    Icons.filter_list,
-                    color: AppColors.primary,
-                  ),
-                  tooltip: 'Фильтры',
-                ),
-              ],
-            ),
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        onChanged: (value) {
+          setState(() => _searchQuery = value);
+          _performSearch();
+        },
+        decoration: InputDecoration(
+          hintText: 'Поиск продаж...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
-          if (_showFilters) const SalesFilterWidget(),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSearchField() {
-    return TextField(
-      onChanged: (value) {
-        setState(() => _searchQuery = value);
-        _performSearch();
-      },
-      decoration: InputDecoration(
-        hintText: 'Поиск продаж...',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _searchQuery != null && _searchQuery!.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  setState(() => _searchQuery = null);
-                  _clearSearch();
-                },
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF007BFF)),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-      ),
-    );
-  }
 
   void _performSearch() {
     // Обновляем фильтры с поисковым запросом

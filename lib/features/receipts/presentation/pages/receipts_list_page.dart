@@ -14,6 +14,8 @@ class ReceiptsListPage extends ConsumerStatefulWidget {
 
 class _ReceiptsListPageState extends ConsumerState<ReceiptsListPage> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   String? _selectedStatus = 'in_transit'; // Default to in_transit for "Товары в пути"
   int? _selectedWarehouseId;
 
@@ -26,6 +28,7 @@ class _ReceiptsListPageState extends ConsumerState<ReceiptsListPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -41,55 +44,72 @@ class _ReceiptsListPageState extends ConsumerState<ReceiptsListPage> {
     await ref.read(receiptsNotifierProvider(status: _selectedStatus, warehouseId: _selectedWarehouseId).notifier).refresh();
   }
 
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Фильтры'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              decoration: const InputDecoration(
-                labelText: 'Статус',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Все')),
-                DropdownMenuItem(value: 'in_transit', child: Text('В пути')),
-                DropdownMenuItem(value: 'for_receipt', child: Text('К приемке')),
-                DropdownMenuItem(value: 'in_stock', child: Text('На складе')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedStatus = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            // Add warehouse filter here if needed
-          ],
+
+  void _applyFilters() {
+    ref.invalidate(receiptsNotifierProvider(status: _selectedStatus, warehouseId: _selectedWarehouseId));
+  }
+
+  Widget _buildSearchSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Поиск товаров в пути...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _applyFilters();
-            },
-            child: const Text('Применить'),
-          ),
-        ],
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
       ),
     );
   }
 
-  void _applyFilters() {
-    ref.invalidate(receiptsNotifierProvider(status: _selectedStatus, warehouseId: _selectedWarehouseId));
+  Widget _buildReceiptsList(List<ReceiptEntity> receipts) {
+    // Фильтруем по поисковому запросу
+    final filteredReceipts = _searchQuery.isEmpty
+        ? receipts
+        : receipts.where((receipt) => 
+            receipt.name.toLowerCase().contains(_searchQuery.toLowerCase())
+          ).toList();
+
+    if (filteredReceipts.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Нет товаров в пути'),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: filteredReceipts.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final receipt = filteredReceipts[index];
+        return ReceiptCard(
+          receipt: receipt,
+          onTap: () => _openReceiptDetail(receipt),
+          onReceive: () => _receiveReceipt(receipt),
+        );
+      },
+    );
   }
 
   @override
@@ -102,127 +122,38 @@ class _ReceiptsListPageState extends ConsumerState<ReceiptsListPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Товары в пути'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              print('🔵 Manual refresh triggered');
-              ref.invalidate(receiptsNotifierProvider(status: _selectedStatus, warehouseId: _selectedWarehouseId));
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Navigate to create receipt page when implemented
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Создание приемки будет реализовано позже'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
+        children: [
+          // Поиск
+          _buildSearchSection(),
+          
+          // Список товаров в пути
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: receiptsAsync.when(
+                data: (receipts) => _buildReceiptsList(receipts),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text('Ошибка: $error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _onRefresh,
+                        child: const Text('Повторить'),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
         ],
-      ),
-      body: receiptsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        error: (error, stack) => RefreshIndicator(
-          onRefresh: _onRefresh,
-          child: ListView(
-            children: [
-              Container(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Ошибка загрузки данных',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _onRefresh,
-                      child: const Text('Повторить'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        data: (receipts) {
-          if (receipts.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: ListView(
-                children: [
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Нет товаров в пути',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Товары в пути будут отображаться здесь',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: receipts.length,
-              itemBuilder: (context, index) {
-                final receipt = receipts[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: ReceiptCard(
-                    receipt: receipt,
-                    onTap: () => _openReceiptDetail(receipt),
-                    onReceive: () => _receiveReceipt(receipt),
-                  ),
-                );
-              },
-            ),
-          );
-        },
       ),
     );
   }

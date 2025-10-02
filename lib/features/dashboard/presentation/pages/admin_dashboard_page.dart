@@ -240,9 +240,37 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           ),
         ),
         const SizedBox(height: 16),
-        ActivityChart(
-          data: _getMockActivityData(),
-          title: 'Активность за неделю',
+        // ActivityChart временно отключен до реализации API
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.analytics_outlined, size: 48, color: Colors.grey),
+                SizedBox(height: 8),
+                Text(
+                  'График активности',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  'Будет доступен после настройки API',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -700,16 +728,4 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     }
   }
 
-  /// Мок-данные для графика активности
-  List<ActivityData> _getMockActivityData() {
-    return const [
-      ActivityData(period: 'Пн', completed: 12, pending: 3),
-      ActivityData(period: 'Вт', completed: 15, pending: 5),
-      ActivityData(period: 'Ср', completed: 8, pending: 2),
-      ActivityData(period: 'Чт', completed: 18, pending: 4),
-      ActivityData(period: 'Пт', completed: 22, pending: 6),
-      ActivityData(period: 'Сб', completed: 10, pending: 1),
-      ActivityData(period: 'Вс', completed: 5, pending: 0),
-    ];
-  }
 }
