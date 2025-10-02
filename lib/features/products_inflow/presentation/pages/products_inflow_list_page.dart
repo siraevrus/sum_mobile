@@ -391,68 +391,14 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                   ),
                 
                 // Информация о товаре
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.inventory,
-                        label: 'Количество',
-                        value: '${product.quantity} ${product.template?.unit ?? ''}',
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.calculate,
-                        label: 'Объем',
-                        value: product.calculatedVolume ?? '0',
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.warehouse,
-                        label: 'Склад',
-                        value: product.warehouse?.name ?? 'Не указан',
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.factory,
-                        label: 'Производитель',
-                        value: product.producer?.name ?? 'Не указан',
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.person,
-                        label: 'Создатель',
-                        value: product.creator?.name ?? 'Не указан',
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.calendar_today,
-                        label: 'Дата поступления',
-                        value: product.arrivalDate != null 
-                            ? _formatDate(product.arrivalDate!)
-                            : 'Не указана',
-                      ),
-                    ),
-                  ],
-                ),
+                _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
+                _buildInfoRow('Объем', product.calculatedVolume ?? '0'),
+                _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
+                _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
+                _buildInfoRow('Создатель', product.creator?.name ?? 'Не указан'),
+                _buildInfoRow('Дата поступления', product.arrivalDate != null 
+                    ? _formatDate(product.arrivalDate!)
+                    : 'Не указана'),
               ],
             ),
           ),
@@ -461,43 +407,31 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
     );
   }
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Colors.grey.shade500,
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF4A5568),
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF2D3748),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

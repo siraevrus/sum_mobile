@@ -589,6 +589,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     }
   }
 
+
   Future<void> _deleteProduct() async {
     final confirmed = await showDialog<bool>(
       context: context,
