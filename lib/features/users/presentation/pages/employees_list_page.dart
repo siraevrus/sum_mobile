@@ -645,8 +645,6 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
         return 'Оператор';
       case UserRole.warehouseWorker:
         return 'Работник склада';
-      case UserRole.manager:
-        return 'Менеджер';
       case UserRole.salesManager:
         return 'Менеджер по продажам';
     }
@@ -717,8 +715,6 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
     switch (role) {
       case UserRole.admin:
         return const Color(0xFFE74C3C);
-      case UserRole.manager:
-        return AppColors.primary;
       case UserRole.operator:
         return const Color(0xFF3498DB);
       case UserRole.warehouseWorker:
@@ -732,8 +728,6 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
     switch (role) {
       case UserRole.admin:
         return 'Администратор';
-      case UserRole.manager:
-        return 'Менеджер';
       case UserRole.operator:
         return 'Оператор';
       case UserRole.warehouseWorker:

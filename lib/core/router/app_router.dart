@@ -55,8 +55,6 @@ GoRouter router(RouterRef ref) {
                 return '/inventory';
               case UserRole.warehouseWorker:
                 return '/inventory';
-              case UserRole.manager:
-                return '/inventory';
             }
           }
 

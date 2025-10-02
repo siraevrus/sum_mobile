@@ -32,9 +32,6 @@ enum UserRole {
   /// Работник склада - запросы/остатки/товар в пути/реализация/приемка
   @JsonValue('warehouse_worker')
   warehouseWorker,
-  /// Менеджер - запросы/остатки/товар в пути
-  @JsonValue('sales_manager')
-  manager,
   /// Менеджер по продажам - продажи/клиенты
   @JsonValue('sales_manager')
   salesManager,

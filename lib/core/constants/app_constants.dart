@@ -21,5 +21,5 @@ class AppConstants {
   static const String roleAdmin = 'admin';
   static const String roleOperator = 'operator';
   static const String roleWorker = 'warehouse_worker';
-  static const String roleManager = 'manager';
+  static const String roleSalesManager = 'sales_manager';
 }

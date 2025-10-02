@@ -224,7 +224,6 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
               const SizedBox(height: 16),
               
               if (_selectedRole == UserRole.warehouseWorker ||
-                  _selectedRole == UserRole.manager ||
                   _selectedRole == UserRole.salesManager ||
                   _selectedRole == UserRole.operator)
                 _buildWarehouseDropdown(),
@@ -354,7 +353,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
       onChanged: (value) => setState(() {
         _selectedRole = value!;
         // Сбрасываем склад если роль не требует его
-        if (value != UserRole.warehouseWorker && value != UserRole.manager) {
+        if (value != UserRole.warehouseWorker) {
           _selectedWarehouseId = null;
         }
       }),
@@ -477,8 +476,6 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
         return 'Оператор';
       case UserRole.warehouseWorker:
         return 'Работник склада';
-      case UserRole.manager:
-        return 'Менеджер';
       case UserRole.salesManager:
         return 'Менеджер по продажам';
     }
@@ -506,7 +503,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           role: _selectedRole,
           isBlocked: _isBlocked,
           companyId: _selectedCompanyId,
-          warehouseId: (_selectedRole == UserRole.warehouseWorker || _selectedRole == UserRole.manager)
+          warehouseId: (_selectedRole == UserRole.warehouseWorker)
               ? _selectedWarehouseId
               : null,
         );
@@ -525,7 +522,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           role: _selectedRole,
           isBlocked: _isBlocked,
           companyId: _selectedCompanyId,
-          warehouseId: (_selectedRole == UserRole.warehouseWorker || _selectedRole == UserRole.manager)
+          warehouseId: (_selectedRole == UserRole.warehouseWorker)
               ? _selectedWarehouseId
               : null,
         );

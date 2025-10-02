@@ -451,8 +451,6 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'operator';
       case UserRole.warehouseWorker:
         return 'warehouse_worker';
-      case UserRole.manager:
-        return 'manager';
       case UserRole.salesManager:
         return 'sales_manager';
     }
@@ -468,8 +466,6 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'inventory';
       case UserRole.warehouseWorker:
         return 'inventory';
-      case UserRole.manager:
-        return 'inventory';
     }
   }
 
@@ -481,8 +477,6 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Оператор';
       case UserRole.warehouseWorker:
         return 'Работник склада';
-      case UserRole.manager:
-        return 'Менеджер';
       case UserRole.salesManager:
         return 'Менеджер по продажам';
     }

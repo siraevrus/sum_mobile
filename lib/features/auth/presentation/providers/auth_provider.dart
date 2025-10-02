@@ -227,8 +227,7 @@ class Auth extends _$Auth {
         return UserRole.operator;
       case 'warehouse_worker':
         return UserRole.warehouseWorker;
-      case 'manager':
-        return UserRole.manager;
+      case 'manager': // Для совместимости со старыми данными
       case 'sales_manager':
         return UserRole.salesManager;
       default:
@@ -245,8 +244,6 @@ class Auth extends _$Auth {
         return 'operator';
       case UserRole.warehouseWorker:
         return 'warehouse_worker';
-      case UserRole.manager:
-        return 'manager';
       case UserRole.salesManager:
         return 'sales_manager';
     }

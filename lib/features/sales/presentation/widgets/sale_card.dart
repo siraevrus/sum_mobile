@@ -56,10 +56,24 @@ class SaleCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text('Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}'),
+            Text(
+              'Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFBBBBBB),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             Row(
               children: [
-                Text('Кол-во: ${sale.quantity.toStringAsFixed(2)}'),
+                Text(
+                  'Кол-во: ${sale.quantity.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFBBBBBB),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(width: 16),
                 Text(
                   '${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}',
@@ -77,7 +91,11 @@ class SaleCard extends StatelessWidget {
               children: [
                 Text(
                   'Дата: ${_formatDate(sale.saleDate)}',
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFBBBBBB),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 _buildStatusChip(sale.paymentStatus),
               ],
@@ -119,8 +137,22 @@ class SaleCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}'),
-              Text('Кол-во: ${sale.quantity.toStringAsFixed(2)} • ${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}'),
+              Text(
+                'Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFBBBBBB),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Кол-во: ${sale.quantity.toStringAsFixed(2)} • ${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFBBBBBB),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -131,7 +163,11 @@ class SaleCard extends StatelessWidget {
             children: [
               Text(
                 _formatDate(sale.saleDate),
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFBBBBBB),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 8),
               Align(

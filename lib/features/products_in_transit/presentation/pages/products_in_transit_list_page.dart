@@ -659,7 +659,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
               '$label:',
               style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Color(0xFFBBBBBB),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

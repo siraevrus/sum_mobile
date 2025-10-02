@@ -295,34 +295,6 @@ class DashboardPage extends ConsumerWidget {
         ]);
         break;
         
-      case UserRole.manager:
-        actions.addAll([
-          _ActionTile(
-            icon: Icons.assignment,
-            title: 'Запросы',
-            subtitle: 'Создание и просмотр запросов',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const RequestsListPage(),
-                ),
-              );
-            },
-          ),
-          _ActionTile(
-            icon: Icons.storage,
-            title: 'Остатки',
-            subtitle: 'Контроль остатков',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const StocksListPage(),
-                ),
-              );
-            },
-          ),
-        ]);
-        break;
         
       default:
         break;
@@ -398,8 +370,8 @@ class DashboardPage extends ConsumerWidget {
         return 'Оператор ПК';
       case UserRole.warehouseWorker:
         return 'Работник склада';
-      case UserRole.manager:
-        return 'Менеджер';
+      case UserRole.salesManager:
+        return 'Менеджер по продажам';
       default:
         return 'Неизвестная роль';
     }

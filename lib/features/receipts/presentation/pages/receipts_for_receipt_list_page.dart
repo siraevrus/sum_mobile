@@ -202,7 +202,7 @@ class _ReceiptsForReceiptListPageState extends ConsumerState<ReceiptsForReceiptL
           label,
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFF6C757D),
+            color: Color(0xFFBBBBBB),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -404,8 +404,9 @@ class _ReceiptsForReceiptDetailPageState extends ConsumerState<ReceiptsForReceip
             child: Text(
               '$label:',
               style: const TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF2C3E50),
+                color: Color(0xFFBBBBBB),
               ),
             ),
           ),

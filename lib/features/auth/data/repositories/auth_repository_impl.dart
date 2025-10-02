@@ -133,8 +133,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return UserRole.operator;
       case 'warehouse_worker':
         return UserRole.warehouseWorker;
-      case 'manager':
-        return UserRole.manager;
+      case 'manager': // Для совместимости со старыми данными
       case 'sales_manager':
         return UserRole.salesManager;
       default:

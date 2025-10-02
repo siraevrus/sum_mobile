@@ -126,8 +126,10 @@ class ReceiptCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFBBBBBB),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 2),

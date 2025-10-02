@@ -486,8 +486,6 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'operator';
       case UserRole.warehouseWorker:
         return 'warehouse_worker';
-      case UserRole.manager:
-        return 'manager';
       case UserRole.salesManager:
         return 'sales_manager';
     }
