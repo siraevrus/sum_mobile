@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
-import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
-import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
-import 'package:sum_warehouse/shared/models/common_references.dart';
-import 'package:sum_warehouse/shared/models/producer_model.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
-import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
+import 'package:sum_warehouse/shared/models/producer_model.dart';
 
-/// Форма создания/редактирования товара в поступлении
+/// Форма создания/редактирования товара
 class ProductInflowFormPage extends ConsumerStatefulWidget {
   final ProductInflowModel? product;
   final bool isViewMode;
@@ -30,20 +25,25 @@ class ProductInflowFormPage extends ConsumerStatefulWidget {
 
 class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   final _formKey = GlobalKey<FormState>();
-  final _quantityController = TextEditingController();
-  final _transportNumberController = TextEditingController();
   final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _quantityController = TextEditingController();
   final _calculatedVolumeController = TextEditingController();
+  final _transportNumberController = TextEditingController();
+  final _shippingLocationController = TextEditingController();
+  final _notesController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isActive = true;
   int? _selectedWarehouseId;
   int? _selectedProducerId;
-  int? _selectedProductTemplateId;
   DateTime? _selectedArrivalDate;
+  DateTime? _selectedShippingDate;
+  DateTime? _selectedExpectedArrivalDate;
 
+  // Данные из API
   List<WarehouseModel> _warehouses = [];
   List<ProducerModel> _producers = [];
-  List<ProductTemplateReference> _productTemplates = [];
 
   bool get _isEditing => widget.product != null;
 
@@ -56,52 +56,61 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
 
   @override
   void dispose() {
-    _quantityController.dispose();
-    _transportNumberController.dispose();
     _nameController.dispose();
+    _descriptionController.dispose();
+    _quantityController.dispose();
     _calculatedVolumeController.dispose();
+    _transportNumberController.dispose();
+    _shippingLocationController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
   void _initializeForm() {
     if (_isEditing) {
       final product = widget.product!;
-      _quantityController.text = product.quantity;
-      _transportNumberController.text = product.transportNumber ?? '';
       _nameController.text = product.name ?? '';
+      _descriptionController.text = product.description ?? '';
+      _quantityController.text = product.quantity;
       _calculatedVolumeController.text = product.calculatedVolume ?? '';
+      _transportNumberController.text = product.transportNumber ?? '';
+      _shippingLocationController.text = product.shippingLocation ?? '';
+      _notesController.text = product.notes ?? '';
+      _isActive = product.isActive;
       _selectedWarehouseId = product.warehouseId;
       _selectedProducerId = product.producerId;
-      _selectedProductTemplateId = product.productTemplateId;
-      _selectedArrivalDate = product.arrivalDate != null ? DateTime.parse(product.arrivalDate!) : null;
+
+      if (product.arrivalDate != null) {
+        _selectedArrivalDate = DateTime.parse(product.arrivalDate!);
+      }
+      if (product.shippingDate != null) {
+        _selectedShippingDate = DateTime.parse(product.shippingDate!);
+      }
+      if (product.expectedArrivalDate != null) {
+        _selectedExpectedArrivalDate = DateTime.parse(product.expectedArrivalDate!);
+      }
+    } else {
+      // Автогенерация даты поступления для нового товара
+      _selectedArrivalDate = DateTime.now();
     }
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
+    
     try {
       // Загружаем склады
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
-
+      
       // Загружаем производителей
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
         _producers = (producersState.value ?? []).cast<ProducerModel>();
       }
-
-      // Загружаем шаблоны товаров
-      final productsInflowDataSource = ref.read(productsInflowRemoteDataSourceProvider);
-      final templatesResponse = await productsInflowDataSource.getProducts(ProductInflowFilters(perPage: 100));
-      _productTemplates = templatesResponse.data.map((e) => ProductTemplateReference(
-        id: e.productTemplateId, 
-        name: e.template?.name, 
-        unit: e.template?.unit
-      )).toList();
-
+      
       setState(() {});
     } catch (e) {
       print('Ошибка загрузки данных: $e');
@@ -113,36 +122,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  void _onQuantityChanged() {
-    _calculateNameAndVolume();
-  }
-
-  void _onTemplateChanged() {
-    _calculateNameAndVolume();
-  }
-
-  void _calculateNameAndVolume() {
-    if (_selectedProductTemplateId == null || _quantityController.text.isEmpty) {
-      _nameController.text = '';
-      _calculatedVolumeController.text = '';
-      return;
-    }
-
-    final template = _productTemplates.firstWhere(
-      (t) => t.id == _selectedProductTemplateId,
-      orElse: () => ProductTemplateReference(id: 0, name: ''),
-    );
-
-    if (template.name != null) {
-      // Формируем наименование: "Название шаблона x характеристики"
-      _nameController.text = template.name!;
-    }
-
-    // Рассчитываем объем по формуле (если есть)
-    // TODO: Реализовать расчет по формуле из template
-    _calculatedVolumeController.text = '0';
   }
 
   @override
@@ -160,11 +139,11 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         ],
       ),
       body: _isLoading
-          ? const LoadingWidget()
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -216,7 +195,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
                           label: 'Количество *',
                           isRequired: true,
                           keyboardType: TextInputType.number,
-                          onChanged: (value) => _onQuantityChanged(),
                         ),
                         const SizedBox(height: 16),
                         
@@ -259,6 +237,154 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
                         ),
                       ],
                     ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _quantityController,
+                                label: 'Количество *',
+                                isRequired: true,
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _calculatedVolumeController,
+                                label: 'Объем',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildWarehouseDropdown(),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildProducerDropdown(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _transportNumberController,
+                          label: 'Номер транспорта',
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Даты
+                    _buildSection(
+                      title: 'Даты',
+                      children: [
+                        _buildDateField(
+                          label: 'Дата поступления',
+                          selectedDate: _selectedArrivalDate,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _selectedArrivalDate = date;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDateField(
+                          label: 'Дата отгрузки',
+                          selectedDate: _selectedShippingDate,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _selectedShippingDate = date;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDateField(
+                          label: 'Ожидаемая дата прибытия',
+                          selectedDate: _selectedExpectedArrivalDate,
+                          onDateSelected: (date) {
+                            setState(() {
+                              _selectedExpectedArrivalDate = date;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Дополнительная информация
+                    _buildSection(
+                      title: 'Дополнительная информация',
+                      children: [
+                        _buildTextField(
+                          controller: _shippingLocationController,
+                          label: 'Место отгрузки',
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _notesController,
+                          label: 'Заметки',
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: const Text('Активен'),
+                          subtitle: const Text('Товар активен и доступен для использования'),
+                          value: _isActive,
+                          onChanged: widget.isViewMode ? null : (value) {
+                            setState(() {
+                              _isActive = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Кнопки действий
+                    if (!widget.isViewMode)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Отмена'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isEditing ? _updateProduct : _createProduct,
+                              child: Text(_isEditing ? 'Обновить' : 'Создать'),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    if (widget.isViewMode)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (context) => ProductInflowFormPage(
+                                  product: widget.product,
+                                  isViewMode: false,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Редактировать'),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -270,26 +396,37 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     required String title,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A1A1A),
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
     );
   }
 
@@ -297,27 +434,23 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     required TextEditingController controller,
     required String label,
     bool isRequired = false,
+    int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
-    bool readOnly = false,
-    String? hintText,
-    Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: isRequired ? '$label *' : label,
-        hintText: hintText,
-        border: const OutlineInputBorder(),
-        filled: readOnly,
-        fillColor: readOnly ? Colors.grey.shade100 : null,
-      ),
+      maxLines: maxLines,
       keyboardType: keyboardType,
-      readOnly: readOnly,
-      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
+      ),
       validator: isRequired
           ? (value) {
               if (value == null || value.isEmpty) {
-                return 'Пожалуйста, введите $label';
+                return 'Поле обязательно для заполнения';
               }
               return null;
             }
@@ -331,7 +464,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       decoration: InputDecoration(
         labelText: 'Склад *',
         border: const OutlineInputBorder(),
-        filled: widget.isViewMode,
+        filled: true,
         fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
       ),
       items: [
@@ -361,7 +494,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       decoration: InputDecoration(
         labelText: 'Производитель',
         border: const OutlineInputBorder(),
-        filled: widget.isViewMode,
+        filled: true,
         fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
       ),
       items: [
@@ -379,88 +512,96 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     );
   }
 
-  Widget _buildProductTemplateDropdown() {
-    return DropdownButtonFormField<int>(
-      value: _selectedProductTemplateId,
-      decoration: InputDecoration(
-        labelText: 'Шаблон товара *',
-        border: const OutlineInputBorder(),
-        filled: widget.isViewMode,
-        fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
-      ),
-      items: [
-        const DropdownMenuItem(value: null, child: Text('Выберите шаблон товара')),
-        ..._productTemplates.map((template) => DropdownMenuItem(
-          value: template.id,
-          child: Text(template.name ?? 'ID ${template.id}'),
-        )),
-      ],
-      onChanged: widget.isViewMode ? null : (value) {
-        setState(() {
-          _selectedProductTemplateId = value;
-        });
-        _onTemplateChanged();
-      },
-      validator: (value) {
-        if (value == null) {
-          return 'Выберите шаблон товара';
-        }
-        return null;
-      },
-    );
-  }
-
   Widget _buildDateField({
     required String label,
     required DateTime? selectedDate,
     required Function(DateTime?) onDateSelected,
   }) {
-    return TextFormField(
-      readOnly: true,
-      controller: TextEditingController(
-        text: selectedDate != null ? DateFormat('yyyy-MM-dd').format(selectedDate) : '',
+    return InkWell(
+      onTap: widget.isViewMode ? null : () async {
+        final date = await showDatePicker(
+          context: context,
+          initialDate: selectedDate ?? DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2030),
+        );
+        onDateSelected(date);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+          color: widget.isViewMode ? Colors.grey.shade100 : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.calendar_today,
+              color: widget.isViewMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    selectedDate != null
+                        ? '${selectedDate.day.toString().padLeft(2, '0')}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.year}'
+                        : 'Выберите дату',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: selectedDate != null ? Colors.black : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        suffixIcon: widget.isViewMode ? null : const Icon(Icons.calendar_today),
-        filled: widget.isViewMode,
-        fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
-      ),
-      onTap: widget.isViewMode
-          ? null
-          : () async {
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: selectedDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2101),
-              );
-              onDateSelected(picked);
-            },
     );
   }
 
   Future<void> _createProduct() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedWarehouseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Выберите склад')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final createRequest = CreateProductInflowRequest(
-        productTemplateId: _selectedProductTemplateId!,
+      final request = CreateProductInflowRequest(
+        productTemplateId: 1, // TODO: Добавить выбор шаблона товара
         warehouseId: _selectedWarehouseId!,
-        name: _nameController.text.isEmpty ? null : _nameController.text,
+        name: _nameController.text,
+        description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
         quantity: _quantityController.text,
         calculatedVolume: _calculatedVolumeController.text.isEmpty ? null : _calculatedVolumeController.text,
         transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
         producerId: _selectedProducerId,
-        arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
-        isActive: true,
+        arrivalDate: _selectedArrivalDate?.toIso8601String().split('T')[0],
+        isActive: _isActive,
         status: 'in_stock',
+        shippingLocation: _shippingLocationController.text.isEmpty ? null : _shippingLocationController.text,
+        shippingDate: _selectedShippingDate?.toIso8601String().split('T')[0],
+        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String().split('T')[0],
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
-      await ref.read(productsInflowProvider.notifier).createProduct(createRequest);
+      await ref.read(productsInflowProvider.notifier).createProduct(request);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -487,16 +628,22 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      final updateRequest = UpdateProductInflowRequest(
-        name: _nameController.text.isEmpty ? null : _nameController.text,
+      final request = UpdateProductInflowRequest(
+        name: _nameController.text,
+        description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
         quantity: _quantityController.text,
         calculatedVolume: _calculatedVolumeController.text.isEmpty ? null : _calculatedVolumeController.text,
         transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
         producerId: _selectedProducerId,
-        arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
+        arrivalDate: _selectedArrivalDate?.toIso8601String().split('T')[0],
+        isActive: _isActive,
+        shippingLocation: _shippingLocationController.text.isEmpty ? null : _shippingLocationController.text,
+        shippingDate: _selectedShippingDate?.toIso8601String().split('T')[0],
+        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String().split('T')[0],
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
-      await ref.read(productsInflowProvider.notifier).updateProduct(widget.product!.id, updateRequest);
+      await ref.read(productsInflowProvider.notifier).updateProduct(widget.product!.id, request);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -516,6 +663,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       }
     }
   }
+
 
   Future<void> _deleteProduct() async {
     final confirmed = await showDialog<bool>(
