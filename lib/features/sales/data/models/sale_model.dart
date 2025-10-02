@@ -98,6 +98,7 @@ class CreateSaleRequest with _$CreateSaleRequest {
     required String currency,
     @JsonKey(name: 'exchange_rate') required double exchangeRate,
     @JsonKey(name: 'payment_method') required String paymentMethod,
+    @JsonKey(name: 'payment_status') @Default('paid') String paymentStatus,
     @JsonKey(name: 'sale_date') required String saleDate,
     @JsonKey(name: 'customer_phone') String? customerPhone,
     @JsonKey(name: 'customer_email') String? customerEmail,
