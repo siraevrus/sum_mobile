@@ -45,30 +45,10 @@ class ProductInflowDetailPage extends ConsumerWidget {
                   _buildInfoRow('Описание', product.description!),
                 _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
                 _buildInfoRow('Объем', product.calculatedVolume ?? '0'),
-                _buildInfoRow('Статус', _getStatusText(product.status)),
-                _buildInfoRow('Активен', product.isActive ? 'Да' : 'Нет'),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Связанные объекты
-            _buildSection(
-              title: 'Связанные объекты',
-              children: [
                 _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
                 _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
                 _buildInfoRow('Создатель', product.creator?.name ?? 'Не указан'),
                 _buildInfoRow('Шаблон товара', product.template?.name ?? 'Не указан'),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Транспортная информация
-            _buildSection(
-              title: 'Транспортная информация',
-              children: [
                 _buildInfoRow('Номер транспорта', product.transportNumber ?? 'Не указан'),
                 _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
                 _buildInfoRow('Дата отгрузки', product.shippingDate != null 
@@ -76,9 +56,6 @@ class ProductInflowDetailPage extends ConsumerWidget {
                     : 'Не указана'),
                 _buildInfoRow('Ожидаемая дата прибытия', product.expectedArrivalDate != null 
                     ? _formatDate(product.expectedArrivalDate!) 
-                    : 'Не указана'),
-                _buildInfoRow('Фактическая дата прибытия', product.actualArrivalDate != null 
-                    ? _formatDate(product.actualArrivalDate!) 
                     : 'Не указана'),
                 _buildInfoRow('Дата поступления', product.arrivalDate != null 
                     ? _formatDate(product.arrivalDate!) 
@@ -88,10 +65,10 @@ class ProductInflowDetailPage extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Атрибуты товара
+            // Характеристики товара
             if (product.attributes.isNotEmpty)
               _buildSection(
-                title: 'Атрибуты товара',
+                title: 'Характеристики товара',
                 children: product.attributes.entries
                     .map((entry) => _buildInfoRow(entry.key, entry.value.toString()))
                     .toList(),
@@ -130,21 +107,6 @@ class ProductInflowDetailPage extends ConsumerWidget {
                   ),
                 ],
               ),
-
-            const SizedBox(height: 24),
-
-            // Системная информация
-            _buildSection(
-              title: 'Системная информация',
-              children: [
-                _buildInfoRow('ID', product.id.toString()),
-                _buildInfoRow('ID шаблона', product.productTemplateId.toString()),
-                _buildInfoRow('ID склада', product.warehouseId.toString()),
-                _buildInfoRow('ID создателя', product.createdBy.toString()),
-                _buildInfoRow('Дата создания', _formatDateTime(product.createdAt)),
-                _buildInfoRow('Дата обновления', _formatDateTime(product.updatedAt)),
-              ],
-            ),
 
             const SizedBox(height: 24),
 
