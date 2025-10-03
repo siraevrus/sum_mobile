@@ -407,8 +407,9 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         documentUrl = path;
       } else {
         // Формируем URL относительно базового адреса API
-        // Убираем /api из базового URL и добавляем путь к документу
-        documentUrl = 'http://93.189.230.65$path';
+        // Проверяем, начинается ли путь со слэша
+        String normalizedPath = path.startsWith('/') ? path : '/$path';
+        documentUrl = 'http://93.189.230.65$normalizedPath';
       }
       
       print('🔵 ProductInflowDetailPage: Полная ссылка на документ: $documentUrl');
