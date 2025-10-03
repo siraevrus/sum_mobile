@@ -43,8 +43,24 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       print('🔵 ProductInflowDetailPage: Ответ API /product-templates: ${response.data}');
       
       final data = response.data;
-      if (data is Map<String, dynamic> && data['attributes'] != null) {
-        final attributes = data['attributes'] as List<dynamic>;
+      print('🔵 ProductInflowDetailPage: Тип ответа: ${data.runtimeType}');
+      
+      // Проверяем структуру ответа - может быть {success: true, data: {...}} или прямая структура
+      Map<String, dynamic>? templateData;
+      if (data is Map<String, dynamic>) {
+        if (data['success'] == true && data['data'] != null) {
+          // Формат {success: true, data: {...}}
+          templateData = data['data'] as Map<String, dynamic>;
+          print('🔵 ProductInflowDetailPage: Используем data из success/data структуры');
+        } else {
+          // Прямой формат
+          templateData = data;
+          print('🔵 ProductInflowDetailPage: Используем прямой формат');
+        }
+      }
+      
+      if (templateData != null && templateData['attributes'] != null) {
+        final attributes = templateData['attributes'] as List<dynamic>;
         final attributeNames = <String, String>{};
         
         for (final attr in attributes) {
@@ -60,6 +76,12 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         print('🔵 ProductInflowDetailPage: Загружены названия атрибутов: $attributeNames');
         setState(() {
           _attributeNames = attributeNames;
+          _isLoadingAttributes = false;
+        });
+      } else {
+        print('🔵 ProductInflowDetailPage: Атрибуты не найдены в ответе');
+        setState(() {
+          _attributeNames = {};
           _isLoadingAttributes = false;
         });
       }
