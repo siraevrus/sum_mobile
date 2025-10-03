@@ -6,8 +6,70 @@ import 'package:sum_warehouse/features/products_inflow/presentation/pages/produc
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/shared/models/company_model.dart' as CompanyModels;
+import 'package:sum_warehouse/shared/models/user_model.dart' as UserModels;
+import 'package:sum_warehouse/core/network/dio_client.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
+
+// Локальные провайдеры для фильтров
+final companiesProvider = FutureProvider<List<CompanyModels.CompanyModel>>((ref) async {
+  final dio = ref.read(dioClientProvider);
+  
+  try {
+    print('🔵 CompaniesProvider: Запрос API /companies');
+    final response = await dio.get('/companies', queryParameters: {
+      'per_page': 15,
+    });
+    print('🔵 CompaniesProvider: Ответ API /companies: ${response.data}');
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (data['data'] is List) {
+        return (data['data'] as List)
+            .map((e) => CompanyModels.CompanyModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } else if (data is List) {
+      return data
+          .map((e) => CompanyModels.CompanyModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception('Неожиданный формат ответа API');
+  } catch (e) {
+    print('🔴 CompaniesProvider: Ошибка загрузки компаний: $e');
+    rethrow;
+  }
+});
+
+final usersProvider = FutureProvider<List<UserModels.UserModel>>((ref) async {
+  final dio = ref.read(dioClientProvider);
+  
+  try {
+    print('🔵 UsersProvider: Запрос API /users');
+    final response = await dio.get('/users', queryParameters: {
+      'per_page': 15,
+    });
+    print('🔵 UsersProvider: Ответ API /users: ${response.data}');
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (data['data'] is List) {
+        return (data['data'] as List)
+            .map((e) => UserModels.UserModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } else if (data is List) {
+      return data
+          .map((e) => UserModels.UserModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception('Неожиданный формат ответа API');
+  } catch (e) {
+    print('🔴 UsersProvider: Ошибка загрузки пользователей: $e');
+    rethrow;
+  }
+});
 
 /// Страница списка товаров в поступлениях
 class ProductsInflowListPage extends ConsumerStatefulWidget {
@@ -244,9 +306,9 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                   ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Все')),
-                    DropdownMenuItem(value: 'null', child: Text('Без коррекции')),
                     DropdownMenuItem(value: 'correction', child: Text('Требует внимание')),
                     DropdownMenuItem(value: 'revised', child: Text('Внесена корректировка')),
+                    DropdownMenuItem(value: 'null', child: Text('Без коррекции')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -266,9 +328,16 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     filled: true,
                     fillColor: Colors.grey.shade50,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Все компании')),
-                    // TODO: Добавить загрузку компаний из API
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Все компании')),
+                    ...ref.watch(companiesProvider).when(
+                      data: (companies) => companies.map((company) => DropdownMenuItem<int>(
+                        value: company.id,
+                        child: Text(company.name),
+                      )).toList(),
+                      loading: () => [],
+                      error: (e, st) => [],
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -293,9 +362,16 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     filled: true,
                     fillColor: Colors.grey.shade50,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Все сотрудники')),
-                    // TODO: Добавить загрузку сотрудников из API
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Все сотрудники')),
+                    ...ref.watch(usersProvider).when(
+                      data: (users) => users.map((user) => DropdownMenuItem<int>(
+                        value: user.id,
+                        child: Text(user.name),
+                      )).toList(),
+                      loading: () => [],
+                      error: (e, st) => [],
+                    ),
                   ],
                   onChanged: (value) {
                     setState(() {
