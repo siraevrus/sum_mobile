@@ -55,6 +55,9 @@ class ProductInflowFilters with _$ProductInflowFilters {
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'in_stock') bool? inStock,
     String? status,
+    @JsonKey(name: 'correction_status') String? correctionStatus,
+    @JsonKey(name: 'company_id') int? companyId,
+    @JsonKey(name: 'employee_id') int? employeeId,
     @JsonKey(name: 'arrival_date_from') String? arrivalDateFrom,
     @JsonKey(name: 'arrival_date_to') String? arrivalDateTo,
     @JsonKey(name: 'created_by') int? createdBy,
@@ -76,6 +79,9 @@ extension ProductInflowFiltersExtension on ProductInflowFilters {
     if (producerId != null) params['producer_id'] = producerId;
     if (inStock != null) params['in_stock'] = inStock;
     if (status != null) params['status'] = status;
+    if (correctionStatus != null) params['correction_status'] = correctionStatus;
+    if (companyId != null) params['company_id'] = companyId;
+    if (employeeId != null) params['employee_id'] = employeeId;
     if (arrivalDateFrom != null) params['arrival_date_from'] = arrivalDateFrom;
     if (arrivalDateTo != null) params['arrival_date_to'] = arrivalDateTo;
     if (createdBy != null) params['created_by'] = createdBy;

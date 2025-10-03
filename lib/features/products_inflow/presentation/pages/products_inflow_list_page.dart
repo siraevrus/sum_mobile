@@ -24,6 +24,9 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
   // Переменные для фильтра
   int? _selectedWarehouseId;
   int? _selectedProducerId;
+  String? _selectedCorrectionStatus;
+  int? _selectedCompanyId;
+  int? _selectedEmployeeId;
   bool _showFilter = false;
 
   @override
@@ -141,13 +144,28 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Фильтры',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Фильтры',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              TextButton(
+                onPressed: _resetFilters,
+                child: const Text(
+                  'Сбросить',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Row(
@@ -211,9 +229,100 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          // Вторая строка фильтров
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedCorrectionStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Коррекция',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Все')),
+                    DropdownMenuItem(value: 'null', child: Text('Без коррекции')),
+                    DropdownMenuItem(value: 'correction', child: Text('Требует внимание')),
+                    DropdownMenuItem(value: 'revised', child: Text('Внесена корректировка')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCorrectionStatus = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: _selectedCompanyId,
+                  decoration: InputDecoration(
+                    labelText: 'Компания',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Все компании')),
+                    // TODO: Добавить загрузку компаний из API
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCompanyId = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Третья строка фильтров
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: _selectedEmployeeId,
+                  decoration: InputDecoration(
+                    labelText: 'Сотрудник',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Все сотрудники')),
+                    // TODO: Добавить загрузку сотрудников из API
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedEmployeeId = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox()), // Пустое место для выравнивания
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _selectedWarehouseId = null;
+      _selectedProducerId = null;
+      _selectedCorrectionStatus = null;
+      _selectedCompanyId = null;
+      _selectedEmployeeId = null;
+    });
+    _applyFilters();
   }
 
   void _applyFilters() {
@@ -221,6 +330,9 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       search: _searchQuery.isNotEmpty ? _searchQuery : null,
       warehouseId: _selectedWarehouseId,
       producerId: _selectedProducerId,
+      correctionStatus: _selectedCorrectionStatus,
+      companyId: _selectedCompanyId,
+      employeeId: _selectedEmployeeId,
       page: 1,
     );
     ref.read(productsInflowProvider.notifier).filterProducts(filters);
