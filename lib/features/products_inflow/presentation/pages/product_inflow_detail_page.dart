@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
@@ -240,14 +241,12 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Коррекции
-            if (_product.correction != null || _product.correctionStatus != null)
+            if (_product.correction != null || _product.revisedAt != null)
               _buildSection(
                 title: 'Коррекции',
                 children: [
                   if (_product.correction != null)
                     _buildInfoRow('Коррекция', _product.correction!),
-                  if (_product.correctionStatus != null)
-                    _buildInfoRow('Статус коррекции', _product.correctionStatus!),
                   if (_product.revisedAt != null)
                     _buildInfoRow('Дата пересмотра', _formatDateTime(_product.revisedAt!)),
                 ],
@@ -357,43 +356,85 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
   Widget _buildDocumentItem(BuildContext context, String path) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.description,
-            size: 20,
-            color: Colors.grey.shade600,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              path.split('/').last,
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openDocument(path),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.description,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    path.split('/').last,
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.open_in_new,
+                  size: 18,
+                  color: Colors.grey.shade600,
+                ),
+              ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              // TODO: Реализовать открытие документа
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Открытие документа будет реализовано')),
-              );
-            },
-            icon: Icon(
-              Icons.open_in_new,
-              size: 18,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openDocument(String path) async {
+    try {
+      print('🔵 ProductInflowDetailPage: Открываем документ: $path');
+      
+      // Формируем полную ссылку на документ
+      String documentUrl;
+      if (path.startsWith('http')) {
+        // Если путь уже полный URL
+        documentUrl = path;
+      } else {
+        // Формируем URL относительно базового адреса API
+        // Убираем /api из базового URL и добавляем путь к документу
+        documentUrl = 'http://93.189.230.65$path';
+      }
+      
+      print('🔵 ProductInflowDetailPage: Полная ссылка на документ: $documentUrl');
+      
+      final Uri url = Uri.parse(documentUrl);
+      
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+        print('🔵 ProductInflowDetailPage: Документ успешно открыт');
+      } else {
+        print('🔴 ProductInflowDetailPage: Не удалось открыть документ: $url');
+        throw Exception('Не удалось открыть документ');
+      }
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка открытия документа: $e');
+      
+      // Показываем уведомление об ошибке
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка открытия документа: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _getStatusText(String status) {

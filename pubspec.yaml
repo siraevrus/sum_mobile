@@ -39,6 +39,7 @@ dependencies:
   
   # === Файлы ===
   file_picker: ^8.0.7
+  url_launcher: ^6.2.5
   
   # === Локализация ===
   flutter_localizations:
