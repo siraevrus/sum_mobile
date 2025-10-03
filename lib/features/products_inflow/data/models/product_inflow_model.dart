@@ -118,7 +118,7 @@ class UpdateProductInflowRequest with _$UpdateProductInflowRequest {
   const factory UpdateProductInflowRequest({
     String? name,
     String? description,
-    Map<String, dynamic>? attributes,
+    dynamic attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     String? quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,

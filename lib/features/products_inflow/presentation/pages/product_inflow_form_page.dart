@@ -85,6 +85,9 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       _selectedProducerId = product.producerId;
       _selectedProductTemplateId = product.productTemplateId;
       _selectedArrivalDate = product.arrivalDate != null ? DateTime.parse(product.arrivalDate!) : null;
+      
+      print('🔵 ProductInflowFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
+      print('🔵 ProductInflowFormPage: product_template_id: ${product.productTemplateId}');
     }
   }
 
@@ -124,6 +127,12 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       _productTemplates = await templateDataSource.getProductTemplates();
       print('🔵 ProductInflowFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
+
+      // Если редактируем товар, загружаем атрибуты шаблона
+      if (_isEditing && _selectedProductTemplateId != null) {
+        print('🔵 ProductInflowFormPage: Загружаем атрибуты для редактирования товара...');
+        await _loadTemplateAttributes();
+      }
 
       setState(() {});
       print('🔵 ProductInflowFormPage: setState вызван, _isLoading = false');
@@ -175,7 +184,9 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         if (_isEditing && widget.product!.attributes != null) {
           final attributes = widget.product!.attributes as Map<String, dynamic>?;
           if (attributes != null && attributes.containsKey(attribute.variable)) {
-            _attributeControllers[attribute.variable]!.text = attributes[attribute.variable].toString();
+            final value = attributes[attribute.variable];
+            _attributeControllers[attribute.variable]!.text = value.toString();
+            print('🔵 ProductInflowFormPage: Загружен атрибут ${attribute.variable} = $value');
           }
         }
         
@@ -240,7 +251,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       nameParts.add(regularAttributes.join(', '));
     }
 
-    return nameParts.join(', ');
+    return nameParts.join(': ');
   }
 
   String _calculateVolume() {
@@ -621,37 +632,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (attribute.isInFormula)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.blue.shade200),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.functions, size: 16, color: Colors.blue.shade600),
-                const SizedBox(width: 4),
-                Text(
-                  'Используется в формуле',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (attribute.isInFormula) const SizedBox(height: 8),
-        field,
-      ],
-    );
+    return field;
   }
 
   Widget _buildSelectField(ProductAttributeModel attribute, TextEditingController controller) {
