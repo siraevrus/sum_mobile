@@ -213,29 +213,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Заметки
-            if (widget.product.notes != null && widget.product.notes!.isNotEmpty)
-              _buildSection(
-                title: 'Заметки',
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Text(
-                      widget.product.notes!,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ],
-              ),
-
-            const SizedBox(height: 24),
-
-            // Заметки
             if (_product.notes != null && _product.notes!.isNotEmpty)
               _buildSection(
                 title: 'Заметки',
