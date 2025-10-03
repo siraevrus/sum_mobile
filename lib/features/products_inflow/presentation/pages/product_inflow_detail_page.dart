@@ -14,6 +14,12 @@ class ProductInflowDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${product.id}');
+    print('🔵 ProductInflowDetailPage: product.name = ${product.name}');
+    print('🔵 ProductInflowDetailPage: product.warehouse = ${product.warehouse?.name}');
+    print('🔵 ProductInflowDetailPage: product.producer = ${product.producer?.name}');
+    print('🔵 ProductInflowDetailPage: product.template = ${product.template?.name}');
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name ?? 'Без названия'),
@@ -133,6 +139,7 @@ class ProductInflowDetailPage extends ConsumerWidget {
     required String title,
     required List<Widget> children,
   }) {
+    print('🔵 ProductInflowDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -168,6 +175,7 @@ class ProductInflowDetailPage extends ConsumerWidget {
   }
 
   Widget _buildInfoRow(String label, String value) {
+    print('🔵 ProductInflowDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -265,9 +273,13 @@ class ProductInflowDetailPage extends ConsumerWidget {
 
   String _formatDateTime(String dateTimeString) {
     try {
+      print('🔵 ProductInflowDetailPage: _formatDateTime вызван для "$dateTimeString"');
       final dateTime = DateTime.parse(dateTimeString);
-      return '${dateTime.day.toString().padLeft(2, '0')}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      final result = '${dateTime.day.toString().padLeft(2, '0')}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      print('🔵 ProductInflowDetailPage: _formatDateTime результат: "$result"');
+      return result;
     } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка в _formatDateTime: $e');
       return dateTimeString;
     }
   }

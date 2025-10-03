@@ -354,18 +354,24 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductInflowDetailPage(product: product),
-            ),
-          ),
+          onTap: () {
+            print('🔵 ProductsInflowListPage: Нажата карточка товара ID: ${product.id}');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) {
+                  print('🔵 ProductsInflowListPage: Переход к ProductInflowDetailPage для товара ID: ${product.id}');
+                  return ProductInflowDetailPage(product: product);
+                },
+              ),
+            );
+          },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Заголовок с названием и статусом
+                // Заголовок с названием, статусом и меню
                 Row(
                   children: [
                     Expanded(
@@ -391,6 +397,51 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                           fontWeight: FontWeight.w500,
                           color: _getStatusColor(product.status),
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    PopupMenuButton<String>(
+                      onSelected: (value) => _handleMenuAction(value, product),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'preview',
+                          child: Row(
+                            children: [
+                              Icon(Icons.visibility, size: 18),
+                              SizedBox(width: 8),
+                              Text('Превью'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 18),
+                              SizedBox(width: 8),
+                              Text('Редактировать'),
+                            ],
+                          ),
+                        ),
+                        if (product.status == 'in_stock')
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Удалить', style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                      ],
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(Icons.more_vert, size: 18, color: Colors.grey),
                       ),
                     ),
                   ],
@@ -489,5 +540,75 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
     } catch (e) {
       return dateString;
     }
+  }
+
+  void _handleMenuAction(String action, ProductInflowModel product) {
+    print('🔵 ProductsInflowListPage: Выбрано действие "$action" для товара ID: ${product.id}');
+    
+    switch (action) {
+      case 'preview':
+        print('🔵 ProductsInflowListPage: Переход к превью товара ID: ${product.id}');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductInflowDetailPage(product: product),
+          ),
+        );
+        break;
+        
+      case 'edit':
+        print('🔵 ProductsInflowListPage: Переход к редактированию товара ID: ${product.id}');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductInflowFormPage(product: product),
+          ),
+        ).then((_) {
+          print('🔵 ProductsInflowListPage: Возврат из редактирования, обновляем список');
+          ref.read(productsInflowProvider.notifier).refresh();
+        });
+        break;
+        
+      case 'delete':
+        _showDeleteDialog(product);
+        break;
+    }
+  }
+
+  void _showDeleteDialog(ProductInflowModel product) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удаление товара'),
+        content: Text('Вы уверены, что хотите удалить товар "${product.name ?? 'Без названия'}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              print('🔵 ProductsInflowListPage: Удаляем товар ID: ${product.id}');
+              
+              try {
+                await ref.read(productsInflowProvider.notifier).deleteProduct(product.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Товар успешно удален')),
+                  );
+                }
+              } catch (e) {
+                print('🔴 ProductsInflowListPage: Ошибка удаления товара: $e');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Ошибка удаления товара: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 }
