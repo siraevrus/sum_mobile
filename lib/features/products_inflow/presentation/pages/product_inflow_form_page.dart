@@ -37,6 +37,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   final _transportNumberController = TextEditingController();
   final _nameController = TextEditingController();
   final _calculatedVolumeController = TextEditingController();
+  final _notesController = TextEditingController();
 
   bool _isLoading = false;
   int? _selectedWarehouseId;
@@ -67,6 +68,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     _transportNumberController.dispose();
     _nameController.dispose();
     _calculatedVolumeController.dispose();
+    _notesController.dispose();
     // Очищаем контроллеры атрибутов
     for (final controller in _attributeControllers.values) {
       controller.dispose();
@@ -85,6 +87,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       _selectedProducerId = product.producerId;
       _selectedProductTemplateId = product.productTemplateId;
       _selectedArrivalDate = product.arrivalDate != null ? DateTime.parse(product.arrivalDate!) : null;
+      _notesController.text = product.notes ?? '';
       
       print('🔵 ProductInflowFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
       print('🔵 ProductInflowFormPage: product_template_id: ${product.productTemplateId}');
@@ -421,6 +424,17 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
 
                     const SizedBox(height: 24),
 
+                    // Блок "Дополнительная информация"
+                    _buildSection(
+                      title: 'Дополнительная информация',
+                      children: [
+                        // Поле Заметки
+                        _buildNotesField(),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Кнопки
                     Row(
                       children: [
@@ -682,6 +696,29 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     );
   }
 
+  Widget _buildNotesField() {
+    return TextFormField(
+      controller: _notesController,
+      decoration: InputDecoration(
+        labelText: 'Заметки',
+        hintText: 'Введите дополнительные заметки (до 5000 символов)',
+        border: const OutlineInputBorder(),
+        alignLabelWithHint: true,
+        filled: widget.isViewMode,
+        fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
+      ),
+      maxLines: 6,
+      maxLength: 5000,
+      readOnly: widget.isViewMode,
+      validator: (value) {
+        if (value != null && value.length > 5000) {
+          return 'Заметки не могут превышать 5000 символов';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildDateField({
     required String label,
     required DateTime? selectedDate,
@@ -757,6 +794,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         isActive: true,
         status: 'in_stock',
         attributes: attributes,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
       await ref.read(productsInflowProvider.notifier).createProduct(createRequest);
@@ -820,6 +858,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         producerId: _selectedProducerId,
         arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
         attributes: attributes,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
 
       await ref.read(productsInflowProvider.notifier).updateProduct(widget.product!.id, updateRequest);
