@@ -21,24 +21,55 @@ class ProductInflowDetailPage extends ConsumerStatefulWidget {
 class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPage> {
   Map<String, String>? _attributeNames; // Кэш названий атрибутов
   bool _isLoadingAttributes = false;
+  ProductInflowModel? _currentProduct; // Актуальные данные товара
 
   @override
   void initState() {
     super.initState();
+    _currentProduct = widget.product;
     _loadProductTemplate();
   }
 
+  ProductInflowModel get _product => _currentProduct ?? widget.product;
+
+  Future<void> _refreshProductData() async {
+    if (_currentProduct == null) return;
+
+    try {
+      print('🔵 ProductInflowDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
+      
+      final dio = ref.read(dioClientProvider);
+      final response = await dio.get('/products/${_currentProduct!.id}');
+      
+      print('🔵 ProductInflowDetailPage: Обновленные данные товара: ${response.data}');
+      
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        
+        if (data['success'] == true && data['data'] != null) {
+          final productData = data['data'] as Map<String, dynamic>;
+          _currentProduct = ProductInflowModel.fromJson(productData);
+          print('🔵 ProductInflowDetailPage: Товар успешно обновлен');
+        }
+      }
+      
+      setState(() {});
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка обновления данных товара: $e');
+    }
+  }
+
   Future<void> _loadProductTemplate() async {
-    if (widget.product.productTemplateId == null) return;
+    if (_product.productTemplateId == null) return;
     
     setState(() => _isLoadingAttributes = true);
     
     try {
-      print('🔵 ProductInflowDetailPage: Загружаем шаблон товара ID: ${widget.product.productTemplateId}');
+      print('🔵 ProductInflowDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
       
       // Отправляем запрос на /product-templates/{id}
       final dio = ref.read(dioClientProvider);
-      final response = await dio.get('/product-templates/${widget.product.productTemplateId}');
+      final response = await dio.get('/product-templates/${_product.productTemplateId}');
       
       print('🔵 ProductInflowDetailPage: Ответ API /product-templates: ${response.data}');
       
@@ -93,23 +124,28 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${widget.product.id}');
-    print('🔵 ProductInflowDetailPage: product.name = ${widget.product.name}');
-    print('🔵 ProductInflowDetailPage: product.warehouse = ${widget.product.warehouse?.name}');
-    print('🔵 ProductInflowDetailPage: product.producer = ${widget.product.producer?.name}');
-    print('🔵 ProductInflowDetailPage: product.template = ${widget.product.template?.name}');
+    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${_product.id}');
+    print('🔵 ProductInflowDetailPage: product.name = ${_product.name}');
+    print('🔵 ProductInflowDetailPage: product.warehouse = ${_product.warehouse?.name}');
+    print('🔵 ProductInflowDetailPage: product.producer = ${_product.producer?.name}');
+    print('🔵 ProductInflowDetailPage: product.template = ${_product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.product.name ?? 'Без названия'),
+        title: Text(_product.name ?? 'Без названия'),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => ProductInflowFormPage(product: widget.product),
+                  builder: (context) => ProductInflowFormPage(product: _currentProduct ?? widget.product),
                 ),
               );
+              
+              // Обновляем данные при возврате из редактирования
+              if (result == true || result == null) {
+                await _refreshProductData();
+              }
             },
             icon: const Icon(Icons.edit),
             tooltip: 'Редактировать',
@@ -125,25 +161,25 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             _buildSection(
               title: 'Основная информация',
               children: [
-                _buildInfoRow('Название', widget.product.name ?? 'Без названия'),
-                if (widget.product.description != null && widget.product.description!.isNotEmpty)
-                  _buildInfoRow('Описание', widget.product.description!),
-                _buildInfoRow('Количество', widget.product.quantity),
-                _buildInfoRow('Объем', '${widget.product.calculatedVolume ?? '0'} ${widget.product.template?.unit ?? ''}'),
-                _buildInfoRow('Склад', widget.product.warehouse?.name ?? 'Не указан'),
-                _buildInfoRow('Производитель', widget.product.producer?.name ?? 'Не указан'),
-                _buildInfoRow('Создатель', widget.product.creator?.name ?? 'Не указан'),
-                _buildInfoRow('Шаблон товара', widget.product.template?.name ?? 'Не указан'),
-                _buildInfoRow('Номер транспорта', widget.product.transportNumber ?? 'Не указан'),
-                _buildInfoRow('Место отгрузки', widget.product.shippingLocation ?? 'Не указано'),
-                _buildInfoRow('Дата отгрузки', widget.product.shippingDate != null 
-                    ? _formatDate(widget.product.shippingDate!) 
+                _buildInfoRow('Название', _product.name ?? 'Без названия'),
+                if (_product.description != null && _product.description!.isNotEmpty)
+                  _buildInfoRow('Описание', _product.description!),
+                _buildInfoRow('Количество', _product.quantity),
+                _buildInfoRow('Объем', '${_product.calculatedVolume ?? '0'} ${_product.template?.unit ?? ''}'),
+                _buildInfoRow('Склад', _product.warehouse?.name ?? 'Не указан'),
+                _buildInfoRow('Производитель', _product.producer?.name ?? 'Не указан'),
+                _buildInfoRow('Создатель', _product.creator?.name ?? 'Не указан'),
+                _buildInfoRow('Шаблон товара', _product.template?.name ?? 'Не указан'),
+                _buildInfoRow('Номер транспорта', _product.transportNumber ?? 'Не указан'),
+                _buildInfoRow('Место отгрузки', _product.shippingLocation ?? 'Не указано'),
+                _buildInfoRow('Дата отгрузки', _product.shippingDate != null 
+                    ? _formatDate(_product.shippingDate!) 
                     : 'Не указана'),
-                _buildInfoRow('Ожидаемая дата прибытия', widget.product.expectedArrivalDate != null 
-                    ? _formatDate(widget.product.expectedArrivalDate!) 
+                _buildInfoRow('Ожидаемая дата прибытия', _product.expectedArrivalDate != null 
+                    ? _formatDate(_product.expectedArrivalDate!) 
                     : 'Не указана'),
-                _buildInfoRow('Дата поступления', widget.product.arrivalDate != null 
-                    ? _formatDate(widget.product.arrivalDate!) 
+                _buildInfoRow('Дата поступления', _product.arrivalDate != null 
+                    ? _formatDate(_product.arrivalDate!) 
                     : 'Не указана'),
               ],
             ),
@@ -151,12 +187,12 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Характеристики товара
-            if (widget.product.attributes != null && widget.product.attributes is Map && (widget.product.attributes as Map).isNotEmpty)
+            if (_product.attributes != null && _product.attributes is Map && (_product.attributes as Map).isNotEmpty)
               _buildSection(
                 title: 'Характеристики товара',
                 children: _isLoadingAttributes 
                     ? [const Center(child: CircularProgressIndicator())]
-                    : (widget.product.attributes as Map).entries
+                    : (_product.attributes as Map).entries
                         .map((entry) => _buildInfoRow(
                             _getAttributeDisplayName(entry.key.toString()), 
                             entry.value.toString()))
@@ -166,11 +202,11 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Документы
-            if (widget.product.documentPath != null && widget.product.documentPath.isNotEmpty)
+            if (_product.documentPath != null && _product.documentPath.isNotEmpty)
               _buildSection(
                 title: 'Документы',
                 children: [
-                  ...widget.product.documentPath.map((path) => _buildDocumentItem(context, path)),
+                  ..._product.documentPath.map((path) => _buildDocumentItem(context, path)),
                 ],
               ),
 
@@ -200,7 +236,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Заметки
-            if (widget.product.notes != null && widget.product.notes!.isNotEmpty)
+            if (_product.notes != null && _product.notes!.isNotEmpty)
               _buildSection(
                 title: 'Заметки',
                 children: [
@@ -213,7 +249,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                       border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Text(
-                      widget.product.notes!,
+                      _product.notes!,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF2D3748),
@@ -227,16 +263,16 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             const SizedBox(height: 24),
 
             // Коррекции
-            if (widget.product.correction != null || widget.product.correctionStatus != null)
+            if (_product.correction != null || _product.correctionStatus != null)
               _buildSection(
                 title: 'Коррекции',
                 children: [
-                  if (widget.product.correction != null)
-                    _buildInfoRow('Коррекция', widget.product.correction!),
-                  if (widget.product.correctionStatus != null)
-                    _buildInfoRow('Статус коррекции', widget.product.correctionStatus!),
-                  if (widget.product.revisedAt != null)
-                    _buildInfoRow('Дата пересмотра', _formatDateTime(widget.product.revisedAt!)),
+                  if (_product.correction != null)
+                    _buildInfoRow('Коррекция', _product.correction!),
+                  if (_product.correctionStatus != null)
+                    _buildInfoRow('Статус коррекции', _product.correctionStatus!),
+                  if (_product.revisedAt != null)
+                    _buildInfoRow('Дата пересмотра', _formatDateTime(_product.revisedAt!)),
                 ],
               ),
           ],

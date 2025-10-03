@@ -803,7 +803,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Товар успешно создан')),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -867,7 +867,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Товар успешно обновлен')),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
