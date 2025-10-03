@@ -371,7 +371,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Заголовок с названием, статусом и меню
+                // Заголовок с названием и меню
                 Row(
                   children: [
                     Expanded(
@@ -384,22 +384,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(product.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getStatusText(product.status),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _getStatusColor(product.status),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     PopupMenuButton<String>(
                       onSelected: (value) => _handleMenuAction(value, product),
                       itemBuilder: (context) => [

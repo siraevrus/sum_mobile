@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
+import 'package:sum_warehouse/features/products_inflow/data/datasources/product_template_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
+import 'package:sum_warehouse/features/products_inflow/data/models/product_template_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/features/producers/domain/entities/producer_entity.dart';
@@ -44,7 +46,9 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
 
   List<WarehouseModel> _warehouses = [];
   List<ProducerModel> _producers = [];
-  List<ProductTemplateReference> _productTemplates = [];
+  List<ProductTemplateModel> _productTemplates = [];
+  ProductTemplateModel? _selectedTemplate;
+  Map<String, TextEditingController> _attributeControllers = {};
 
   bool get _isEditing => widget.product != null;
 
@@ -63,6 +67,10 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     _transportNumberController.dispose();
     _nameController.dispose();
     _calculatedVolumeController.dispose();
+    // Очищаем контроллеры атрибутов
+    for (final controller in _attributeControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -113,13 +121,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
 
       // Загружаем шаблоны товаров
       print('🔵 ProductInflowFormPage: Загружаем шаблоны товаров...');
-      final productsInflowDataSource = ref.read(productsInflowRemoteDataSourceProvider);
-      final templatesResponse = await productsInflowDataSource.getProducts(ProductInflowFilters(perPage: 100));
-      _productTemplates = templatesResponse.data.map((e) => ProductTemplateReference(
-        id: e.productTemplateId, 
-        name: e.template?.name, 
-        unit: e.template?.unit
-      )).toList();
+      final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      _productTemplates = await templateDataSource.getProductTemplates();
       print('🔵 ProductInflowFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
 
       setState(() {});
@@ -143,29 +146,164 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   }
 
   void _onTemplateChanged() {
+    _loadTemplateAttributes();
     _calculateNameAndVolume();
   }
 
+  void _onAttributeChanged() {
+    _calculateNameAndVolume();
+  }
+
+  Future<void> _loadTemplateAttributes() async {
+    if (_selectedProductTemplateId == null) {
+      _selectedTemplate = null;
+      _clearAttributeControllers();
+      return;
+    }
+
+    try {
+      print('🔵 ProductInflowFormPage: Загружаем атрибуты шаблона ID: $_selectedProductTemplateId');
+      final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      _selectedTemplate = await templateDataSource.getProductTemplate(_selectedProductTemplateId!);
+      
+      // Создаем контроллеры для атрибутов
+      _clearAttributeControllers();
+      for (final attribute in _selectedTemplate!.attributes) {
+        _attributeControllers[attribute.variable] = TextEditingController();
+        
+        // Если редактируем существующий товар, заполняем значения из attributes
+        if (_isEditing && widget.product!.attributes != null) {
+          final attributes = widget.product!.attributes as Map<String, dynamic>?;
+          if (attributes != null && attributes.containsKey(attribute.variable)) {
+            _attributeControllers[attribute.variable]!.text = attributes[attribute.variable].toString();
+          }
+        }
+        
+        // Добавляем слушатель изменений
+        _attributeControllers[attribute.variable]!.addListener(_onAttributeChanged);
+      }
+      
+      print('🔵 ProductInflowFormPage: Загружено атрибутов: ${_selectedTemplate!.attributes.length}');
+      setState(() {});
+    } catch (e) {
+      print('🔴 ProductInflowFormPage: Ошибка загрузки атрибутов шаблона: $e');
+      _selectedTemplate = null;
+      _clearAttributeControllers();
+    }
+  }
+
+  void _clearAttributeControllers() {
+    for (final controller in _attributeControllers.values) {
+      controller.dispose();
+    }
+    _attributeControllers.clear();
+  }
+
   void _calculateNameAndVolume() {
-    if (_selectedProductTemplateId == null || _quantityController.text.isEmpty) {
+    if (_selectedTemplate == null || _quantityController.text.isEmpty) {
       _nameController.text = '';
       _calculatedVolumeController.text = '';
       return;
     }
 
-    final template = _productTemplates.firstWhere(
-      (t) => t.id == _selectedProductTemplateId,
-      orElse: () => ProductTemplateReference(id: 0, name: ''),
-    );
+    // Формируем наименование
+    _nameController.text = _generateProductName();
 
-    if (template.name != null) {
-      // Формируем наименование: "Название шаблона x характеристики"
-      _nameController.text = template.name!;
+    // Рассчитываем объем по формуле
+    _calculatedVolumeController.text = _calculateVolume();
+  }
+
+  String _generateProductName() {
+    if (_selectedTemplate == null) return '';
+
+    final formulaAttributes = <String>[];
+    final regularAttributes = <String>[];
+
+    for (final attribute in _selectedTemplate!.attributes) {
+      final value = _attributeControllers[attribute.variable]?.text ?? '';
+      if (value.isEmpty) continue;
+
+      if (attribute.isInFormula) {
+        formulaAttributes.add(value);
+      } else if (attribute.type == 'number' || attribute.type == 'select') {
+        regularAttributes.add(value);
+      }
     }
 
-    // Рассчитываем объем по формуле (если есть)
-    // TODO: Реализовать расчет по формуле из template
-    _calculatedVolumeController.text = '0';
+    final List<String> nameParts = [_selectedTemplate!.name];
+
+    if (formulaAttributes.isNotEmpty) {
+      nameParts.add(formulaAttributes.join(' x '));
+    }
+
+    if (regularAttributes.isNotEmpty) {
+      nameParts.add(regularAttributes.join(', '));
+    }
+
+    return nameParts.join(': ');
+  }
+
+  String _calculateVolume() {
+    if (_selectedTemplate == null || 
+        _selectedTemplate!.formula == null || 
+        _quantityController.text.isEmpty) {
+      return '0';
+    }
+
+    try {
+      final quantity = double.tryParse(_quantityController.text) ?? 0;
+      
+      // Заменяем переменные в формуле значениями атрибутов
+      String formula = _selectedTemplate!.formula!;
+      
+      // Заменяем quantity
+      formula = formula.replaceAll('quantity', quantity.toString());
+      
+      // Заменяем атрибуты
+      for (final attribute in _selectedTemplate!.attributes) {
+        final value = _attributeControllers[attribute.variable]?.text ?? '0';
+        final numValue = double.tryParse(value) ?? 0;
+        
+        // Заменяем переменную на значение
+        formula = formula.replaceAll(attribute.variable, numValue.toString());
+      }
+      
+      print('🔵 ProductInflowFormPage: Формула для расчета: $formula');
+      
+      // Простой парсер математических выражений
+      // В реальном проекте лучше использовать библиотеку для парсинга математических выражений
+      final result = _evaluateFormula(formula);
+      
+      return result.toStringAsFixed(4);
+    } catch (e) {
+      print('🔴 ProductInflowFormPage: Ошибка расчета объема: $e');
+      return '0';
+    }
+  }
+
+  double _evaluateFormula(String formula) {
+    // Простая реализация для базовых математических операций
+    // В реальном проекте используйте библиотеку типа math_expressions
+    try {
+      // Убираем скобки и заменяем операции
+      formula = formula.replaceAll('(', '').replaceAll(')', '');
+      
+      // Разбиваем по операциям
+      final parts = formula.split('*');
+      double result = 1;
+      
+      for (final part in parts) {
+        final trimmedPart = part.trim();
+        if (trimmedPart.isNotEmpty) {
+          result *= double.tryParse(trimmedPart) ?? 1;
+        }
+      }
+      
+      return result;
+    } catch (e) {
+      print('🔴 ProductInflowFormPage: Ошибка парсинга формулы: $e');
+      return 0;
+    }
   }
 
   @override
@@ -247,6 +385,9 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
                           onChanged: (value) => _onQuantityChanged(),
                         ),
                         const SizedBox(height: 16),
+                        
+                        // Динамические поля атрибутов
+                        ..._buildAttributeFields(),
                         
                         // Поле Наименование (автоматически формируется)
                         _buildTextField(
@@ -420,7 +561,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         const DropdownMenuItem(value: null, child: Text('Выберите шаблон товара')),
         ..._productTemplates.map((template) => DropdownMenuItem(
           value: template.id,
-          child: Text(template.name ?? 'ID ${template.id}'),
+          child: Text(template.name),
         )),
       ],
       onChanged: widget.isViewMode ? null : (value) {
@@ -435,6 +576,123 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         }
         return null;
       },
+    );
+  }
+
+  List<Widget> _buildAttributeFields() {
+    if (_selectedTemplate == null) return [];
+
+    final List<Widget> fields = [];
+    
+    for (final attribute in _selectedTemplate!.attributes) {
+      final controller = _attributeControllers[attribute.variable];
+      if (controller == null) continue;
+
+      fields.add(
+        _buildAttributeField(attribute, controller),
+      );
+      fields.add(const SizedBox(height: 16));
+    }
+
+    return fields;
+  }
+
+  Widget _buildAttributeField(ProductAttributeModel attribute, TextEditingController controller) {
+    Widget field;
+
+    switch (attribute.type) {
+      case 'number':
+        field = _buildTextField(
+          controller: controller,
+          label: attribute.name + (attribute.isRequired ? ' *' : ''),
+          isRequired: attribute.isRequired,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          hintText: attribute.unit != null ? 'в ${attribute.unit}' : null,
+        );
+        break;
+      case 'select':
+        field = _buildSelectField(attribute, controller);
+        break;
+      default:
+        field = _buildTextField(
+          controller: controller,
+          label: attribute.name + (attribute.isRequired ? ' *' : ''),
+          isRequired: attribute.isRequired,
+        );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (attribute.isInFormula)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.functions, size: 16, color: Colors.blue.shade600),
+                const SizedBox(width: 4),
+                Text(
+                  'Используется в формуле',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (attribute.isInFormula) const SizedBox(height: 8),
+        field,
+      ],
+    );
+  }
+
+  Widget _buildSelectField(ProductAttributeModel attribute, TextEditingController controller) {
+    // Парсим опции из JSON строки
+    List<String> options = [];
+    if (attribute.options != null && attribute.options!.isNotEmpty) {
+      try {
+        // Простой парсинг для списка опций
+        // В реальном проекте используйте jsonDecode
+        final cleanOptions = attribute.options!.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '');
+        options = cleanOptions.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      } catch (e) {
+        print('🔴 ProductInflowFormPage: Ошибка парсинга опций: $e');
+      }
+    }
+
+    return DropdownButtonFormField<String>(
+      value: controller.text.isEmpty ? null : controller.text,
+      decoration: InputDecoration(
+        labelText: attribute.name + (attribute.isRequired ? ' *' : ''),
+        border: const OutlineInputBorder(),
+        filled: widget.isViewMode,
+        fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
+      ),
+      items: [
+        DropdownMenuItem(value: null, child: Text('Выберите ${attribute.name.toLowerCase()}')),
+        ...options.map((option) => DropdownMenuItem(
+          value: option,
+          child: Text(option),
+        )),
+      ],
+      onChanged: widget.isViewMode ? null : (value) {
+        controller.text = value ?? '';
+        _onAttributeChanged();
+      },
+      validator: attribute.isRequired ? (value) {
+        if (value == null || value.isEmpty) {
+          return 'Выберите ${attribute.name.toLowerCase()}';
+        }
+        return null;
+      } : null,
     );
   }
 
@@ -475,6 +733,32 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Собираем атрибуты
+      final Map<String, dynamic> attributes = {};
+      for (final entry in _attributeControllers.entries) {
+        if (entry.value.text.isNotEmpty) {
+          final attribute = _selectedTemplate!.attributes.firstWhere(
+            (a) => a.variable == entry.key,
+            orElse: () => ProductAttributeModel(
+              id: 0,
+              productTemplateId: 0,
+              name: '',
+              variable: entry.key,
+              type: 'text',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          
+          // Преобразуем значение в правильный тип
+          if (attribute.type == 'number') {
+            attributes[entry.key] = double.tryParse(entry.value.text) ?? entry.value.text;
+          } else {
+            attributes[entry.key] = entry.value.text;
+          }
+        }
+      }
+
       final createRequest = CreateProductInflowRequest(
         productTemplateId: _selectedProductTemplateId!,
         warehouseId: _selectedWarehouseId!,
@@ -486,6 +770,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
         isActive: true,
         status: 'in_stock',
+        attributes: attributes,
       );
 
       await ref.read(productsInflowProvider.notifier).createProduct(createRequest);
@@ -515,6 +800,32 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Собираем атрибуты
+      final Map<String, dynamic> attributes = {};
+      for (final entry in _attributeControllers.entries) {
+        if (entry.value.text.isNotEmpty) {
+          final attribute = _selectedTemplate!.attributes.firstWhere(
+            (a) => a.variable == entry.key,
+            orElse: () => ProductAttributeModel(
+              id: 0,
+              productTemplateId: 0,
+              name: '',
+              variable: entry.key,
+              type: 'text',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          
+          // Преобразуем значение в правильный тип
+          if (attribute.type == 'number') {
+            attributes[entry.key] = double.tryParse(entry.value.text) ?? entry.value.text;
+          } else {
+            attributes[entry.key] = entry.value.text;
+          }
+        }
+      }
+
       final updateRequest = UpdateProductInflowRequest(
         name: _nameController.text.isEmpty ? null : _nameController.text,
         quantity: _quantityController.text,
@@ -522,6 +833,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
         producerId: _selectedProducerId,
         arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
+        attributes: attributes,
       );
 
       await ref.read(productsInflowProvider.notifier).updateProduct(widget.product!.id, updateRequest);
