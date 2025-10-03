@@ -657,12 +657,17 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   Widget _buildSelectField(ProductAttributeModel attribute, TextEditingController controller) {
     // Парсим опции из JSON строки
     List<String> options = [];
-    if (attribute.options != null && attribute.options!.isNotEmpty) {
+    if (attribute.options != null) {
       try {
-        // Простой парсинг для списка опций
-        // В реальном проекте используйте jsonDecode
-        final cleanOptions = attribute.options!.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '');
-        options = cleanOptions.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        if (attribute.options is String && (attribute.options as String).isNotEmpty) {
+          // Простой парсинг для списка опций
+          // В реальном проекте используйте jsonDecode
+          final cleanOptions = (attribute.options as String).replaceAll('[', '').replaceAll(']', '').replaceAll('"', '');
+          options = cleanOptions.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        } else if (attribute.options is List) {
+          // Если options уже список
+          options = (attribute.options as List).map((e) => e.toString()).toList();
+        }
       } catch (e) {
         print('🔴 ProductInflowFormPage: Ошибка парсинга опций: $e');
       }

@@ -28,7 +28,7 @@ class ProductAttributeModel with _$ProductAttributeModel {
     required String name,
     required String variable,
     required String type, // 'number', 'select', 'text'
-    String? options, // JSON строка для select типа
+    dynamic options, // JSON строка для select типа или null
     String? unit,
     @Default(false) bool isRequired,
     @Default(false) bool isInFormula,
