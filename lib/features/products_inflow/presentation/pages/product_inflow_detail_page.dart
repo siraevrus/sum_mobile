@@ -72,18 +72,18 @@ class ProductInflowDetailPage extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Характеристики товара
-            if (product.attributes.isNotEmpty)
+            if (product.attributes != null && product.attributes is Map && (product.attributes as Map).isNotEmpty)
               _buildSection(
                 title: 'Характеристики товара',
-                children: product.attributes.entries
-                    .map((entry) => _buildInfoRow(entry.key, entry.value.toString()))
+                children: (product.attributes as Map).entries
+                    .map((entry) => _buildInfoRow(entry.key.toString(), entry.value.toString()))
                     .toList(),
               ),
 
             const SizedBox(height: 24),
 
             // Документы
-            if (product.documentPath.isNotEmpty)
+            if (product.documentPath != null && product.documentPath.isNotEmpty)
               _buildSection(
                 title: 'Документы',
                 children: [
@@ -140,7 +140,8 @@ class ProductInflowDetailPage extends ConsumerWidget {
     required List<Widget> children,
   }) {
     print('🔵 ProductInflowDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
-    return Column(
+    try {
+      return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -172,11 +173,19 @@ class ProductInflowDetailPage extends ConsumerWidget {
         ),
       ],
     );
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка в _buildSection "$title": $e');
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: Text('Ошибка отображения секции: $e'),
+      );
+    }
   }
 
   Widget _buildInfoRow(String label, String value) {
     print('🔵 ProductInflowDetailPage: _buildInfoRow вызван для "$label" = "$value"');
-    return Padding(
+    try {
+      return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,6 +214,13 @@ class ProductInflowDetailPage extends ConsumerWidget {
         ],
       ),
     );
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка в _buildInfoRow "$label": $e');
+      return Container(
+        padding: const EdgeInsets.all(8),
+        child: Text('Ошибка отображения: $e'),
+      );
+    }
   }
 
   Widget _buildDocumentItem(BuildContext context, String path) {
