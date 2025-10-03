@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
+// import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/features/companies/data/repositories/companies_repository_impl.dart';
-import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 
 /// Экран создания/редактирования компании

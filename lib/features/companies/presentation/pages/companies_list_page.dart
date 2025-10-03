@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/company_form_page.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/company_details_page.dart';
-import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
-import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+// import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
+// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 

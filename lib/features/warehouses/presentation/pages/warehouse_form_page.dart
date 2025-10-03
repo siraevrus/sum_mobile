@@ -4,7 +4,7 @@ import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
-import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 
 /// Экран создания/редактирования склада
 class WarehouseFormPage extends ConsumerStatefulWidget {
@@ -222,7 +222,7 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
   
   Widget _buildCompanyDropdown() {
     return FutureBuilder<List<CompanyModel>>(
-      future: ref.read(companiesRemoteDataSourceProvider).getCompanies(),
+      future: Future.value(<CompanyModel>[]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

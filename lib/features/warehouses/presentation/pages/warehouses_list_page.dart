@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouse_form_page.dart';
-import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
@@ -30,11 +30,11 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
 
   Future<void> _loadCompanies() async {
     try {
-      final dataSource = ref.read(companiesRemoteDataSourceProvider);
-      final companies = await dataSource.getCompanies();
+      // final dataSource = ref.read(companiesRemoteDataSourceProvider);
+      // final companies = await dataSource.getCompanies();
       if (mounted) {
         setState(() {
-          _companies = companies;
+          _companies = <CompanyModel>[];
         });
       }
     } catch (e) {

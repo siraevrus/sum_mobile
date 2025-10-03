@@ -6,7 +6,7 @@ import 'package:sum_warehouse/shared/models/user_management_model.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
-import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 
 /// Экран создания/редактирования пользователя
@@ -376,7 +376,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
   
   Widget _buildCompanyDropdown() {
     return FutureBuilder<List<CompanyModel>>(
-      future: ref.read(companiesRemoteDataSourceProvider).getCompanies(),
+      future: Future.value(<CompanyModel>[]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

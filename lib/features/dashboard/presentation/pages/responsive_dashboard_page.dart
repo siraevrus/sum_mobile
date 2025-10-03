@@ -11,7 +11,7 @@ import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouses_
 import 'package:sum_warehouse/features/users/presentation/pages/employees_list_page.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/inventory_tabs_page.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
-import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
+// import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
 
@@ -435,7 +435,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
       case 'producers':
         return const ProducersListPage();
       case 'companies':
-        return const CompaniesListPage();
+        return const Scaffold(body: Center(child: Text('Компании временно недоступны')));
       case 'inventory':
         return const InventoryTabsPage();
       case 'products-inflow':
