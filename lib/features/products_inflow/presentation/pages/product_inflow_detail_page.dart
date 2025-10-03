@@ -407,8 +407,11 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         documentUrl = path;
       } else {
         // Формируем URL относительно базового адреса API
-        // Проверяем, начинается ли путь со слэша
+        // Проверяем, начинается ли путь со слэша и добавляем /storage/
         String normalizedPath = path.startsWith('/') ? path : '/$path';
+        if (!normalizedPath.startsWith('/storage/')) {
+          normalizedPath = '/storage$normalizedPath';
+        }
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
       
