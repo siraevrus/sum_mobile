@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
+import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
+import 'package:sum_warehouse/core/network/dio_client.dart';
 
 /// Страница детального просмотра товара
-class ProductInflowDetailPage extends ConsumerWidget {
+class ProductInflowDetailPage extends ConsumerStatefulWidget {
   final ProductInflowModel product;
 
   const ProductInflowDetailPage({
@@ -13,22 +15,77 @@ class ProductInflowDetailPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${product.id}');
-    print('🔵 ProductInflowDetailPage: product.name = ${product.name}');
-    print('🔵 ProductInflowDetailPage: product.warehouse = ${product.warehouse?.name}');
-    print('🔵 ProductInflowDetailPage: product.producer = ${product.producer?.name}');
-    print('🔵 ProductInflowDetailPage: product.template = ${product.template?.name}');
+  ConsumerState<ProductInflowDetailPage> createState() => _ProductInflowDetailPageState();
+}
+
+class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPage> {
+  Map<String, String>? _attributeNames; // Кэш названий атрибутов
+  bool _isLoadingAttributes = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductTemplate();
+  }
+
+  Future<void> _loadProductTemplate() async {
+    if (widget.product.productTemplateId == null) return;
+    
+    setState(() => _isLoadingAttributes = true);
+    
+    try {
+      print('🔵 ProductInflowDetailPage: Загружаем шаблон товара ID: ${widget.product.productTemplateId}');
+      
+      // Отправляем запрос на /product-templates/{id}
+      final dio = ref.read(dioClientProvider);
+      final response = await dio.get('/product-templates/${widget.product.productTemplateId}');
+      
+      print('🔵 ProductInflowDetailPage: Ответ API /product-templates: ${response.data}');
+      
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['attributes'] != null) {
+        final attributes = data['attributes'] as List<dynamic>;
+        final attributeNames = <String, String>{};
+        
+        for (final attr in attributes) {
+          if (attr is Map<String, dynamic>) {
+            final variable = attr['variable'] as String?;
+            final name = attr['name'] as String?;
+            if (variable != null && name != null) {
+              attributeNames[variable] = name;
+            }
+          }
+        }
+        
+        print('🔵 ProductInflowDetailPage: Загружены названия атрибутов: $attributeNames');
+        setState(() {
+          _attributeNames = attributeNames;
+          _isLoadingAttributes = false;
+        });
+      }
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка загрузки шаблона товара: $e');
+      setState(() => _isLoadingAttributes = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${widget.product.id}');
+    print('🔵 ProductInflowDetailPage: product.name = ${widget.product.name}');
+    print('🔵 ProductInflowDetailPage: product.warehouse = ${widget.product.warehouse?.name}');
+    print('🔵 ProductInflowDetailPage: product.producer = ${widget.product.producer?.name}');
+    print('🔵 ProductInflowDetailPage: product.template = ${widget.product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name ?? 'Без названия'),
+        title: Text(widget.product.name ?? 'Без названия'),
         actions: [
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => ProductInflowFormPage(product: product),
+                  builder: (context) => ProductInflowFormPage(product: widget.product),
                 ),
               );
             },
@@ -46,25 +103,25 @@ class ProductInflowDetailPage extends ConsumerWidget {
             _buildSection(
               title: 'Основная информация',
               children: [
-                _buildInfoRow('Название', product.name ?? 'Без названия'),
-                if (product.description != null && product.description!.isNotEmpty)
-                  _buildInfoRow('Описание', product.description!),
-                _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
-                _buildInfoRow('Объем', product.calculatedVolume ?? '0'),
-                _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
-                _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
-                _buildInfoRow('Создатель', product.creator?.name ?? 'Не указан'),
-                _buildInfoRow('Шаблон товара', product.template?.name ?? 'Не указан'),
-                _buildInfoRow('Номер транспорта', product.transportNumber ?? 'Не указан'),
-                _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
-                _buildInfoRow('Дата отгрузки', product.shippingDate != null 
-                    ? _formatDate(product.shippingDate!) 
+                _buildInfoRow('Название', widget.product.name ?? 'Без названия'),
+                if (widget.product.description != null && widget.product.description!.isNotEmpty)
+                  _buildInfoRow('Описание', widget.product.description!),
+                _buildInfoRow('Количество', '${widget.product.quantity} ${widget.product.template?.unit ?? ''}'),
+                _buildInfoRow('Объем', widget.product.calculatedVolume ?? '0'),
+                _buildInfoRow('Склад', widget.product.warehouse?.name ?? 'Не указан'),
+                _buildInfoRow('Производитель', widget.product.producer?.name ?? 'Не указан'),
+                _buildInfoRow('Создатель', widget.product.creator?.name ?? 'Не указан'),
+                _buildInfoRow('Шаблон товара', widget.product.template?.name ?? 'Не указан'),
+                _buildInfoRow('Номер транспорта', widget.product.transportNumber ?? 'Не указан'),
+                _buildInfoRow('Место отгрузки', widget.product.shippingLocation ?? 'Не указано'),
+                _buildInfoRow('Дата отгрузки', widget.product.shippingDate != null 
+                    ? _formatDate(widget.product.shippingDate!) 
                     : 'Не указана'),
-                _buildInfoRow('Ожидаемая дата прибытия', product.expectedArrivalDate != null 
-                    ? _formatDate(product.expectedArrivalDate!) 
+                _buildInfoRow('Ожидаемая дата прибытия', widget.product.expectedArrivalDate != null 
+                    ? _formatDate(widget.product.expectedArrivalDate!) 
                     : 'Не указана'),
-                _buildInfoRow('Дата поступления', product.arrivalDate != null 
-                    ? _formatDate(product.arrivalDate!) 
+                _buildInfoRow('Дата поступления', widget.product.arrivalDate != null 
+                    ? _formatDate(widget.product.arrivalDate!) 
                     : 'Не указана'),
               ],
             ),
@@ -72,29 +129,33 @@ class ProductInflowDetailPage extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Характеристики товара
-            if (product.attributes != null && product.attributes is Map && (product.attributes as Map).isNotEmpty)
+            if (widget.product.attributes != null && widget.product.attributes is Map && (widget.product.attributes as Map).isNotEmpty)
               _buildSection(
                 title: 'Характеристики товара',
-                children: (product.attributes as Map).entries
-                    .map((entry) => _buildInfoRow(entry.key.toString(), entry.value.toString()))
-                    .toList(),
+                children: _isLoadingAttributes 
+                    ? [const Center(child: CircularProgressIndicator())]
+                    : (widget.product.attributes as Map).entries
+                        .map((entry) => _buildInfoRow(
+                            _getAttributeDisplayName(entry.key.toString()), 
+                            entry.value.toString()))
+                        .toList(),
               ),
 
             const SizedBox(height: 24),
 
             // Документы
-            if (product.documentPath != null && product.documentPath.isNotEmpty)
+            if (widget.product.documentPath != null && widget.product.documentPath.isNotEmpty)
               _buildSection(
                 title: 'Документы',
                 children: [
-                  ...product.documentPath.map((path) => _buildDocumentItem(context, path)),
+                  ...widget.product.documentPath.map((path) => _buildDocumentItem(context, path)),
                 ],
               ),
 
             const SizedBox(height: 24),
 
             // Заметки
-            if (product.notes != null && product.notes!.isNotEmpty)
+            if (widget.product.notes != null && widget.product.notes!.isNotEmpty)
               _buildSection(
                 title: 'Заметки',
                 children: [
@@ -107,7 +168,7 @@ class ProductInflowDetailPage extends ConsumerWidget {
                       border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Text(
-                      product.notes!,
+                      widget.product.notes!,
                       style: const TextStyle(fontSize: 14),
                     ),
                   ),
@@ -117,22 +178,30 @@ class ProductInflowDetailPage extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Коррекции
-            if (product.correction != null || product.correctionStatus != null)
+            if (widget.product.correction != null || widget.product.correctionStatus != null)
               _buildSection(
                 title: 'Коррекции',
                 children: [
-                  if (product.correction != null)
-                    _buildInfoRow('Коррекция', product.correction!),
-                  if (product.correctionStatus != null)
-                    _buildInfoRow('Статус коррекции', product.correctionStatus!),
-                  if (product.revisedAt != null)
-                    _buildInfoRow('Дата пересмотра', _formatDateTime(product.revisedAt!)),
+                  if (widget.product.correction != null)
+                    _buildInfoRow('Коррекция', widget.product.correction!),
+                  if (widget.product.correctionStatus != null)
+                    _buildInfoRow('Статус коррекции', widget.product.correctionStatus!),
+                  if (widget.product.revisedAt != null)
+                    _buildInfoRow('Дата пересмотра', _formatDateTime(widget.product.revisedAt!)),
                 ],
               ),
           ],
         ),
       ),
     );
+  }
+
+  String _getAttributeDisplayName(String variable) {
+    // Если есть названия атрибутов, используем их, иначе переменную
+    if (_attributeNames != null && _attributeNames!.containsKey(variable)) {
+      return _attributeNames![variable]!;
+    }
+    return variable; // Fallback на переменную
   }
 
   Widget _buildSection({
