@@ -455,6 +455,13 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                 _buildInfoRow('Дата поступления', product.arrivalDate != null 
                     ? _formatDate(product.arrivalDate!)
                     : 'Не указана'),
+                
+                // Тег статуса коррекции
+                if (product.correctionStatus != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: _buildCorrectionStatusTag(product.correctionStatus!),
+                  ),
               ],
             ),
           ),
@@ -524,6 +531,61 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
     } catch (e) {
       return dateString;
     }
+  }
+
+  Widget _buildCorrectionStatusTag(String correctionStatus) {
+    Color backgroundColor;
+    Color textColor;
+    String statusText;
+    IconData icon;
+
+    switch (correctionStatus) {
+      case 'correction':
+        backgroundColor = Colors.red.shade100;
+        textColor = Colors.red.shade700;
+        statusText = 'Требует внимание';
+        icon = Icons.warning;
+        break;
+      case 'revised':
+        backgroundColor = Colors.orange.shade100;
+        textColor = Colors.orange.shade700;
+        statusText = 'Внесена корректировка';
+        icon = Icons.edit_note;
+        break;
+      default:
+        backgroundColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade700;
+        statusText = correctionStatus;
+        icon = Icons.info;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: textColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleMenuAction(String action, ProductInflowModel product) {
