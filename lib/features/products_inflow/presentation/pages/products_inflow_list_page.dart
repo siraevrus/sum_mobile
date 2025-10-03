@@ -447,8 +447,8 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                   ),
                 
                 // Информация о товаре
-                _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
-                _buildInfoRow('Объем', product.calculatedVolume ?? '0'),
+                _buildInfoRow('Количество', product.quantity),
+                _buildInfoRow('Объем', '${product.calculatedVolume ?? '0'} ${product.template?.unit ?? ''}'),
                 _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
                 _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
                 _buildInfoRow('Создатель', product.creator?.name ?? 'Не указан'),

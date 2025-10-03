@@ -240,7 +240,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       nameParts.add(regularAttributes.join(', '));
     }
 
-    return nameParts.join(': ');
+    return nameParts.join(', ');
   }
 
   String _calculateVolume() {

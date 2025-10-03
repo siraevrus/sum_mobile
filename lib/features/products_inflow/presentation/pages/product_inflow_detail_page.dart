@@ -128,8 +128,8 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                 _buildInfoRow('Название', widget.product.name ?? 'Без названия'),
                 if (widget.product.description != null && widget.product.description!.isNotEmpty)
                   _buildInfoRow('Описание', widget.product.description!),
-                _buildInfoRow('Количество', '${widget.product.quantity} ${widget.product.template?.unit ?? ''}'),
-                _buildInfoRow('Объем', widget.product.calculatedVolume ?? '0'),
+                _buildInfoRow('Количество', widget.product.quantity),
+                _buildInfoRow('Объем', '${widget.product.calculatedVolume ?? '0'} ${widget.product.template?.unit ?? ''}'),
                 _buildInfoRow('Склад', widget.product.warehouse?.name ?? 'Не указан'),
                 _buildInfoRow('Производитель', widget.product.producer?.name ?? 'Не указан'),
                 _buildInfoRow('Создатель', widget.product.creator?.name ?? 'Не указан'),
