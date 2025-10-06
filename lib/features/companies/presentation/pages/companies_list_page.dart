@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/company_form_page.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/company_details_page.dart';
-// import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
-// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
@@ -28,10 +27,10 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final companiesList = ref.watch(companiesListProvider(
+    final companiesList = ref.watch(companiesListProvider((
       search: _searchController.text.isNotEmpty ? _searchController.text : null,
       showArchived: _showArchived,
-    ));
+    )));
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -53,13 +52,19 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(companiesListProvider);
+                ref.invalidate(companiesListProvider((
+                  search: _searchController.text.isNotEmpty ? _searchController.text : null,
+                  showArchived: _showArchived,
+                )));
               },
               child: companiesList.when(
                 loading: () => const LoadingWidget(message: 'Загружаем компании...'),
                 error: (error, stack) => AppErrorWidget(
                   error: error,
-                  onRetry: () => ref.invalidate(companiesListProvider),
+                  onRetry: () => ref.invalidate(companiesListProvider((
+                    search: _searchController.text.isNotEmpty ? _searchController.text : null,
+                    showArchived: _showArchived,
+                  ))),
                 ),
                 data: (companies) => companies.isEmpty
                     ? const EmptyWidget(

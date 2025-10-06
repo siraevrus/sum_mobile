@@ -31,8 +31,7 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
         queryParams['status'] = 'in_stock';
       }
       
-      // Добавляем include для получения связанных объектов
-      queryParams['include'] = 'template,warehouse,creator,producer';
+      // include не нужен — API уже возвращает связанные объекты
       
       print('🔵 Запрос на /products с параметрами: $queryParams');
       final response = await _dio.get('/products', queryParameters: queryParams);

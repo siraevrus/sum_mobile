@@ -149,6 +149,11 @@ GoRouter router(RouterRef ref) {
         name: 'products-inflow',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-inflow'),
       ),
+      GoRoute(
+        path: '/products-in-transit',
+        name: 'products-in-transit',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(

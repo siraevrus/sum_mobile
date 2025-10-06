@@ -118,6 +118,24 @@ class SingleCompanyStats with _$SingleCompanyStats {
       _$SingleCompanyStatsFromJson(json);
 }
 
+/// Расширение для методов SingleCompanyStats
+extension SingleCompanyStatsX on SingleCompanyStats {
+  /// Создать из общей статистики компаний
+  static SingleCompanyStats fromStats(CompanyStats stats) {
+    return SingleCompanyStats(
+      companyId: 0, // Общая статистика
+      companyName: 'Все компании',
+      warehousesCount: stats.totalWarehouses,
+      employeesCount: stats.totalEmployees,
+      activeEmployees: stats.totalEmployees,
+      totalProducts: 0, // Не предоставляется в общей статистике
+      monthlyRevenue: 0.0, // Не предоставляется в общей статистике
+      monthlyOrders: 0, // Не предоставляется в общей статистике
+      status: 'active',
+    );
+  }
+}
+
 /// Псевдоним для обратной совместимости
 typedef CompanyStatsModel = SingleCompanyStats;
 

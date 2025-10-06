@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/companies/presentation/pages/company_form_page.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouse_form_page.dart';
-// import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
@@ -505,7 +505,8 @@ class CompanyDetailsPage extends ConsumerWidget {
   
   Future<void> _performDelete(BuildContext context, WidgetRef ref, CompanyModel company) async {
     try {
-      await ref.read(companiesListProvider().notifier).deleteCompany(company.id);
+      final notifier = ref.read(companiesProvider.notifier);
+      await notifier.deleteCompany(company.id);
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

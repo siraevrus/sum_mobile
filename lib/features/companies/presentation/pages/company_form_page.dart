@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-// import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
-import 'package:sum_warehouse/features/companies/data/repositories/companies_repository_impl.dart';
-// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 
 /// Экран создания/редактирования компании
@@ -368,13 +366,14 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       CompanyModel? result;
       if (_isEditing) {
         try {
-          result = await ref.read(companiesListProvider().notifier)
-              .updateCompany(widget.company!.id, formData);
+          final notifier = ref.read(companiesProvider.notifier);
+          await notifier.updateCompany(widget.company!.id, formData);
+          result = widget.company;
         } catch (e) {
           // If update failed due to parsing but server updated successfully,
           // try to GET the fresh company and continue so UI can return.
           try {
-            final repo = await ref.read(companiesRepositoryProvider.future);
+            final repo = ref.read(companiesRepositoryProvider);
             final fresh = await repo.getCompanyById(widget.company!.id);
             result = fresh;
           } catch (e2) {
@@ -382,8 +381,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
           }
         }
       } else {
-        result = await ref.read(companiesListProvider().notifier)
-            .createCompany(formData);
+        final notifier = ref.read(companiesProvider.notifier);
+        await notifier.createCompany(formData);
+        result = null; // Новые компании не возвращаются
       }
       
       if (mounted && result != null) {

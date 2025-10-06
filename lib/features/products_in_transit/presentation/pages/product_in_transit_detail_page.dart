@@ -4,28 +4,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
-import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
-import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
+import 'package:sum_warehouse/features/products_in_transit/data/models/product_in_transit_model.dart';
+import 'package:sum_warehouse/features/products_in_transit/presentation/pages/product_in_transit_form_page.dart';
+import 'package:sum_warehouse/features/products_in_transit/data/datasources/products_in_transit_remote_datasource.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 
-/// Страница детального просмотра товара
-class ProductInflowDetailPage extends ConsumerStatefulWidget {
-  final ProductInflowModel product;
+/// Страница детального просмотра товара в пути
+class ProductInTransitDetailPage extends ConsumerStatefulWidget {
+  final ProductInTransitModel product;
 
-  const ProductInflowDetailPage({
+  const ProductInTransitDetailPage({
     super.key,
     required this.product,
   });
 
   @override
-  ConsumerState<ProductInflowDetailPage> createState() => _ProductInflowDetailPageState();
+  ConsumerState<ProductInTransitDetailPage> createState() => _ProductInTransitDetailPageState();
 }
 
-class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPage> {
+class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDetailPage> {
   Map<String, String>? _attributeNames; // Кэш названий атрибутов
   bool _isLoadingAttributes = false;
-  ProductInflowModel? _currentProduct; // Актуальные данные товара
+  ProductInTransitModel? _currentProduct; // Актуальные данные товара
 
   @override
   void initState() {
@@ -34,105 +34,100 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     _loadProductTemplate();
   }
 
-  ProductInflowModel get _product => _currentProduct ?? widget.product;
+  ProductInTransitModel get _product => _currentProduct ?? widget.product;
 
   Future<void> _refreshProductData() async {
     if (_currentProduct == null) return;
 
     try {
-      print('🔵 ProductInflowDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
+      print('🔵 ProductInTransitDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/products/${_currentProduct!.id}');
       
-      print('🔵 ProductInflowDetailPage: Обновленные данные товара: ${response.data}');
+      print('🔵 ProductInTransitDetailPage: Обновленные данные товара: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
+        final updatedProduct = ProductInTransitModel.fromJson(response.data);
         
-        if (data['success'] == true && data['data'] != null) {
-          final productData = data['data'] as Map<String, dynamic>;
-          _currentProduct = ProductInflowModel.fromJson(productData);
-          print('🔵 ProductInflowDetailPage: Товар успешно обновлен');
+        if (mounted) {
+          setState(() {
+            _currentProduct = updatedProduct;
+          });
         }
       }
-      
-      setState(() {});
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка обновления данных товара: $e');
+      print('🔴 ProductInTransitDetailPage: Ошибка обновления данных товара: $e');
     }
   }
 
   Future<void> _loadProductTemplate() async {
     if (_product.productTemplateId == null) return;
     
-    setState(() => _isLoadingAttributes = true);
-    
+    setState(() {
+      _isLoadingAttributes = true;
+    });
+
     try {
-      print('🔵 ProductInflowDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
+      print('🔵 ProductInTransitDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
       
-      // Отправляем запрос на /product-templates/{id}
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/product-templates/${_product.productTemplateId}');
       
-      print('🔵 ProductInflowDetailPage: Ответ API /product-templates: ${response.data}');
+      print('🔵 ProductInTransitDetailPage: Ответ API /product-templates: ${response.data}');
       
-      final data = response.data;
-      print('🔵 ProductInflowDetailPage: Тип ответа: ${data.runtimeType}');
-      
-      // Проверяем структуру ответа - может быть {success: true, data: {...}} или прямая структура
-      Map<String, dynamic>? templateData;
-      if (data is Map<String, dynamic>) {
-        if (data['success'] == true && data['data'] != null) {
-          // Формат {success: true, data: {...}}
-          templateData = data['data'] as Map<String, dynamic>;
-          print('🔵 ProductInflowDetailPage: Используем data из success/data структуры');
-        } else {
-          // Прямой формат
-          templateData = data;
-          print('🔵 ProductInflowDetailPage: Используем прямой формат');
-        }
-      }
-      
-      if (templateData != null && templateData['attributes'] != null) {
-        final attributes = templateData['attributes'] as List<dynamic>;
-        final attributeNames = <String, String>{};
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data;
         
-        for (final attr in attributes) {
-          if (attr is Map<String, dynamic>) {
-            final variable = attr['variable'] as String?;
-            final name = attr['name'] as String?;
-            if (variable != null && name != null) {
-              attributeNames[variable] = name;
+        // Проверяем структуру ответа - может быть вложен в data
+        Map<String, dynamic> templateData;
+        if (data.containsKey('data') && data['data'] is Map<String, dynamic>) {
+          templateData = data['data'] as Map<String, dynamic>;
+        } else {
+          templateData = data;
+        }
+        
+        if (templateData.containsKey('attributes') && templateData['attributes'] is List) {
+          final attributes = templateData['attributes'] as List;
+          
+          final attributeNames = <String, String>{};
+          for (final attr in attributes) {
+            if (attr is Map<String, dynamic>) {
+              final variable = attr['variable'] as String?;
+              final name = attr['name'] as String?;
+              if (variable != null && name != null) {
+                attributeNames[variable] = name;
+              }
             }
           }
+          
+          print('🔵 ProductInTransitDetailPage: Названия атрибутов загружены: $attributeNames');
+          
+          if (mounted) {
+            setState(() {
+              _attributeNames = attributeNames;
+            });
+          }
         }
-        
-        print('🔵 ProductInflowDetailPage: Загружены названия атрибутов: $attributeNames');
+      }
+    } catch (e) {
+      print('🔴 ProductInTransitDetailPage: Ошибка загрузки шаблона товара: $e');
+    } finally {
+      if (mounted) {
         setState(() {
-          _attributeNames = attributeNames;
-          _isLoadingAttributes = false;
-        });
-      } else {
-        print('🔵 ProductInflowDetailPage: Атрибуты не найдены в ответе');
-        setState(() {
-          _attributeNames = {};
           _isLoadingAttributes = false;
         });
       }
-    } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка загрузки шаблона товара: $e');
-      setState(() => _isLoadingAttributes = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${_product.id}');
-    print('🔵 ProductInflowDetailPage: product.name = ${_product.name}');
-    print('🔵 ProductInflowDetailPage: product.warehouse = ${_product.warehouse?.name}');
-    print('🔵 ProductInflowDetailPage: product.producer = ${_product.producer?.name}');
-    print('🔵 ProductInflowDetailPage: product.template = ${_product.template?.name}');
+    print('🔵 ProductInTransitDetailPage: build вызван для товара ID: ${_product.id}');
+    print('🔵 ProductInTransitDetailPage: product.name = ${_product.name}');
+    print('🔵 ProductInTransitDetailPage: product.warehouse = ${_product.warehouse?.name}');
+    print('🔵 ProductInTransitDetailPage: product.producer = ${_product.producer?.name}');
+    print('🔵 ProductInTransitDetailPage: product.template = ${_product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
@@ -142,7 +137,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
             onPressed: () async {
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => ProductInflowFormPage(product: _currentProduct ?? widget.product),
+                  builder: (context) => ProductInTransitFormPage(product: _currentProduct ?? widget.product),
                 ),
               );
               
@@ -260,54 +255,48 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     );
   }
 
-  String _getAttributeDisplayName(String variable) {
-    // Если есть названия атрибутов, используем их, иначе переменную
-    if (_attributeNames != null && _attributeNames!.containsKey(variable)) {
-      return _attributeNames![variable]!;
-    }
-    return variable; // Fallback на переменную
-  }
-
   Widget _buildSection({
     required String title,
     required List<Widget> children,
   }) {
-    print('🔵 ProductInflowDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
+    print('🔵 ProductInTransitDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     try {
       return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A1A),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A1A),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            ),
           ),
-          child: Column(
-            children: children,
-          ),
-        ),
-      ],
-    );
+        ],
+      );
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _buildSection "$title": $e');
+      print('🔴 ProductInTransitDetailPage: Ошибка в _buildSection "$title": $e');
       return Container(
         padding: const EdgeInsets.all(16),
         child: Text('Ошибка отображения секции: $e'),
@@ -316,44 +305,110 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
   }
 
   Widget _buildInfoRow(String label, String value) {
-    print('🔵 ProductInflowDetailPage: _buildInfoRow вызван для "$label" = "$value"');
+    print('🔵 ProductInTransitDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     try {
       return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF1A1A1A),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF2D3748),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _buildInfoRow "$label": $e');
+      print('🔴 ProductInTransitDetailPage: Ошибка в _buildInfoRow "$label": $e');
       return Container(
         padding: const EdgeInsets.all(8),
         child: Text('Ошибка отображения: $e'),
       );
     }
+  }
+
+  String _getAttributeDisplayName(String variable) {
+    // Если есть названия атрибутов, используем их, иначе переменную
+    if (_attributeNames != null && _attributeNames!.containsKey(variable)) {
+      return _attributeNames![variable]!;
+    }
+    return variable; // Fallback на переменную
+  }
+
+  List<Widget> _buildAttributesList() {
+    if (_isLoadingAttributes) {
+      return [
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      ];
+    }
+
+    if (_product.attributes == null) {
+      return [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'Характеристики не указаны',
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+      ];
+    }
+
+    final attributes = _product.attributes as Map<String, dynamic>?;
+    if (attributes == null || attributes.isEmpty) {
+      return [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Text(
+            'Характеристики не указаны',
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+      ];
+    }
+
+    return attributes.entries.map((entry) {
+      final key = entry.key;
+      final value = entry.value?.toString() ?? '';
+      
+      // Получаем название атрибута из шаблона или используем ключ
+      final attributeName = _attributeNames?[key] ?? key;
+      
+      return _buildInfoRow(attributeName, value);
+    }).toList();
   }
 
   Widget _buildDocumentItem(BuildContext context, String path) {
@@ -399,10 +454,28 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     );
   }
 
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  String _formatDateTime(String dateTimeString) {
+    try {
+      final dateTime = DateTime.parse(dateTimeString);
+      return '${dateTime.day.toString().padLeft(2, '0')}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateTimeString;
+    }
+  }
+
   Future<void> _openDocument(String path) async {
     try {
-      print('🔵 ProductInflowDetailPage: Скачиваем документ: $path');
-      
+      print('🔵 ProductInTransitDetailPage: Скачиваем документ: $path');
+
       // Формируем полную ссылку на документ
       String documentUrl;
       if (path.startsWith('http')) {
@@ -417,9 +490,9 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         }
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
-      
-      print('🔵 ProductInflowDetailPage: Полная ссылка на документ: $documentUrl');
-      
+
+      print('🔵 ProductInTransitDetailPage: Полная ссылка на документ: $documentUrl');
+
       // Показываем диалог загрузки
       showDialog(
         context: context,
@@ -434,7 +507,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
           ),
         ),
       );
-      
+
       // Запрашиваем разрешения в зависимости от версии Android
       bool hasPermission = false;
       
@@ -471,7 +544,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         _showErrorDialog('Необходимо разрешение на доступ к хранилищу. Пожалуйста, предоставьте разрешение в настройках приложения.');
         return;
       }
-      
+
       // Скачиваем файл
       final dio = ref.read(dioClientProvider);
       final response = await dio.get(
@@ -481,7 +554,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
           followRedirects: false,
         ),
       );
-      
+
       // Получаем директорию для загрузок
       Directory? directory;
       Directory downloadsDir;
@@ -496,7 +569,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         }
       } catch (e) {
         // Если внешнее хранилище недоступно, используем внутреннее
-        print('🔵 ProductInflowDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
+        print('🔵 ProductInTransitDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
         directory = await getApplicationDocumentsDirectory();
         downloadsDir = Directory('${directory.path}/Downloads');
       }
@@ -505,16 +578,16 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       if (!await downloadsDir.exists()) {
         await downloadsDir.create(recursive: true);
       }
-      
+
       // Получаем имя файла из пути
       final fileName = path.split('/').last;
       final file = File('${downloadsDir.path}/$fileName');
-      
+
       // Сохраняем файл
       await file.writeAsBytes(response.data);
-      
+
       Navigator.of(context).pop(); // Закрываем диалог загрузки
-      
+
       // Показываем диалог успеха
       if (mounted) {
         String locationText;
@@ -538,71 +611,47 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
           ),
         );
       }
-      
-      print('🔵 ProductInflowDetailPage: Документ успешно сохранен: ${file.path}');
-      
+
+      print('🔵 ProductInTransitDetailPage: Документ успешно сохранен: ${file.path}');
+
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка скачивания документа: $e');
-      
+      print('🔴 ProductInTransitDetailPage: Ошибка скачивания документа: $e');
+
       // Закрываем диалог загрузки если он открыт
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
-      
+
       _showErrorDialog('Не удалось скачать документ: ${e.toString()}');
     }
   }
-  
+
   void _showErrorDialog(String message) {
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Ошибка'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('ОК'),
-            ),
-          ],
-        ),
-      );
-    }
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ошибка'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ОК'),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'in_stock':
-        return 'На складе';
-      case 'for_receipt':
-        return 'На приемке';
-      case 'in_transit':
-        return 'В пути';
-      default:
-        return status;
-    }
-  }
-
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  String _formatDateTime(String dateTimeString) {
-    try {
-      print('🔵 ProductInflowDetailPage: _formatDateTime вызван для "$dateTimeString"');
-      final dateTime = DateTime.parse(dateTimeString);
-      final result = '${dateTime.day.toString().padLeft(2, '0')}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-      print('🔵 ProductInflowDetailPage: _formatDateTime результат: "$result"');
-      return result;
-    } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _formatDateTime: $e');
-      return dateTimeString;
-    }
+  void _editProduct() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProductInTransitFormPage(product: _product),
+      ),
+    ).then((_) {
+      // Обновляем данные после редактирования
+      _refreshProductData();
+    });
   }
 }

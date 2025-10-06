@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
+import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/features/companies/domain/repositories/companies_repository.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 
@@ -10,7 +11,7 @@ part 'companies_repository_impl.g.dart';
 class CompaniesRepositoryImpl implements CompaniesRepository {
   final CompaniesRemoteDataSource _remoteDataSource;
   
-  CompaniesRepositoryImpl(this._remoteDataSource);
+  CompaniesRepositoryImpl({required CompaniesRemoteDataSource remoteDataSource}) : _remoteDataSource = remoteDataSource;
   
   @override
   Future<List<CompanyModel>> getCompanies({
@@ -21,13 +22,15 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
     int perPage = 15,
   }) async {
     try {
-      return await _remoteDataSource.getCompanies(
-        search: search,
-        isActive: isActive,
-        showArchived: showArchived,
-        page: page,
-        perPage: perPage,
+      final response = await _remoteDataSource.getCompanies(
+        queryParams: {
+          if (search != null) 'search': search,
+          if (isActive != null) 'is_active': isActive ? 1 : 0,
+          'page': page,
+          'per_page': perPage,
+        },
       );
+      return response.data;
     } catch (e) {
       rethrow;
     }
@@ -36,7 +39,7 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   @override
   Future<CompanyModel> getCompanyById(int id) async {
     try {
-      return await _remoteDataSource.getCompanyById(id);
+      return await _remoteDataSource.getCompany(id);
     } catch (e) {
       rethrow;
     }
@@ -58,7 +61,8 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
         throw ValidationException('Некорректный ИНН');
       }
       
-      return await _remoteDataSource.createCompany(company);
+      final request = company.toCreateRequest();
+      return await _remoteDataSource.createCompany(request);
     } catch (e) {
       rethrow;
     }
@@ -67,7 +71,8 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   @override
   Future<CompanyModel> updateCompany(int id, CompanyFormModel company) async {
     try {
-      final updated = await _remoteDataSource.updateCompany(id, company);
+      final request = company.toUpdateRequest();
+      final updated = await _remoteDataSource.updateCompany(id, request);
       return updated;
     } catch (e) {
       rethrow;
@@ -77,7 +82,7 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   @override
   Future<void> deleteCompany(int id) async {
     try {
-      return await _remoteDataSource.archiveCompany(id);
+      await _remoteDataSource.deleteCompany(id);
     } catch (e) {
       rethrow;
     }
@@ -86,7 +91,9 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   @override
   Future<List<CompanyStatsModel>> getCompaniesStats() async {
     try {
-      return await _remoteDataSource.getCompaniesStats();
+      final stats = await _remoteDataSource.getCompaniesStats();
+      // Возвращаем список с одной статистикой
+      return [SingleCompanyStatsX.fromStats(stats)];
     } catch (e) {
       rethrow;
     }
@@ -95,7 +102,8 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   @override
   Future<List<WarehouseModel>> getCompanyWarehouses(int companyId) async {
     try {
-      return await _remoteDataSource.getCompanyWarehouses(companyId);
+      // Пока возвращаем пустой список, так как метод не реализован в datasource
+      return [];
     } catch (e) {
       rethrow;
     }
@@ -117,7 +125,7 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
 @riverpod
 Future<CompaniesRepository> companiesRepository(CompaniesRepositoryRef ref) async {
   final remoteDataSource = ref.watch(companiesRemoteDataSourceProvider);
-  return CompaniesRepositoryImpl(remoteDataSource);
+  return CompaniesRepositoryImpl(remoteDataSource: remoteDataSource);
 }
 
 /// Кастомное исключение валидации

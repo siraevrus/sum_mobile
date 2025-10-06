@@ -11,9 +11,10 @@ import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouses_
 import 'package:sum_warehouse/features/users/presentation/pages/employees_list_page.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/inventory_tabs_page.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
-// import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
+import 'package:sum_warehouse/features/companies/presentation/pages/companies_list_page.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
+import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
 class ResponsiveDashboardPage extends ConsumerWidget {
@@ -294,6 +295,14 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       title: 'Поступление товаров',
                       section: 'products-inflow',
                     ),
+                  // Товары в пути - админ и оператор
+                  if (_hasAccess(user, ['admin', 'operator']))
+                    _buildDrawerMenuItem(
+                      context,
+                      icon: Icons.local_shipping,
+                      title: 'Товары в пути',
+                      section: 'products-in-transit',
+                    ),
                   // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
                   if (_hasAccess(user, ['admin', 'warehouse_worker', 'sales_manager']))
                     _buildDrawerMenuItem(
@@ -413,6 +422,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Остатки на складе';
       case 'products-inflow':
         return 'Поступление товаров';
+      case 'products-in-transit':
+        return 'Товары в пути';
       default:
         return 'Инфопанель';
     }
@@ -435,11 +446,13 @@ class ResponsiveDashboardPage extends ConsumerWidget {
       case 'producers':
         return const ProducersListPage();
       case 'companies':
-        return const Scaffold(body: Center(child: Text('Компании временно недоступны')));
+        return const CompaniesListPage();
       case 'inventory':
         return const InventoryTabsPage();
       case 'products-inflow':
         return const ProductsInflowListPage();
+      case 'products-in-transit':
+        return const ProductsInTransitListPage();
       default:
         return ResponsiveDashboardContent(
           onShowAllProductsPressed: () => context.go('/inventory'),

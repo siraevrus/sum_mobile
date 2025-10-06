@@ -1,13 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
 
-part 'product_inflow_model.freezed.dart';
-part 'product_inflow_model.g.dart';
+part 'product_in_transit_model.freezed.dart';
+part 'product_in_transit_model.g.dart';
 
-/// Модель товара для раздела "Поступление товаров"
+/// Модель товара для раздела "Товары в пути"
 @freezed
-class ProductInflowModel with _$ProductInflowModel {
-  const factory ProductInflowModel({
+class ProductInTransitModel with _$ProductInTransitModel {
+  const factory ProductInTransitModel({
     required int id,
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
@@ -40,15 +40,15 @@ class ProductInflowModel with _$ProductInflowModel {
     WarehouseReference? warehouse,
     UserReference? creator,
     ProducerReference? producer,
-  }) = _ProductInflowModel;
+  }) = _ProductInTransitModel;
 
-  factory ProductInflowModel.fromJson(Map<String, dynamic> json) => _$ProductInflowModelFromJson(json);
+  factory ProductInTransitModel.fromJson(Map<String, dynamic> json) => _$ProductInTransitModelFromJson(json);
 }
 
-/// Фильтры для товаров
+/// Фильтры для товаров в пути
 @freezed
-class ProductInflowFilters with _$ProductInflowFilters {
-  const factory ProductInflowFilters({
+class ProductInTransitFilters with _$ProductInTransitFilters {
+  const factory ProductInTransitFilters({
     String? search,
     @JsonKey(name: 'warehouse_id') int? warehouseId,
     @JsonKey(name: 'template_id') int? templateId,
@@ -64,13 +64,13 @@ class ProductInflowFilters with _$ProductInflowFilters {
     @JsonKey(name: 'created_by') int? createdBy,
     @JsonKey(name: 'per_page') @Default(15) int perPage,
     @Default(1) int page,
-  }) = _ProductInflowFilters;
+  }) = _ProductInTransitFilters;
 
-  factory ProductInflowFilters.fromJson(Map<String, dynamic> json) => _$ProductInflowFiltersFromJson(json);
+  factory ProductInTransitFilters.fromJson(Map<String, dynamic> json) => _$ProductInTransitFiltersFromJson(json);
 }
 
-/// Extension для ProductInflowFilters
-extension ProductInflowFiltersExtension on ProductInflowFilters {
+/// Extension для ProductInTransitFilters
+extension ProductInTransitFiltersExtension on ProductInTransitFilters {
   Map<String, dynamic> toQueryParams() {
     final params = <String, dynamic>{};
     
@@ -94,10 +94,10 @@ extension ProductInflowFiltersExtension on ProductInflowFilters {
   }
 }
 
-/// Запрос создания товара
+/// Запрос создания товара в пути
 @freezed
-class CreateProductInflowRequest with _$CreateProductInflowRequest {
-  const factory CreateProductInflowRequest({
+class CreateProductInTransitRequest with _$CreateProductInTransitRequest {
+  const factory CreateProductInTransitRequest({
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     String? name,
@@ -109,21 +109,21 @@ class CreateProductInflowRequest with _$CreateProductInflowRequest {
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'arrival_date') String? arrivalDate,
     @JsonKey(name: 'is_active') @Default(true) bool isActive,
-    @Default('in_stock') String status,
+    @Default('for_receipt') String status, // Основное отличие - статус for_receipt
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') String? shippingDate,
     @JsonKey(name: 'expected_arrival_date') String? expectedArrivalDate,
     String? notes,
     @JsonKey(name: 'document_path') @Default([]) List<String> documentPath,
-  }) = _CreateProductInflowRequest;
+  }) = _CreateProductInTransitRequest;
 
-  factory CreateProductInflowRequest.fromJson(Map<String, dynamic> json) => _$CreateProductInflowRequestFromJson(json);
+  factory CreateProductInTransitRequest.fromJson(Map<String, dynamic> json) => _$CreateProductInTransitRequestFromJson(json);
 }
 
-/// Запрос обновления товара
+/// Запрос обновления товара в пути
 @freezed
-class UpdateProductInflowRequest with _$UpdateProductInflowRequest {
-  const factory UpdateProductInflowRequest({
+class UpdateProductInTransitRequest with _$UpdateProductInTransitRequest {
+  const factory UpdateProductInTransitRequest({
     String? name,
     String? description,
     dynamic attributes,
@@ -139,7 +139,7 @@ class UpdateProductInflowRequest with _$UpdateProductInflowRequest {
     @JsonKey(name: 'expected_arrival_date') String? expectedArrivalDate,
     String? notes,
     @JsonKey(name: 'document_path') List<String>? documentPath,
-  }) = _UpdateProductInflowRequest;
+  }) = _UpdateProductInTransitRequest;
 
-  factory UpdateProductInflowRequest.fromJson(Map<String, dynamic> json) => _$UpdateProductInflowRequestFromJson(json);
+  factory UpdateProductInTransitRequest.fromJson(Map<String, dynamic> json) => _$UpdateProductInTransitRequestFromJson(json);
 }
