@@ -115,7 +115,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     
                     // Название приложения
                     const Text(
-                      'Sum Warehouse',
+                      'СкладOnline',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,

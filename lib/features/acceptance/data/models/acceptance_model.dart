@@ -1,13 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
 
-part 'product_in_transit_model.freezed.dart';
-part 'product_in_transit_model.g.dart';
+part 'acceptance_model.freezed.dart';
+part 'acceptance_model.g.dart';
 
-/// Модель товара для раздела "Товары в пути"
+/// Модель товара для раздела "Приемка"
 @freezed
-class ProductInTransitModel with _$ProductInTransitModel {
-  const factory ProductInTransitModel({
+class AcceptanceModel with _$AcceptanceModel {
+  const factory AcceptanceModel({
     required int id,
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
@@ -40,15 +40,15 @@ class ProductInTransitModel with _$ProductInTransitModel {
     WarehouseReference? warehouse,
     UserReference? creator,
     ProducerReference? producer,
-  }) = _ProductInTransitModel;
+  }) = _AcceptanceModel;
 
-  factory ProductInTransitModel.fromJson(Map<String, dynamic> json) => _$ProductInTransitModelFromJson(json);
+  factory AcceptanceModel.fromJson(Map<String, dynamic> json) => _$AcceptanceModelFromJson(json);
 }
 
-/// Фильтры для товаров в пути
+/// Фильтры для товаров приемки
 @freezed
-class ProductInTransitFilters with _$ProductInTransitFilters {
-  const factory ProductInTransitFilters({
+class AcceptanceFilters with _$AcceptanceFilters {
+  const factory AcceptanceFilters({
     String? search,
     @JsonKey(name: 'warehouse_id') int? warehouseId,
     @JsonKey(name: 'template_id') int? templateId,
@@ -64,13 +64,13 @@ class ProductInTransitFilters with _$ProductInTransitFilters {
     @JsonKey(name: 'created_by') int? createdBy,
     @JsonKey(name: 'per_page') @Default(15) int perPage,
     @Default(1) int page,
-  }) = _ProductInTransitFilters;
+  }) = _AcceptanceFilters;
 
-  factory ProductInTransitFilters.fromJson(Map<String, dynamic> json) => _$ProductInTransitFiltersFromJson(json);
+  factory AcceptanceFilters.fromJson(Map<String, dynamic> json) => _$AcceptanceFiltersFromJson(json);
 }
 
-/// Extension для ProductInTransitFilters
-extension ProductInTransitFiltersExtension on ProductInTransitFilters {
+/// Extension для AcceptanceFilters
+extension AcceptanceFiltersExtension on AcceptanceFilters {
   Map<String, dynamic> toQueryParams() {
     final params = <String, dynamic>{};
     
@@ -94,10 +94,10 @@ extension ProductInTransitFiltersExtension on ProductInTransitFilters {
   }
 }
 
-/// Запрос создания товара в пути
+/// Запрос создания товара в приемке
 @freezed
-class CreateProductInTransitRequest with _$CreateProductInTransitRequest {
-  const factory CreateProductInTransitRequest({
+class CreateAcceptanceRequest with _$CreateAcceptanceRequest {
+  const factory CreateAcceptanceRequest({
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     String? name,
@@ -109,52 +109,21 @@ class CreateProductInTransitRequest with _$CreateProductInTransitRequest {
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'arrival_date') String? arrivalDate,
     @JsonKey(name: 'is_active') @Default(true) bool isActive,
-    @Default('for_receipt') String status, // Основное отличие - статус for_receipt
+    @Default('accepted') String status, // Основное отличие - статус accepted для приемки
     @JsonKey(name: 'shipping_location') String? shippingLocation,
     @JsonKey(name: 'shipping_date') String? shippingDate,
     @JsonKey(name: 'expected_arrival_date') String? expectedArrivalDate,
     String? notes,
     @JsonKey(name: 'document_path') @Default([]) List<String> documentPath,
-  }) = _CreateProductInTransitRequest;
+  }) = _CreateAcceptanceRequest;
 
-  factory CreateProductInTransitRequest.fromJson(Map<String, dynamic> json) => _$CreateProductInTransitRequestFromJson(json);
+  factory CreateAcceptanceRequest.fromJson(Map<String, dynamic> json) => _$CreateAcceptanceRequestFromJson(json);
 }
 
-  @freezed
-  class CreateMultipleProductsInTransitRequest with _$CreateMultipleProductsInTransitRequest {
-    const factory CreateMultipleProductsInTransitRequest({
-      @JsonKey(name: 'warehouse_id') required int warehouseId,
-      @JsonKey(name: 'shipping_location') String? shippingLocation,
-      @JsonKey(name: 'shipping_date') String? shippingDate,
-      @JsonKey(name: 'transport_number') String? transportNumber,
-      @JsonKey(name: 'arrival_date') String? arrivalDate,
-      @JsonKey(name: 'expected_arrival_date') String? expectedArrivalDate,
-      String? notes,
-      @JsonKey(name: 'document_path') @Default([]) List<String> documentPath,
-      required List<ProductInTransitItem> products,
-    }) = _CreateMultipleProductsInTransitRequest;
-
-  factory CreateMultipleProductsInTransitRequest.fromJson(Map<String, dynamic> json) => _$CreateMultipleProductsInTransitRequestFromJson(json);
-}
-
+/// Запрос обновления товара в приемке
 @freezed
-class ProductInTransitItem with _$ProductInTransitItem {
-  const factory ProductInTransitItem({
-    @JsonKey(name: 'product_template_id') required int productTemplateId,
-    required String quantity,
-    String? producer,
-    String? description,
-    String? name,
-    dynamic attributes,
-  }) = _ProductInTransitItem;
-
-  factory ProductInTransitItem.fromJson(Map<String, dynamic> json) => _$ProductInTransitItemFromJson(json);
-}
-
-/// Запрос обновления товара в пути
-@freezed
-class UpdateProductInTransitRequest with _$UpdateProductInTransitRequest {
-  const factory UpdateProductInTransitRequest({
+class UpdateAcceptanceRequest with _$UpdateAcceptanceRequest {
+  const factory UpdateAcceptanceRequest({
     String? name,
     String? description,
     dynamic attributes,
@@ -170,7 +139,7 @@ class UpdateProductInTransitRequest with _$UpdateProductInTransitRequest {
     @JsonKey(name: 'expected_arrival_date') String? expectedArrivalDate,
     String? notes,
     @JsonKey(name: 'document_path') List<String>? documentPath,
-  }) = _UpdateProductInTransitRequest;
+  }) = _UpdateAcceptanceRequest;
 
-  factory UpdateProductInTransitRequest.fromJson(Map<String, dynamic> json) => _$UpdateProductInTransitRequestFromJson(json);
+  factory UpdateAcceptanceRequest.fromJson(Map<String, dynamic> json) => _$UpdateAcceptanceRequestFromJson(json);
 }

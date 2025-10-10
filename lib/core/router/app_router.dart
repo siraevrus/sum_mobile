@@ -154,6 +154,11 @@ GoRouter router(RouterRef ref) {
         name: 'products-in-transit',
         builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'products-in-transit'),
       ),
+      GoRoute(
+        path: '/acceptance',
+        name: 'acceptance',
+        builder: (context, state) => const ResponsiveDashboardPage(selectedSection: 'acceptance'),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(

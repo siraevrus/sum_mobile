@@ -15,6 +15,7 @@ import 'package:sum_warehouse/features/companies/presentation/pages/companies_li
 import 'package:sum_warehouse/features/producers/presentation/pages/producers_list_page.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
+import 'package:sum_warehouse/features/acceptance/presentation/pages/acceptance_list_page.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
 class ResponsiveDashboardPage extends ConsumerWidget {
@@ -161,6 +162,45 @@ class ResponsiveDashboardPage extends ConsumerWidget {
 
   /// Выдвижное меню для мобильных устройств
   Widget _buildMobileDrawer(UserEntity user, BuildContext context, WidgetRef ref) {
+    return _MobileDrawerMenu(
+      user: user,
+      selectedSection: selectedSection ?? 'dashboard',
+      onLogout: () {
+        Navigator.of(context).pop(); // Закрываем drawer
+        ref.read(authProvider.notifier).logout();
+      },
+    );
+  }
+}
+
+/// Stateful виджет для мобильного меню с поддержкой expandable разделов
+class _MobileDrawerMenu extends StatefulWidget {
+  final UserEntity user;
+  final String selectedSection;
+  final VoidCallback onLogout;
+
+  const _MobileDrawerMenu({
+    required this.user,
+    required this.selectedSection,
+    required this.onLogout,
+  });
+
+  @override
+  State<_MobileDrawerMenu> createState() => _MobileDrawerMenuState();
+}
+
+class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
+  bool _infoExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Если текущий раздел - один из подразделов Инфо, раскрываем меню
+    _infoExpanded = ['companies', 'warehouses', 'employees'].contains(widget.selectedSection);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: const Color(0xFF2C3E50),
       child: SafeArea(
@@ -206,8 +246,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                     radius: 20,
                     backgroundColor: const Color(0xFF3498DB),
                     child: Text(
-                      user.name.isNotEmpty
-                          ? user.name[0].toUpperCase()
+                      widget.user.name.isNotEmpty
+                          ? widget.user.name[0].toUpperCase()
                           : 'U',
                       style: const TextStyle(
                         color: Colors.white,
@@ -221,7 +261,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.name,
+                          widget.user.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -248,39 +288,50 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   // Инфопанель: показываем только админу
-                  if (_hasAccess(user, ['admin']))
+                  if (_hasAccess(widget.user, ['admin']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.dashboard,
                       title: 'Инфопанель',
                       section: 'dashboard',
                     ),
-                  // Компании - только админ
-                  if (_hasAccess(user, ['admin']))
-                    _buildDrawerMenuItem(
+                  
+                  // Раздел "Инфо" с подменю - только админ
+                  if (_hasAccess(widget.user, ['admin']))
+                    _buildExpandableDrawerMenuItem(
                       context,
-                      icon: Icons.business,
-                      title: 'Компании',
-                      section: 'companies',
+                      icon: Icons.info_outline,
+                      title: 'Инфо',
+                      isExpanded: _infoExpanded,
+                      onTap: () {
+                        setState(() {
+                          _infoExpanded = !_infoExpanded;
+                        });
+                      },
+                      children: [
+                        _buildSubDrawerMenuItem(
+                          context,
+                          icon: Icons.business,
+                          title: 'Компании',
+                          section: 'companies',
+                        ),
+                        _buildSubDrawerMenuItem(
+                          context,
+                          icon: Icons.warehouse,
+                          title: 'Склад',
+                          section: 'warehouses',
+                        ),
+                        _buildSubDrawerMenuItem(
+                          context,
+                          icon: Icons.people,
+                          title: 'Сотрудники',
+                          section: 'employees',
+                        ),
+                      ],
                     ),
-                  // Остатки на складе - только админ
-                  if (_hasAccess(user, ['admin']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.warehouse,
-                      title: 'Склад',
-                      section: 'warehouses',
-                    ),
-                  // Сотрудники - только админ
-                  if (_hasAccess(user, ['admin']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.people,
-                      title: 'Сотрудники',
-                      section: 'employees',
-                    ),
+                  
                   // Остатки - админ, оператор, работник склада, менеджер по продажам
-                  if (_hasAccess(user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
+                  if (_hasAccess(widget.user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.storage,
@@ -288,7 +339,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       section: 'inventory',
                     ),
                   // Поступление товаров - админ и оператор
-                  if (_hasAccess(user, ['admin', 'operator']))
+                  if (_hasAccess(widget.user, ['admin', 'operator']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.input,
@@ -296,15 +347,23 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       section: 'products-inflow',
                     ),
                   // Товары в пути - админ и оператор
-                  if (_hasAccess(user, ['admin', 'operator']))
+                  if (_hasAccess(widget.user, ['admin', 'operator']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.local_shipping,
                       title: 'Товары в пути',
                       section: 'products-in-transit',
                     ),
+                  // Приемка - админ и оператор
+                  if (_hasAccess(widget.user, ['admin', 'operator']))
+                    _buildDrawerMenuItem(
+                      context,
+                      icon: Icons.inventory_2,
+                      title: 'Приемка',
+                      section: 'acceptance',
+                    ),
                   // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
-                  if (_hasAccess(user, ['admin', 'warehouse_worker', 'sales_manager']))
+                  if (_hasAccess(widget.user, ['admin', 'warehouse_worker', 'sales_manager']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.assignment,
@@ -312,7 +371,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
                       section: 'requests',
                     ),
                   // Реализация - админ, работник склада
-                  if (_hasAccess(user, ['admin', 'warehouse_worker']))
+                  if (_hasAccess(widget.user, ['admin', 'warehouse_worker']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.point_of_sale,
@@ -329,10 +388,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Закрываем drawer
-                    ref.read(authProvider.notifier).logout();
-                  },
+                  onPressed: widget.onLogout,
                   icon: const Icon(
                     Icons.logout,
                     size: 18,
@@ -364,13 +420,113 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildExpandableDrawerMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required bool isExpanded,
+    required VoidCallback onTap,
+    required List<Widget> children,
+  }) {
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: isExpanded ? const Color(0xFF23384D) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ListTile(
+            leading: Icon(
+              icon,
+              color: const Color(0xFFBDC3C7),
+              size: 20,
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFFBDC3C7),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            trailing: AnimatedRotation(
+              turns: isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: const Icon(
+                Icons.expand_more,
+                color: Color(0xFFBDC3C7),
+                size: 20,
+              ),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            onTap: onTap,
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: isExpanded
+              ? Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF23384D),
+                  ),
+                  child: Column(children: children),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubDrawerMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String section,
+  }) {
+    final isSelected = widget.selectedSection == section;
+    
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 8, top: 2, bottom: 2),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+          size: 18,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        selected: isSelected,
+        selectedTileColor: const Color(0xFF34495E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        onTap: () {
+          Navigator.of(context).pop(); // Закрываем drawer
+          context.go('/$section');
+        },
+      ),
+    );
+  }
+
   Widget _buildDrawerMenuItem(
     BuildContext context, {
     required IconData icon,
     required String title,
     required String section,
   }) {
-    final isSelected = (selectedSection ?? 'dashboard') == section;
+    final isSelected = widget.selectedSection == section;
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -402,6 +558,28 @@ class ResponsiveDashboardPage extends ConsumerWidget {
     );
   }
 
+  bool _hasAccess(UserEntity user, List<String> allowedRoles) {
+    final userRole = _getRoleCode(user.role);
+    return allowedRoles.contains(userRole);
+  }
+
+  String _getRoleCode(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'admin';
+      case UserRole.operator:
+        return 'operator';
+      case UserRole.warehouseWorker:
+        return 'warehouse_worker';
+      case UserRole.salesManager:
+        return 'sales_manager';
+    }
+  }
+}
+
+// Теперь методы родительского класса ResponsiveDashboardPage
+
+extension on ResponsiveDashboardPage {
   String _getSectionTitle(String section) {
     switch (section) {
       case 'dashboard':
@@ -424,6 +602,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return 'Поступление товаров';
       case 'products-in-transit':
         return 'Товары в пути';
+      case 'acceptance':
+        return 'Приемка';
       default:
         return 'Инфопанель';
     }
@@ -453,6 +633,8 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         return const ProductsInflowListPage();
       case 'products-in-transit':
         return const ProductsInTransitListPage();
+      case 'acceptance':
+        return const AcceptanceListPage();
       default:
         return ResponsiveDashboardContent(
           onShowAllProductsPressed: () => context.go('/inventory'),

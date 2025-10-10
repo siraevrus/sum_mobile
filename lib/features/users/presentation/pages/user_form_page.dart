@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/users/data/datasources/users_remote_datasource.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/user_management_model.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
-// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 
 /// Экран создания/редактирования пользователя
@@ -375,24 +375,23 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
   }
   
   Widget _buildCompanyDropdown() {
-    return FutureBuilder<List<CompanyModel>>(
-      future: Future.value(<CompanyModel>[]),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Text('Ошибка загрузки компаний', style: TextStyle(color: Colors.red));
-        }
-        final companies = snapshot.data ?? [];
+    // Загружаем компании через провайдер
+    final companiesAsyncValue = ref.watch(companiesListProvider((search: null, showArchived: false)));
+    
+    return companiesAsyncValue.when(
+      data: (companies) {
+        print('🔵 UserFormPage: Загружено компаний: ${companies.length}');
         return DropdownButtonFormField<int>(
-        dropdownColor: Colors.white,
+          dropdownColor: Colors.white,
           value: _selectedCompanyId,
-          onChanged: (value) => setState(() {
-            _selectedCompanyId = value;
-            // Сбрасываем выбранный склад при изменении компании
-            _selectedWarehouseId = null;
-          }),
+          onChanged: (value) {
+            print('🔵 UserFormPage: Выбрана компания ID: $value');
+            setState(() {
+              _selectedCompanyId = value;
+              // Сбрасываем выбранный склад при изменении компании
+              _selectedWarehouseId = null;
+            });
+          },
           decoration: InputDecoration(
             labelText: 'Компания',
             border: OutlineInputBorder(
@@ -403,11 +402,43 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           ),
           items: [
             const DropdownMenuItem(value: null, child: Text('Не выбрано')),
-            ...companies.map((company) => DropdownMenuItem(
-              value: company.id,
-              child: Text(company.name),
-            )),
+            ...companies.map((company) {
+              print('🔵 UserFormPage: Компания: ${company.name} (ID: ${company.id})');
+              return DropdownMenuItem(
+                value: company.id,
+                child: Text(company.name),
+              );
+            }),
           ],
+        );
+      },
+      loading: () => Container(
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (error, stack) {
+        print('🔴 UserFormPage: Ошибка загрузки компаний: $error');
+        print('🔴 UserFormPage: Stack trace: $stack');
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'Ошибка загрузки компаний: $error',
+            style: const TextStyle(color: Colors.red),
+          ),
         );
       },
     );

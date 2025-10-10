@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
@@ -386,25 +387,37 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
         result = null; // Новые компании не возвращаются
       }
       
-      if (mounted && result != null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isEditing 
                 ? 'Компания обновлена' 
-                : 'Компания создана'),
+                : 'Компания успешно создана'),
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.of(context).pop();
+        
+        // После успешного создания/редактирования переходим на список компаний
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        // Извлекаем сообщение об ошибке из DioException
+        String errorMessage = 'Ошибка: $e';
+        
+        if (e is DioException && e.response?.data != null) {
+          try {
+            final responseData = e.response!.data;
+            if (responseData is Map<String, dynamic> && responseData.containsKey('message')) {
+              errorMessage = responseData['message'].toString();
+            }
+          } catch (_) {
+            // Если не удалось извлечь message, используем стандартное сообщение
+          }
+        }
+        
+        // Показываем диалог с ошибкой
+        _showErrorDialog(errorMessage);
       }
     } finally {
       if (mounted) {
@@ -413,6 +426,22 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
         });
       }
     }
+  }
+  
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ошибка'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
   
   void _archiveCompany() {

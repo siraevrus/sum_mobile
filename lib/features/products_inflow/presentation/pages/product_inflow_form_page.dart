@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:math_expressions/math_expressions.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/product_template_remote_datasource.dart';
@@ -288,7 +289,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       // В реальном проекте лучше использовать библиотеку для парсинга математических выражений
       final result = _evaluateFormula(formula);
       
-      return result.toStringAsFixed(4);
+      return result.toStringAsFixed(3);
     } catch (e) {
       print('🔴 ProductInflowFormPage: Ошибка расчета объема: $e');
       return '0';
@@ -296,26 +297,17 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   }
 
   double _evaluateFormula(String formula) {
-    // Простая реализация для базовых математических операций
-    // В реальном проекте используйте библиотеку типа math_expressions
     try {
-      // Убираем скобки и заменяем операции
-      formula = formula.replaceAll('(', '').replaceAll(')', '');
-      
-      // Разбиваем по операциям
-      final parts = formula.split('*');
-      double result = 1;
-      
-      for (final part in parts) {
-        final trimmedPart = part.trim();
-        if (trimmedPart.isNotEmpty) {
-          result *= double.tryParse(trimmedPart) ?? 1;
-        }
-      }
-      
-      return result;
+      // Используем библиотеку math_expressions для правильного парсинга
+      final parser = Parser();
+      final expression = parser.parse(formula);
+      final contextModel = ContextModel();
+
+      final result = expression.evaluate(EvaluationType.REAL, contextModel);
+      return result as double;
     } catch (e) {
       print('🔴 ProductInflowFormPage: Ошибка парсинга формулы: $e');
+      print('🔴 ProductInflowFormPage: Формула: $formula');
       return 0;
     }
   }

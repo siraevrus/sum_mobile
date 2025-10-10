@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'Sum Warehouse';
+  static const String appName = 'СкладOnline';
   static const String baseUrl = 'http://93.189.230.65/api';
   
   // Размеры

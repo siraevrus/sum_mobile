@@ -1,5 +1,5 @@
 name: sum_warehouse
-description: "Система складского учета - Flutter приложение"
+description: "СкладOnline - Система складского учета"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -47,6 +47,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+
+  # === Математические выражения ===
+  math_expressions: ^2.5.0
     
   # === Графики и анимации ===
   fl_chart: ^0.68.0

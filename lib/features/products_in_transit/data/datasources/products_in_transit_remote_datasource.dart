@@ -11,6 +11,7 @@ abstract class ProductsInTransitRemoteDataSource {
   Future<PaginatedResponse<ProductInTransitModel>> getProducts([ProductInTransitFilters? filters]);
   Future<ProductInTransitModel> getProduct(int id);
   Future<ProductInTransitModel> createProduct(CreateProductInTransitRequest request);
+  Future<List<ProductInTransitModel>> createMultipleProducts(CreateMultipleProductsInTransitRequest request);
   Future<ProductInTransitModel> updateProduct(int id, UpdateProductInTransitRequest request);
   Future<void> deleteProduct(int id);
 }
@@ -68,12 +69,66 @@ class ProductsInTransitRemoteDataSourceImpl implements ProductsInTransitRemoteDa
     try {
       print('🔵 Создание товара в пути: ${request.toJson()}');
       final response = await _dio.post('/products', data: request.toJson());
-      
+
       print('🔵 Ответ создания товара в пути: ${response.data}');
-      
-      return ProductInTransitModel.fromJson(response.data['product']);
+      print('🔵 Тип ответа: ${response.data.runtimeType}');
+
+      // Проверяем структуру ответа
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        print('🔵 Ключи в ответе: ${data.keys.toList()}');
+
+        // Пробуем разные варианты структуры ответа
+        if (data.containsKey('product')) {
+          print('🔵 Используем response.data[\'product\']');
+          return ProductInTransitModel.fromJson(data['product']);
+        } else if (data.containsKey('data')) {
+          print('🔵 Используем response.data[\'data\']');
+          return ProductInTransitModel.fromJson(data['data']);
+        } else {
+          print('🔵 Используем весь response.data');
+          return ProductInTransitModel.fromJson(data);
+        }
+      } else {
+        print('🔵 Ответ не является Map, используем как есть');
+        return ProductInTransitModel.fromJson(response.data);
+      }
     } catch (e) {
       print('🔴 Ошибка создания товара в пути: $e');
+      print('🔴 Stack trace: ${StackTrace.current}');
+      throw _handleError(e);
+    }
+  }
+
+  /// Создание нескольких товаров в пути за один запрос
+  Future<List<ProductInTransitModel>> createMultipleProducts(CreateMultipleProductsInTransitRequest request) async {
+    try {
+      print('🔵 Создание нескольких товаров в пути: ${request.toJson()}');
+      final response = await _dio.post('/receipts', data: request.toJson());
+
+      print('🔵 Ответ создания товаров в пути: ${response.data}');
+      print('🔵 Тип ответа: ${response.data.runtimeType}');
+
+      // Проверяем структуру ответа
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        print('🔵 Ключи в ответе: ${data.keys.toList()}');
+
+        if (data.containsKey('data') && data['data'] is List) {
+          print('🔵 Используем response.data[\'data\'] как массив');
+          final productsList = data['data'] as List;
+          return productsList.map((productJson) => ProductInTransitModel.fromJson(productJson)).toList();
+        } else {
+          print('🔵 Неожиданная структура ответа, пробуем парсить как есть');
+          throw Exception('Неожиданная структура ответа API');
+        }
+      } else {
+        print('🔵 Ответ не является Map');
+        throw Exception('Неожиданный тип ответа API');
+      }
+    } catch (e) {
+      print('🔴 Ошибка создания товаров в пути: $e');
+      print('🔴 Stack trace: ${StackTrace.current}');
       throw _handleError(e);
     }
   }

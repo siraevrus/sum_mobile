@@ -138,6 +138,14 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
         actions: [
+          // Кнопка корректировки, если товар требует корректировки
+          if (_product.correctionStatus == 'correction') ...[
+            IconButton(
+              onPressed: _showCorrectionConfirmationDialog,
+              icon: const Icon(Icons.check_circle, color: Colors.green),
+              tooltip: 'Скорректировано',
+            ),
+          ],
           IconButton(
             onPressed: () async {
               final result = await Navigator.of(context).push(
@@ -145,7 +153,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                   builder: (context) => ProductInflowFormPage(product: _currentProduct ?? widget.product),
                 ),
               );
-              
+
               // Обновляем данные при возврате из редактирования
               if (result == true || result == null) {
                 await _refreshProductData();
@@ -169,7 +177,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                 if (_product.description != null && _product.description!.isNotEmpty)
                   _buildInfoRow('Описание', _product.description!),
                 _buildInfoRow('Количество', _product.quantity),
-                _buildInfoRow('Объем', '${_product.calculatedVolume ?? '0'} ${_product.template?.unit ?? ''}'),
+                _buildInfoRow('Объем', '${_formatVolume(_product.calculatedVolume)} ${_product.template?.unit ?? ''}'),
                 _buildInfoRow('Склад', _product.warehouse?.name ?? 'Не указан'),
                 _buildInfoRow('Производитель', _product.producer?.name ?? 'Не указан'),
                 _buildInfoRow('Создатель', _product.creator?.name ?? 'Не указан'),
@@ -603,6 +611,108 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     } catch (e) {
       print('🔴 ProductInflowDetailPage: Ошибка в _formatDateTime: $e');
       return dateTimeString;
+    }
+  }
+
+  String _formatVolume(String? volumeString) {
+    if (volumeString == null || volumeString.isEmpty || volumeString == '0') {
+      return '0';
+    }
+
+    try {
+      final volume = double.parse(volumeString);
+      return volume.toStringAsFixed(3);
+    } catch (e) {
+      return volumeString; // Возвращаем исходное значение если не удалось распарсить
+    }
+  }
+
+  /// Показать диалог подтверждения корректировки
+  void _showCorrectionConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Подтверждение о внесении изменения'),
+        content: const Text(
+          'Информация о поступившем заказке будет скорректирована и был внесен актуальный остаток. Это действие нельзя отменить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: _confirmCorrection,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Скорректировано'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Подтвердить корректировку товара
+  Future<void> _confirmCorrection() async {
+    try {
+      print('🔵 ProductInflowDetailPage: Подтверждаем корректировку товара ID: ${_product.id}');
+      print('🔵 ProductInflowDetailPage: Текущий статус товара: ${_product.status}');
+      print('🔵 ProductInflowDetailPage: Текущий correction_status: ${_product.correctionStatus}');
+
+      final dio = ref.read(dioClientProvider);
+
+      // Пробуем альтернативный endpoint - возможно, сервер ожидает другой маршрут
+      // Попробуем PUT запрос вместо POST
+      try {
+        final response = await dio.put(
+          '/products/${_product.id}',
+          data: {
+            'correction_status': 'revised',
+          },
+        );
+        print('🔵 ProductInflowDetailPage: PUT запрос успешен');
+      } catch (putError) {
+        print('🔴 ProductInflowDetailPage: PUT запрос не удался, пробуем POST: $putError');
+
+        // Если PUT не работает, пробуем POST
+        final response = await dio.post(
+          '/products/${_product.id}/correction-confirm',
+          data: {
+            'correction_status': 'revised',
+          },
+        );
+
+        print('🔵 ProductInflowDetailPage: POST запрос успешен');
+      }
+
+      print('🔵 ProductInflowDetailPage: Ответ подтверждения корректировки получен');
+
+      // Закрываем диалог
+      Navigator.of(context).pop();
+
+      // Обновляем локальные данные
+      await _refreshProductData();
+
+      // Закрываем страницу детального просмотра
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      print('🔴 ProductInflowDetailPage: Ошибка подтверждения корректировки: $e');
+
+      // Закрываем диалог
+      Navigator.of(context).pop();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка подтверждения корректировки: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

@@ -22,7 +22,7 @@ class SumWarehouseApp extends ConsumerWidget {
     // Запускаем предзагрузку данных при старте приложения
     
     return MaterialApp.router(
-      title: 'Sum Warehouse',
+      title: 'СкладOnline',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
+import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
-// import 'package:sum_warehouse/features/companies/data/datasources/companies_remote_datasource.dart';
 
 /// Экран создания/редактирования склада
 class WarehouseFormPage extends ConsumerStatefulWidget {
@@ -221,20 +221,19 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
   }
   
   Widget _buildCompanyDropdown() {
-    return FutureBuilder<List<CompanyModel>>(
-      future: Future.value(<CompanyModel>[]),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Text('Ошибка загрузки компаний', style: TextStyle(color: Colors.red));
-        }
-        final companies = snapshot.data ?? [];
+    // Загружаем компании через провайдер
+    final companiesAsyncValue = ref.watch(companiesListProvider((search: null, showArchived: false)));
+    
+    return companiesAsyncValue.when(
+      data: (companies) {
+        print('🔵 Загружено компаний: ${companies.length}');
         return DropdownButtonFormField<int>(
-        dropdownColor: Colors.white,
+          dropdownColor: Colors.white,
           value: _selectedCompanyId,
-          onChanged: (value) => setState(() => _selectedCompanyId = value),
+          onChanged: (value) {
+            print('🔵 Выбрана компания ID: $value');
+            setState(() => _selectedCompanyId = value);
+          },
           decoration: InputDecoration(
             labelText: 'Компания *',
             border: OutlineInputBorder(
@@ -249,10 +248,50 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
             }
             return null;
           },
-          items: companies.map((company) => DropdownMenuItem(
-            value: company.id,
-            child: Text(company.name),
-          )).toList(),
+          items: companies.isEmpty 
+            ? [
+                const DropdownMenuItem(
+                  value: null,
+                  enabled: false,
+                  child: Text('Нет доступных компаний'),
+                )
+              ]
+            : companies.map((company) {
+                print('🔵 Компания: ${company.name} (ID: ${company.id})');
+                return DropdownMenuItem(
+                  value: company.id,
+                  child: Text(company.name),
+                );
+              }).toList(),
+        );
+      },
+      loading: () => Container(
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+      error: (error, stack) {
+        print('🔴 Ошибка загрузки компаний: $error');
+        print('🔴 Stack trace: $stack');
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.red),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'Ошибка загрузки компаний: $error',
+            style: const TextStyle(color: Colors.red),
+          ),
         );
       },
     );

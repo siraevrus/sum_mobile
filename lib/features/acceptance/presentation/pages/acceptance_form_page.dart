@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:math_expressions/math_expressions.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/datasources/products_in_transit_remote_datasource.dart';
+import 'package:sum_warehouse/features/acceptance/data/datasources/acceptance_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_in_transit/data/datasources/product_template_remote_datasource.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/models/product_in_transit_model.dart';
+import 'package:sum_warehouse/features/acceptance/data/models/acceptance_model.dart';
 import 'package:sum_warehouse/features/products_in_transit/data/models/product_template_model.dart';
-import 'package:sum_warehouse/features/products_in_transit/presentation/providers/products_in_transit_provider.dart';
+import 'package:sum_warehouse/features/acceptance/presentation/providers/acceptance_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/features/producers/domain/entities/producer_entity.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
@@ -19,7 +18,7 @@ import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 // Класс для хранения данных формы товара
-class ProductFormData {
+class AcceptanceFormData {
   final int? productTemplateId;
   final String quantity;
   final String name;
@@ -28,7 +27,7 @@ class ProductFormData {
   final ProductTemplateModel? template;
   final Map<String, TextEditingController> attributeControllers;
 
-  ProductFormData({
+  AcceptanceFormData({
     this.productTemplateId,
     required this.quantity,
     required this.name,
@@ -39,22 +38,22 @@ class ProductFormData {
   });
 }
 
-/// Форма создания/редактирования товара в пути
-class ProductInTransitFormPage extends ConsumerStatefulWidget {
-  final ProductInTransitModel? product;
+/// Форма создания/редактирования товара приемки
+class AcceptanceFormPage extends ConsumerStatefulWidget {
+  final AcceptanceModel? product;
   final bool isViewMode;
 
-  const ProductInTransitFormPage({
+  const AcceptanceFormPage({
     super.key,
     this.product,
     this.isViewMode = false,
   });
 
   @override
-  ConsumerState<ProductInTransitFormPage> createState() => _ProductInTransitFormPageState();
+  ConsumerState<AcceptanceFormPage> createState() => _AcceptanceFormPageState();
 }
 
-class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormPage> {
+class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _transportNumberController = TextEditingController();
@@ -77,26 +76,18 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   Map<String, TextEditingController> _attributeControllers = {};
   
   // Переменные для множественных товаров
-  List<ProductFormData> _products = [];
+  List<AcceptanceFormData> _products = [];
 
   bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
-    print('🔵 ProductInTransitFormPage: initState начат');
-    print('🔵 ProductInTransitFormPage: widget.product = ${widget.product}');
-    print('🔵 ProductInTransitFormPage: _isEditing = $_isEditing');
-    
+    print('🔵 AcceptanceFormPage: initState начат');
     _initializeForm();
-    print('🔵 ProductInTransitFormPage: _initializeForm завершен');
-    
     _initializeProducts();
-    print('🔵 ProductInTransitFormPage: _initializeProducts завершен, _products.length = ${_products.length}');
-    print('🔵 ProductInTransitFormPage: _products = $_products');
-    
     _loadData();
-    print('🔵 ProductInTransitFormPage: initState завершен');
+    print('🔵 AcceptanceFormPage: initState завершен');
   }
 
   @override
@@ -129,73 +120,32 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _selectedShippingDate = product.shippingDate != null ? DateTime.parse(product.shippingDate!) : null;
       _notesController.text = product.notes ?? '';
       
-      print('🔵 ProductInTransitFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
-      print('🔵 ProductInTransitFormPage: product_template_id: ${product.productTemplateId}');
+      print('🔵 AcceptanceFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
+      print('🔵 AcceptanceFormPage: product_template_id: ${product.productTemplateId}');
     }
   }
 
   void _initializeProducts() {
-    print('🔵 ProductInTransitFormPage: _initializeProducts начат');
-
-    if (_isEditing && widget.product != null) {
-      // Режим редактирования - заполняем данными из существующего товара
-      final product = widget.product!;
-      print('🔵 ProductInTransitFormPage: Режим редактирования, заполняем данными товара');
-
-      // Создаем контроллеры для атрибутов
-      final attributeControllers = <String, TextEditingController>{};
-      final attributes = <String, dynamic>{};
-
-      if (product.attributes is Map<String, dynamic>) {
-        final productAttributes = product.attributes as Map<String, dynamic>;
-        productAttributes.forEach((key, value) {
-          attributeControllers[key] = TextEditingController(text: value?.toString() ?? '');
-          attributes[key] = value;
-        });
-      }
-
-      _products = [
-        ProductFormData(
-          productTemplateId: product.productTemplateId,
-          quantity: product.quantity,
-          name: product.name ?? '',
-          calculatedVolume: product.calculatedVolume ?? '',
-          attributes: attributes,
-          template: null, // Загрузим позже в _loadData
-          attributeControllers: attributeControllers,
-        ),
-      ];
-      print('🔵 ProductInTransitFormPage: Товар для редактирования создан: ${_products[0]}');
-    } else {
-      // Режим создания - создаем пустой товар
-      print('🔵 ProductInTransitFormPage: Режим создания, создаем пустой товар');
-      _products = [
-        ProductFormData(
-          productTemplateId: null,
-          quantity: '',
-          name: '',
-          calculatedVolume: '',
-          attributes: {},
-          template: null,
-          attributeControllers: {},
-        ),
-      ];
-      print('🔵 ProductInTransitFormPage: Пустой товар создан: ${_products[0]}');
-    }
-
-    print('🔵 ProductInTransitFormPage: _initializeProducts завершен, _products.length = ${_products.length}');
+    // Инициализируем первый товар
+    _products = [
+      AcceptanceFormData(
+        quantity: '',
+        name: '',
+        calculatedVolume: '',
+        attributes: {},
+        attributeControllers: {},
+      ),
+    ];
   }
 
   void _addProduct() {
     setState(() {
       _products.add(
-        ProductFormData(
-          productTemplateId: null,
+        AcceptanceFormData(
           quantity: '',
           name: '',
           calculatedVolume: '',
           attributes: {},
-          template: null,
           attributeControllers: {},
         ),
       );
@@ -215,20 +165,19 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   }
 
   Future<void> _loadData() async {
-    print('🔵 ProductInTransitFormPage: _loadData начат');
-    print('🔵 ProductInTransitFormPage: _products перед загрузкой данных: $_products');
+    print('🔵 AcceptanceFormPage: _loadData начат');
     setState(() => _isLoading = true);
 
     try {
       // Загружаем склады
-      print('🔵 ProductInTransitFormPage: Загружаем склады...');
+      print('🔵 AcceptanceFormPage: Загружаем склады...');
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
-      print('🔵 ProductInTransitFormPage: Склады загружены: ${_warehouses.length} шт');
+      print('🔵 AcceptanceFormPage: Склады загружены: ${_warehouses.length} шт');
 
       // Загружаем производителей
-      print('🔵 ProductInTransitFormPage: Загружаем производителей...');
+      print('🔵 AcceptanceFormPage: Загружаем производителей...');
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
@@ -241,32 +190,25 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           createdAt: entity.createdAt,
           updatedAt: entity.updatedAt,
         )).toList();
-        print('🔵 ProductInTransitFormPage: Производители загружены: ${_producers.length} шт');
+        print('🔵 AcceptanceFormPage: Производители загружены: ${_producers.length} шт');
       } else {
-        print('🔵 ProductInTransitFormPage: Производители не загружены');
+        print('🔵 AcceptanceFormPage: Производители не загружены');
       }
 
       // Загружаем шаблоны товаров
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       final templatesResponse = await templateDataSource.getProductTemplates();
       _productTemplates = templatesResponse;
-      print('🔵 ProductInTransitFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
+      print('🔵 AcceptanceFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
 
-      // Если редактируем, загружаем атрибуты для товаров
-      if (_isEditing) {
-        print('🔵 ProductInTransitFormPage: Загружаем атрибуты для редактирования товаров...');
-        for (int i = 0; i < _products.length; i++) {
-          if (_products[i].productTemplateId != null) {
-            await _loadProductTemplateAttributes(i, _products[i].productTemplateId!);
-          }
-        }
+      // Если редактируем, загружаем атрибуты выбранного шаблона
+      if (_isEditing && _selectedProductTemplateId != null) {
+        print('🔵 AcceptanceFormPage: Загружаем атрибуты для редактирования товара...');
+        await _loadTemplateAttributes();
       }
 
-      print('🔵 ProductInTransitFormPage: _loadData завершен успешно');
-      print('🔵 ProductInTransitFormPage: _products после загрузки данных: $_products');
-
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка загрузки данных: $e');
+      print('🔴 AcceptanceFormPage: Ошибка загрузки данных: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -280,16 +222,48 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         setState(() {
           _isLoading = false;
         });
-        print('🔵 ProductInTransitFormPage: _loadData завершен, _isLoading = false');
+        print('🔵 AcceptanceFormPage: _loadData завершен, _isLoading = false');
       }
     }
   }
 
   Future<void> _loadTemplateAttributes() async {
-    // В новой системе множественных товаров шаблоны загружаются индивидуально для каждого товара
-    // Этот метод оставляем для совместимости со старой системой
-    print('🔵 ProductInTransitFormPage: _loadTemplateAttributes вызван (устаревший метод)');
-    return;
+    if (_selectedProductTemplateId == null) {
+      _selectedTemplate = null;
+      _clearAttributeControllers();
+      return;
+    }
+
+    try {
+      print('🔵 AcceptanceFormPage: Загружаем атрибуты шаблона ID: $_selectedProductTemplateId');
+      final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
+      _selectedTemplate = await templateDataSource.getProductTemplate(_selectedProductTemplateId!);
+      
+      // Создаем контроллеры для атрибутов
+      _clearAttributeControllers();
+      for (final attribute in _selectedTemplate!.attributes) {
+        _attributeControllers[attribute.variable] = TextEditingController();
+        
+        // Если редактируем товар, заполняем значения из существующих атрибутов
+        if (_isEditing && widget.product != null) {
+          final productAttributes = widget.product!.attributes;
+          if (productAttributes is Map<String, dynamic>) {
+            final value = productAttributes[attribute.variable]?.toString() ?? '';
+            _attributeControllers[attribute.variable]!.text = value;
+          }
+        }
+        
+        // Добавляем слушатель для автоматического обновления названия и объема
+        _attributeControllers[attribute.variable]!.addListener(() => _onAttributeChanged());
+      }
+
+      print('🔵 AcceptanceFormPage: Атрибуты шаблона загружены: ${_selectedTemplate!.attributes.length} шт');
+      setState(() {});
+    } catch (e) {
+      print('🔴 AcceptanceFormPage: Ошибка загрузки атрибутов шаблона: $e');
+      _selectedTemplate = null;
+      _clearAttributeControllers();
+    }
   }
 
   void _clearAttributeControllers() {
@@ -369,45 +343,54 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         formula = formula.replaceAll(attribute.variable, numValue.toString());
       }
       
-      print('🔵 ProductInTransitFormPage: Формула для расчета: $formula');
+      print('🔵 AcceptanceFormPage: Формула для расчета: $formula');
       
       // Простой парсер математических выражений
       final result = _evaluateFormula(formula);
       
       return result.toStringAsFixed(3);
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка расчета объема: $e');
+      print('🔴 AcceptanceFormPage: Ошибка расчета объема: $e');
       return '0';
     }
   }
 
   double _evaluateFormula(String formula) {
+    // Простая реализация для базовых математических операций
+    // В реальном проекте используйте библиотеку типа math_expressions
     try {
-      // Используем библиотеку math_expressions для правильного парсинга
-      final parser = Parser();
-      final expression = parser.parse(formula);
-      final contextModel = ContextModel();
-
-      final result = expression.evaluate(EvaluationType.REAL, contextModel);
-      return result as double;
+      // Убираем скобки и заменяем операции
+      formula = formula.replaceAll('(', '').replaceAll(')', '');
+      
+      // Разбиваем по операциям
+      final parts = formula.split('*');
+      double result = 1;
+      
+      for (final part in parts) {
+        final trimmedPart = part.trim();
+        if (trimmedPart.isNotEmpty) {
+          result *= double.tryParse(trimmedPart) ?? 1;
+        }
+      }
+      
+      return result;
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка парсинга формулы: $e');
-      print('🔴 ProductInTransitFormPage: Формула: $formula');
+      print('🔴 AcceptanceFormPage: Ошибка парсинга формулы: $e');
       return 0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInTransitFormPage: build вызван, _isLoading = $_isLoading');
-    print('🔵 ProductInTransitFormPage: _warehouses.length = ${_warehouses.length}');
-    print('🔵 ProductInTransitFormPage: _producers.length = ${_producers.length}');
-    print('🔵 ProductInTransitFormPage: _productTemplates.length = ${_productTemplates.length}');
+    print('🔵 AcceptanceFormPage: build вызван, _isLoading = $_isLoading');
+    print('🔵 AcceptanceFormPage: _warehouses.length = ${_warehouses.length}');
+    print('🔵 AcceptanceFormPage: _producers.length = ${_producers.length}');
+    print('🔵 AcceptanceFormPage: _productTemplates.length = ${_productTemplates.length}');
 
     if (_isLoading) {
     return Scaffold(
       appBar: AppBar(
-          title: Text(_isEditing ? 'Редактирование товара в пути' : 'Создание товара в пути'),
+          title: Text(_isEditing ? 'Редактирование товара приемки' : 'Создание товара приемки'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         ),
@@ -534,7 +517,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isEditing ? _updateProduct : _submitForm,
+                      onPressed: _isEditing ? _updateProduct : _createProduct,
                       child: Text(_isEditing ? 'Обновить' : 'Создать'),
                     ),
                   ),
@@ -780,55 +763,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     );
   }
 
-
-  Widget _buildTransportNumberField() {
-    return TextFormField(
-      controller: _transportNumberController,
-      decoration: InputDecoration(
-        labelText: 'Номер транспорта',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-      ),
-      readOnly: widget.isViewMode,
-    );
-  }
-
-  Widget _buildArrivalDateField() {
-    return InkWell(
-      onTap: widget.isViewMode ? null : _selectArrivalDate,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: 'Дата поступления',
-          border: const OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.grey.shade50,
-          suffixIcon: const Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          _selectedArrivalDate != null
-              ? DateFormat('dd.MM.yyyy').format(_selectedArrivalDate!)
-              : 'Выберите дату',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _selectArrivalDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedArrivalDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-    
-    if (date != null) {
-      setState(() {
-        _selectedArrivalDate = date;
-      });
-    }
-  }
-
   List<Widget> _buildProductsList() {
     final List<Widget> widgets = [];
     
@@ -945,7 +879,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           isRequired: attribute.isRequired,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           hintText: attribute.unit != null ? 'в ${attribute.unit}' : null,
-          onChanged: (value) => _onProductAttributeChanged(controller),
         );
             break;
       case 'select':
@@ -956,37 +889,10 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           controller: controller,
           label: attribute.name + (attribute.isRequired ? ' *' : ''),
           isRequired: attribute.isRequired,
-          onChanged: (value) => _onProductAttributeChanged(controller),
         );
     }
 
     return field;
-  }
-
-
-  Widget _buildNumberField(ProductAttributeModel attribute, TextEditingController controller) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: '${attribute.name}${attribute.isRequired ? ' *' : ''}',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        suffixText: attribute.unit,
-      ),
-      keyboardType: TextInputType.number,
-      readOnly: widget.isViewMode,
-      onChanged: (value) => _onAttributeChanged(),
-      validator: attribute.isRequired ? (value) {
-        if (value == null || value.isEmpty) {
-          return 'Поле обязательно для заполнения';
-        }
-        if (double.tryParse(value) == null) {
-          return 'Введите корректное число';
-        }
-        return null;
-      } : null,
-    );
   }
 
   Widget _buildSelectField(ProductAttributeModel attribute, TextEditingController controller) {
@@ -1032,22 +938,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     );
   }
 
-
-  Widget _buildCalculatedVolumeField() {
-    return TextFormField(
-      controller: _calculatedVolumeController,
-      decoration: InputDecoration(
-        labelText: 'Объем',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        suffixText: _selectedTemplate?.unit,
-        helperText: 'Рассчитывается автоматически',
-      ),
-      readOnly: true,
-    );
-  }
-
   Widget _buildNotesField() {
     return TextFormField(
       controller: _notesController,
@@ -1079,11 +969,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   }
 
   void _onProductTemplateChanged(int index, int? templateId) {
-    print('🔵 ProductInTransitFormPage: _onProductTemplateChanged для товара $index, templateId = $templateId');
-    print('🔵 ProductInTransitFormPage: _products до изменения: $_products');
-    
-    setState(() {
-      _products[index] = ProductFormData(
+        setState(() {
+      _products[index] = AcceptanceFormData(
         productTemplateId: templateId,
         quantity: _products[index].quantity,
         name: _products[index].name,
@@ -1094,24 +981,14 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       );
     });
     
-    print('🔵 ProductInTransitFormPage: _products после изменения: $_products');
-
     if (templateId != null) {
-      print('🔵 ProductInTransitFormPage: Загружаем атрибуты для шаблона $templateId');
       _loadProductTemplateAttributes(index, templateId);
-    } else {
-      print('🔵 ProductInTransitFormPage: Шаблон не выбран, очищаем наименование и объем');
-      // Если шаблон не выбран, очищаем наименование и объем
-      _calculateProductNameAndVolume(index);
     }
   }
 
   void _onProductQuantityChanged(int index, String quantity) {
-    print('🔵 ProductInTransitFormPage: _onProductQuantityChanged для товара $index, quantity = $quantity');
-    print('🔵 ProductInTransitFormPage: _products до изменения: $_products');
-    
     setState(() {
-      _products[index] = ProductFormData(
+      _products[index] = AcceptanceFormData(
         productTemplateId: _products[index].productTemplateId,
         quantity: quantity,
         name: _products[index].name,
@@ -1122,22 +999,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       );
     });
     
-    print('🔵 ProductInTransitFormPage: _products после изменения: $_products');
-  }
-
-  void _onProductAttributeChanged(TextEditingController controller) {
-    print('🔵 ProductInTransitFormPage: _onProductAttributeChanged вызван');
-    print('🔵 ProductInTransitFormPage: _products = $_products');
-    
-    // Находим индекс товара по контроллеру атрибута
-    for (int i = 0; i < _products.length; i++) {
-      print('🔵 ProductInTransitFormPage: Проверяем товар $i, attributeControllers = ${_products[i].attributeControllers.keys.toList()}');
-      if (_products[i].attributeControllers.containsValue(controller)) {
-        print('🔵 ProductInTransitFormPage: Найден товар $i, вызываем _calculateProductNameAndVolume');
-        _calculateProductNameAndVolume(i);
-        break;
-      }
-    }
+    _calculateProductNameAndVolume(index);
   }
 
   Future<void> _loadProductTemplateAttributes(int index, int templateId) async {
@@ -1154,16 +1016,11 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       // Создаем контроллеры для атрибутов
       for (final attribute in template.attributes) {
-        // Заполняем значение из существующих атрибутов товара при редактировании
-        final existingValue = _isEditing && widget.product != null
-          ? _products[index].attributes[attribute.variable]?.toString() ?? ''
-          : '';
-
-        newAttributeControllers[attribute.variable] = TextEditingController(text: existingValue);
+        newAttributeControllers[attribute.variable] = TextEditingController();
       }
       
         setState(() {
-        _products[index] = ProductFormData(
+        _products[index] = AcceptanceFormData(
           productTemplateId: templateId,
           quantity: _products[index].quantity,
           name: _products[index].name,
@@ -1176,7 +1033,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       _calculateProductNameAndVolume(index);
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка загрузки атрибутов шаблона: $e');
+      print('🔴 AcceptanceFormPage: Ошибка загрузки атрибутов шаблона: $e');
     }
   }
 
@@ -1184,7 +1041,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     final product = _products[index];
     if (product.template == null || product.quantity.isEmpty) {
         setState(() {
-        _products[index] = ProductFormData(
+        _products[index] = AcceptanceFormData(
           productTemplateId: product.productTemplateId,
           quantity: product.quantity,
           name: '',
@@ -1204,7 +1061,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     final volume = _calculateProductVolume(index);
 
       setState(() {
-      _products[index] = ProductFormData(
+      _products[index] = AcceptanceFormData(
         productTemplateId: product.productTemplateId,
         quantity: product.quantity,
         name: name,
@@ -1273,14 +1130,14 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         formula = formula.replaceAll(attribute.variable, numValue.toString());
       }
       
-      print('🔵 ProductInTransitFormPage: Формула для расчета: $formula');
+      print('🔵 AcceptanceFormPage: Формула для расчета: $formula');
       
       // Простой парсер математических выражений
       final result = _evaluateFormula(formula);
       
       return result.toStringAsFixed(3);
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка расчета объема: $e');
+      print('🔴 AcceptanceFormPage: Ошибка расчета объема: $e');
       return '0';
     }
   }
@@ -1291,9 +1148,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     setState(() => _isLoading = true);
 
     try {
-      print('🔵 ProductInTransitFormPage: Создание товара');
+      print('🔵 AcceptanceFormPage: Создание товара');
       
-      final provider = ref.read(productsInTransitProvider.notifier);
+      final provider = ref.read(acceptanceNotifierProvider.notifier);
       
       final attributes = <String, dynamic>{};
       for (final entry in _attributeControllers.entries) {
@@ -1302,7 +1159,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         }
       }
 
-      final request = CreateProductInTransitRequest(
+      final request = CreateAcceptanceRequest(
         warehouseId: _selectedWarehouseId!,
         producerId: _selectedProducerId,
         productTemplateId: _selectedProductTemplateId!,
@@ -1323,7 +1180,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка создания товара: $e');
+      print('🔴 AcceptanceFormPage: Ошибка создания товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1345,9 +1202,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     setState(() => _isLoading = true);
 
     try {
-      print('🔵 ProductInTransitFormPage: Обновление товара ID: ${widget.product!.id}');
+      print('🔵 AcceptanceFormPage: Обновление товара ID: ${widget.product!.id}');
       
-      final provider = ref.read(productsInTransitProvider.notifier);
+      final provider = ref.read(acceptanceNotifierProvider.notifier);
       
       final attributes = <String, dynamic>{};
       for (final entry in _attributeControllers.entries) {
@@ -1356,7 +1213,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         }
       }
 
-      final request = UpdateProductInTransitRequest(
+      final request = UpdateAcceptanceRequest(
         producerId: _selectedProducerId,
         quantity: _quantityController.text,
         name: _nameController.text,
@@ -1375,165 +1232,11 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка обновления товара: $e');
+      print('🔴 AcceptanceFormPage: Ошибка обновления товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка обновления товара: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _submitForm() async {
-    print('🔵 ProductInTransitFormPage: _submitForm начат');
-    print('🔵 ProductInTransitFormPage: _formKey.currentState = ${_formKey.currentState}');
-    
-    if (!_formKey.currentState!.validate()) {
-      print('🔵 ProductInTransitFormPage: Валидация формы не прошла');
-      return;
-    }
-    
-    print('🔵 ProductInTransitFormPage: Валидация формы прошла успешно');
-
-    // Проверяем, что выбран склад
-    if (_selectedWarehouseId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Выберите склад'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Проверяем, что есть товары для создания
-    if (_products.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Добавьте хотя бы один товар'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-        try {
-          print('🔵 ProductInTransitFormPage: Создание товаров');
-          print('🔵 ProductInTransitFormPage: _products.length = ${_products.length}');
-          print('🔵 ProductInTransitFormPage: _selectedWarehouseId = $_selectedWarehouseId');
-          print('🔵 ProductInTransitFormPage: _products = $_products');
-
-          // Проверяем, что _products не пустой
-          if (_products.isEmpty) {
-            print('🔴 ProductInTransitFormPage: _products пустой!');
-            throw Exception('Нет товаров для создания');
-          }
-
-          // Подготавливаем товары для API
-          final products = <ProductInTransitItem>[];
-          
-          for (int i = 0; i < _products.length; i++) {
-            final product = _products[i];
-            print('🔵 ProductInTransitFormPage: Обрабатываем товар $i');
-            print('🔵 ProductInTransitFormPage: product.productTemplateId = ${product.productTemplateId}');
-            print('🔵 ProductInTransitFormPage: product.quantity = ${product.quantity}');
-            print('🔵 ProductInTransitFormPage: product.name = ${product.name}');
-
-            // Проверяем обязательные поля для каждого товара
-            if (product.productTemplateId == null) {
-              throw Exception('Выберите шаблон товара для товара ${i + 1}');
-            }
-            if (product.quantity.isEmpty) {
-              throw Exception('Введите количество для товара ${i + 1}');
-            }
-
-            print('🔵 ProductInTransitFormPage: Собираем атрибуты для товара $i');
-            // Собираем атрибуты для товара
-            final attributes = <String, dynamic>{};
-            for (final entry in product.attributeControllers.entries) {
-              if (entry.value.text.isNotEmpty) {
-                attributes[entry.key] = entry.value.text;
-              }
-            }
-            print('🔵 ProductInTransitFormPage: Атрибуты собраны: $attributes');
-
-            // Создаем элемент товара для API
-            final productItem = ProductInTransitItem(
-              productTemplateId: product.productTemplateId!,
-              quantity: product.quantity,
-              name: product.name,
-              attributes: attributes,
-            );
-            
-            products.add(productItem);
-            print('🔵 ProductInTransitFormPage: Товар $i подготовлен для API');
-          }
-
-          print('🔵 ProductInTransitFormPage: Создаем запрос для всех товаров');
-          // Создаем запрос для всех товаров
-          final request = CreateMultipleProductsInTransitRequest(
-            warehouseId: _selectedWarehouseId!,
-            transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-            shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
-            shippingDate: _selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null,
-            arrivalDate: _selectedArrivalDate?.toIso8601String(),
-            expectedArrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
-            notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-            products: products,
-          );
-
-          print('🔵 ProductInTransitFormPage: Создаем товары по одному через старый API');
-          final createdProducts = <ProductInTransitModel>[];
-          
-          for (int i = 0; i < products.length; i++) {
-            final product = products[i];
-            print('🔵 ProductInTransitFormPage: Создаем товар $i через старый API');
-            
-            // Создаем запрос для одного товара через старый API
-            final singleRequest = CreateProductInTransitRequest(
-              warehouseId: _selectedWarehouseId!,
-              productTemplateId: product.productTemplateId,
-              quantity: product.quantity,
-              name: product.name,
-              attributes: product.attributes,
-              transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-              arrivalDate: _selectedArrivalDate?.toIso8601String(),
-              shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
-              shippingDate: _selectedShippingDate?.toIso8601String(),
-              notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-            );
-            
-            final createdProduct = await ref.read(productsInTransitProvider.notifier).createProduct(singleRequest);
-            createdProducts.add(createdProduct);
-            print('🔵 ProductInTransitFormPage: Товар $i создан успешно');
-          }
-          
-          print('🔵 ProductInTransitFormPage: Все товары созданы успешно: ${createdProducts.length}');
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Создано товаров: ${createdProducts.length}'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.of(context).pop();
-          }
-        } catch (e) {
-      print('🔴 ProductInTransitFormPage: Ошибка создания товара: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка: $e'),
             backgroundColor: Colors.red,
           ),
         );

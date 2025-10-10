@@ -211,8 +211,20 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   @override
   Future<void> cancelSale(int id) async {
     try {
-      await _dio.post('/sales/$id/cancel');
+      print('🔵 Отправляем запрос на отмену продажи ID: $id');
+      final response = await _dio.post('/sales/$id/cancel');
+
+      print('🔵 Ответ отмены продажи: ${response.statusCode}');
+      print('🔵 Ответ данные: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('🔵 Продажа успешно отменена');
+        return;
+      } else {
+        throw Exception('Ошибка сервера: ${response.statusCode}');
+      }
     } catch (e) {
+      print('🔴 Ошибка отмены продажи: $e');
       throw _handleError(e);
     }
   }

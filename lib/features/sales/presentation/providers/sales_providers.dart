@@ -124,16 +124,30 @@ class CancelSale extends _$CancelSale {
   Future<void> cancel(int id) async {
     state = const AsyncValue.loading();
     final repository = ref.watch(salesRepositoryProvider);
-    
+
     try {
+      print('🔵 CancelSaleProvider: Начинаем отмену продажи ID: $id');
       await repository.cancelSale(id);
+      print('🔵 CancelSaleProvider: Продажа успешно отменена');
+      
+      // Сначала устанавливаем успешное состояние
       state = const AsyncValue.data(true);
-      // Обновляем список продаж и детали после отмены
-      ref.invalidate(salesListProvider);
-      ref.invalidate(saleDetailProvider);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-      throw e;
+      
+      // Затем инвалидируем провайдеры (используем Future.microtask чтобы избежать "Future already completed")
+      Future.microtask(() {
+        try {
+          ref.invalidate(salesListProvider);
+          ref.invalidate(saleDetailProvider);
+          print('🔵 CancelSaleProvider: Провайдеры инвалидированы');
+        } catch (e) {
+          print('🔴 CancelSaleProvider: Ошибка инвалидации провайдеров: $e');
+        }
+      });
+    } catch (e, stackTrace) {
+      print('🔴 CancelSaleProvider: Ошибка отмены продажи: $e');
+      print('🔴 CancelSaleProvider: Stack trace: $stackTrace');
+      state = AsyncValue.error(e, stackTrace);
+      rethrow;
     }
   }
 }

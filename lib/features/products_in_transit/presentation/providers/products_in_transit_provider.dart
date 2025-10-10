@@ -107,6 +107,21 @@ class ProductsInTransit extends _$ProductsInTransit {
     }
   }
 
+  /// Создание нескольких товаров
+  Future<List<ProductInTransitModel>> createMultipleProducts(CreateMultipleProductsInTransitRequest request) async {
+    try {
+      final apiDataSource = ref.read(productsInTransitRemoteDataSourceProvider);
+      final newProducts = await apiDataSource.createMultipleProducts(request);
+      
+      // Обновляем список товаров
+      await refresh();
+      
+      return newProducts;
+    } catch (e) {
+      throw Exception('Ошибка создания товаров: $e');
+    }
+  }
+
   /// Обновление товара
   Future<ProductInTransitModel> updateProduct(int id, UpdateProductInTransitRequest request) async {
     try {

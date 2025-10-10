@@ -96,6 +96,7 @@ enum RequestPriority {
 class CreateRequestRequest with _$CreateRequestRequest {
   const factory CreateRequestRequest({
     @JsonKey(name: 'warehouse_id') required int warehouseId,
+    @JsonKey(name: 'product_template_id') required int productTemplateId,
     required String title,
     required double quantity,
     required RequestPriority priority,
@@ -113,6 +114,7 @@ class CreateRequestRequest with _$CreateRequestRequest {
 class UpdateRequestRequest with _$UpdateRequestRequest {
   const factory UpdateRequestRequest({
     @JsonKey(name: 'warehouse_id') int? warehouseId,
+    @JsonKey(name: 'product_template_id') int? productTemplateId,
     String? title,
     double? quantity,
     RequestPriority? priority,

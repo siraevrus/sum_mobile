@@ -462,10 +462,24 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           ? 'Сначала выберите склад'
           : 'Выберите товар',
       ),
+      isExpanded: true,
       items: _warehouseProducts.map((product) => DropdownMenuItem(
         value: product['id'] as int,
-        child: Text('${product['name']} (остаток: ${product['quantity']})'),
+        child: Text(
+          '${product['name']} (остаток: ${product['quantity']})',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
       )).toList(),
+      selectedItemBuilder: (BuildContext context) {
+        return _warehouseProducts.map<Widget>((product) {
+          return Text(
+            '${product['name']} (остаток: ${product['quantity']})',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          );
+        }).toList();
+      },
       onChanged: _selectedWarehouseId == null ? null : (productId) {
         setState(() => _selectedProductId = productId);
       },

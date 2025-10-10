@@ -4,28 +4,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/models/product_in_transit_model.dart';
-import 'package:sum_warehouse/features/products_in_transit/presentation/pages/product_in_transit_form_page.dart';
-import 'package:sum_warehouse/features/products_in_transit/data/datasources/products_in_transit_remote_datasource.dart';
+import 'package:sum_warehouse/features/acceptance/data/models/acceptance_model.dart';
+import 'package:sum_warehouse/features/acceptance/data/datasources/acceptance_remote_datasource.dart';
+import 'package:sum_warehouse/features/acceptance/presentation/providers/acceptance_provider.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 
-/// Страница детального просмотра товара в пути
-class ProductInTransitDetailPage extends ConsumerStatefulWidget {
-  final ProductInTransitModel product;
+/// Страница детального просмотра товара приемки
+class AcceptanceDetailPage extends ConsumerStatefulWidget {
+  final AcceptanceModel product;
 
-  const ProductInTransitDetailPage({
+  const AcceptanceDetailPage({
     super.key,
     required this.product,
   });
 
   @override
-  ConsumerState<ProductInTransitDetailPage> createState() => _ProductInTransitDetailPageState();
+  ConsumerState<AcceptanceDetailPage> createState() => _AcceptanceDetailPageState();
 }
 
-class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDetailPage> {
+class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
   Map<String, String>? _attributeNames; // Кэш названий атрибутов
   bool _isLoadingAttributes = false;
-  ProductInTransitModel? _currentProduct; // Актуальные данные товара
+  AcceptanceModel? _currentProduct; // Актуальные данные товара
+  final TextEditingController _correctionController = TextEditingController();
 
   @override
   void initState() {
@@ -34,21 +35,42 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     _loadProductTemplate();
   }
 
-  ProductInTransitModel get _product => _currentProduct ?? widget.product;
+  @override
+  void dispose() {
+    _correctionController.dispose();
+    super.dispose();
+  }
+
+  AcceptanceModel get _product => _currentProduct ?? widget.product;
+
+  /// Проверка доступа к приему товара
+  bool _canReceiveProduct() {
+    // Проверяем статус товара
+    final allowedStatuses = ['in_transit', 'for_receipt'];
+    if (!allowedStatuses.contains(_product.status)) {
+      return false;
+    }
+
+    // Проверяем принадлежность к складу пользователя (для не-админа)
+    // Здесь нужно будет добавить логику получения текущего пользователя и его склада
+    // Пока оставляем доступным для всех (можно будет доработать позже)
+
+    return true;
+  }
 
   Future<void> _refreshProductData() async {
     if (_currentProduct == null) return;
 
     try {
-      print('🔵 ProductInTransitDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
+      print('🔵 AcceptanceDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/products/${_currentProduct!.id}');
       
-      print('🔵 ProductInTransitDetailPage: Обновленные данные товара: ${response.data}');
+      print('🔵 AcceptanceDetailPage: Обновленные данные товара: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
-        final updatedProduct = ProductInTransitModel.fromJson(response.data);
+        final updatedProduct = AcceptanceModel.fromJson(response.data);
         
         if (mounted) {
           setState(() {
@@ -57,7 +79,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       }
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка обновления данных товара: $e');
+      print('🔴 AcceptanceDetailPage: Ошибка обновления данных товара: $e');
     }
   }
 
@@ -69,12 +91,12 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     });
 
     try {
-      print('🔵 ProductInTransitDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
+      print('🔵 AcceptanceDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/product-templates/${_product.productTemplateId}');
       
-      print('🔵 ProductInTransitDetailPage: Ответ API /product-templates: ${response.data}');
+      print('🔵 AcceptanceDetailPage: Ответ API /product-templates: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data;
@@ -101,7 +123,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
             }
           }
           
-          print('🔵 ProductInTransitDetailPage: Названия атрибутов загружены: $attributeNames');
+          print('🔵 AcceptanceDetailPage: Названия атрибутов загружены: $attributeNames');
           
           if (mounted) {
             setState(() {
@@ -111,7 +133,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       }
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка загрузки шаблона товара: $e');
+      print('🔴 AcceptanceDetailPage: Ошибка загрузки шаблона товара: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -123,32 +145,43 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInTransitDetailPage: build вызван для товара ID: ${_product.id}');
-    print('🔵 ProductInTransitDetailPage: product.name = ${_product.name}');
-    print('🔵 ProductInTransitDetailPage: product.warehouse = ${_product.warehouse?.name}');
-    print('🔵 ProductInTransitDetailPage: product.producer = ${_product.producer?.name}');
-    print('🔵 ProductInTransitDetailPage: product.template = ${_product.template?.name}');
+    print('🔵 AcceptanceDetailPage: build вызван для товара ID: ${_product.id}');
+    print('🔵 AcceptanceDetailPage: product.name = ${_product.name}');
+    print('🔵 AcceptanceDetailPage: product.warehouse = ${_product.warehouse?.name}');
+    print('🔵 AcceptanceDetailPage: product.producer = ${_product.producer?.name}');
+    print('🔵 AcceptanceDetailPage: product.template = ${_product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => ProductInTransitFormPage(product: _currentProduct ?? widget.product),
+          if (_canReceiveProduct()) ...[
+            ElevatedButton.icon(
+              onPressed: _showCorrectionDialog,
+              icon: const Icon(Icons.edit_note, size: 18),
+              label: const Text('Корректировка'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-              
-              // Обновляем данные при возврате из редактирования
-              if (result == true || result == null) {
-                await _refreshProductData();
-              }
-            },
-            icon: const Icon(Icons.edit),
-            tooltip: 'Редактировать',
-          ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: _receiveProduct,
+              icon: const Icon(Icons.check_circle, size: 18),
+              label: const Text('Принять товар'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       body: SingleChildScrollView(
@@ -259,7 +292,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     required String title,
     required List<Widget> children,
   }) {
-    print('🔵 ProductInTransitDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
+    print('🔵 AcceptanceDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     try {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,7 +329,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         ],
       );
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка в _buildSection "$title": $e');
+      print('🔴 AcceptanceDetailPage: Ошибка в _buildSection "$title": $e');
       return Container(
         padding: const EdgeInsets.all(16),
         child: Text('Ошибка отображения секции: $e'),
@@ -305,7 +338,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
   }
 
   Widget _buildInfoRow(String label, String value) {
-    print('🔵 ProductInTransitDetailPage: _buildInfoRow вызван для "$label" = "$value"');
+    print('🔵 AcceptanceDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     try {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -337,7 +370,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         ),
       );
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка в _buildInfoRow "$label": $e');
+      print('🔴 AcceptanceDetailPage: Ошибка в _buildInfoRow "$label": $e');
       return Container(
         padding: const EdgeInsets.all(8),
         child: Text('Ошибка отображения: $e'),
@@ -487,7 +520,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
 
   Future<void> _openDocument(String path) async {
     try {
-      print('🔵 ProductInTransitDetailPage: Скачиваем документ: $path');
+      print('🔵 AcceptanceDetailPage: Скачиваем документ: $path');
 
       // Формируем полную ссылку на документ
       String documentUrl;
@@ -504,7 +537,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
 
-      print('🔵 ProductInTransitDetailPage: Полная ссылка на документ: $documentUrl');
+      print('🔵 AcceptanceDetailPage: Полная ссылка на документ: $documentUrl');
 
       // Показываем диалог загрузки
       showDialog(
@@ -582,7 +615,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       } catch (e) {
         // Если внешнее хранилище недоступно, используем внутреннее
-        print('🔵 ProductInTransitDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
+        print('🔵 AcceptanceDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
         directory = await getApplicationDocumentsDirectory();
         downloadsDir = Directory('${directory.path}/Downloads');
       }
@@ -625,10 +658,10 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         );
       }
 
-      print('🔵 ProductInTransitDetailPage: Документ успешно сохранен: ${file.path}');
+      print('🔵 AcceptanceDetailPage: Документ успешно сохранен: ${file.path}');
 
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка скачивания документа: $e');
+      print('🔴 AcceptanceDetailPage: Ошибка скачивания документа: $e');
 
       // Закрываем диалог загрузки если он открыт
       if (mounted && Navigator.of(context).canPop()) {
@@ -641,7 +674,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
 
   void _showErrorDialog(String message) {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -657,14 +690,149 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     );
   }
 
-  void _editProduct() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ProductInTransitFormPage(product: _product),
-      ),
-    ).then((_) {
-      // Обновляем данные после редактирования
-      _refreshProductData();
-    });
+  /// Прием товара
+  Future<void> _receiveProduct() async {
+    try {
+      print('🔵 AcceptanceDetailPage: Принимаем товар ID: ${_product.id}');
+
+      final dio = ref.read(dioClientProvider);
+      final response = await dio.post('/receipts/${_product.id}/receive');
+
+      print('🔵 AcceptanceDetailPage: Ответ приема товара: ${response.data}');
+
+      if (response.data['success'] == true) {
+        // Обновляем локальные данные
+        await _refreshProductData();
+
+        // Обновляем данные в провайдере списка товаров
+        ref.read(acceptanceNotifierProvider.notifier).refresh();
+
+        // Закрываем страницу детального просмотра
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      } else {
+        throw Exception(response.data['message'] ?? 'Ошибка приема товара');
+      }
+    } catch (e) {
+      print('🔴 AcceptanceDetailPage: Ошибка приема товара: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка приема товара: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
+
+  /// Показать диалог корректировки
+  void _showCorrectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Корректировка товара'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Добавьте уточнение к товару:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _correctionController,
+              decoration: const InputDecoration(
+                hintText: 'Введите уточнение (10-1000 символов)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 4,
+              maxLength: 1000,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _correctionController.clear();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: _submitCorrection,
+            child: const Text('Добавить уточнение'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Отправить корректировку
+  Future<void> _submitCorrection() async {
+    final correction = _correctionController.text.trim();
+
+    if (correction.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Введите текст уточнения'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (correction.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Текст уточнения должен содержать минимум 10 символов'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      print('🔵 AcceptanceDetailPage: Отправляем корректировку для товара ID: ${_product.id}');
+      print('🔵 AcceptanceDetailPage: Текст корректировки: $correction');
+
+      final dio = ref.read(dioClientProvider);
+      final response = await dio.post(
+        '/receipts/${_product.id}/correction',
+        data: {'correction': correction},
+      );
+
+      print('🔵 AcceptanceDetailPage: Ответ корректировки: ${response.data}');
+
+      if (response.data['success'] == true) {
+        // Очищаем контроллер
+        _correctionController.clear();
+
+        // Закрываем диалог
+        Navigator.of(context).pop();
+
+        // Обновляем локальные данные
+        await _refreshProductData();
+
+        // Обновляем данные в провайдере списка товаров
+        ref.read(acceptanceNotifierProvider.notifier).refresh();
+
+        // Закрываем страницу детального просмотра
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      } else {
+        throw Exception(response.data['message'] ?? 'Ошибка корректировки товара');
+      }
+    } catch (e) {
+      print('🔴 AcceptanceDetailPage: Ошибка корректировки товара: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка корректировки товара: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
 }

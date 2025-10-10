@@ -251,11 +251,13 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           );
         }
       } catch (e) {
+        print('🔴 Ошибка отмены продажи в UI: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Ошибка отмены продажи: $e'),
               backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
             ),
           );
         }

@@ -517,7 +517,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
               
               // Информация о товаре
               _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
-              _buildInfoRow('Объем', product.calculatedVolume ?? 'Не рассчитан'),
+              _buildInfoRow('Объем', _formatVolume(product.calculatedVolume)),
               _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
               _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
               _buildInfoRow('Дата отгрузки', _formatDate(product.shippingDate)),
@@ -579,6 +579,19 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
     } catch (e) {
       print('🔴 Ошибка форматирования даты $dateString: $e');
       return dateString; // Возвращаем исходное значение если не удалось распарсить
+    }
+  }
+
+  String _formatVolume(String? volumeString) {
+    if (volumeString == null || volumeString.isEmpty || volumeString == 'Не рассчитан') {
+      return 'Не рассчитан';
+    }
+
+    try {
+      final volume = double.parse(volumeString);
+      return volume.toStringAsFixed(3);
+    } catch (e) {
+      return volumeString; // Возвращаем исходное значение если не удалось распарсить
     }
   }
 

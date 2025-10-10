@@ -67,7 +67,7 @@ class LoginPage extends ConsumerWidget {
                 const SizedBox(height: 24),
                 
                 const Text(
-                  'Sum Warehouse',
+                  'СкладOnline',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,

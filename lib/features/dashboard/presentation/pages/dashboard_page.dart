@@ -56,7 +56,7 @@ class DashboardPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sum Warehouse'),
+        title: const Text('СкладOnline'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
