@@ -166,166 +166,124 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
   
   /// Карточка компании
   Widget _buildCompanyCard(CompanyModel company) {
-    return InkWell(
-      onTap: () => _editCompany(company),
-      borderRadius: BorderRadius.circular(12),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () => _editCompany(company),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок с статусом
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          company.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (company.isArchived) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'Архив',
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  
-                  // Меню действий
-                  PopupMenuButton<String>(
-                        onSelected: (action) => _handleCompanyAction(action, company),
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 20),
-                                SizedBox(width: 8),
-                                Text('Редактировать'),
-                              ],
-                            ),
-                          ),
-                          if (!company.isArchived)
-                            const PopupMenuItem(
-                              value: 'archive',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.archive, size: 20, color: Colors.orange),
-                                  SizedBox(width: 8),
-                                  Text('Архивировать', style: TextStyle(color: Colors.orange)),
-                                ],
-                              ),
-                            )
-                          else
-                            const PopupMenuItem(
-                              value: 'restore',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.unarchive, size: 20, color: Colors.green),
-                                  SizedBox(width: 8),
-                                  Text('Восстановить', style: TextStyle(color: Colors.green)),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // ИНН/КПП
+              // Заголовок с меню
               Row(
                 children: [
-                  Icon(Icons.business_center, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    'ИНН: ${company.inn} / КПП: ${company.kpp}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              
-              // Адрес
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      company.legalAddress ?? 'Не указан',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
+                      company.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // Контакты и статистика
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (company.phoneFax != null) ...[
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 16, color: AppColors.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          company.phoneFax!,
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                  PopupMenuButton<String>(
+                    onSelected: (action) => _handleCompanyAction(action, company),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility, size: 20),
+                            SizedBox(width: 8),
+                            Text('Просмотр'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: 8),
+                            Text('Редактировать'),
+                          ],
+                        ),
+                      ),
+                      if (!company.isArchived)
+                        const PopupMenuItem(
+                          value: 'archive',
+                          child: Row(
+                            children: [
+                              Icon(Icons.archive, size: 20, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text('Архивировать', style: TextStyle(color: Colors.orange)),
+                            ],
+                          ),
+                        )
+                      else
+                        const PopupMenuItem(
+                          value: 'restore',
+                          child: Row(
+                            children: [
+                              Icon(Icons.unarchive, size: 20, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('Восстановить', style: TextStyle(color: Colors.green)),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                  
-                  Text(
-                    '${company.employeesCount} сотрудников',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    ],
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              
+              // Информация о компании
+              _buildInfoRow('ИНН', company.inn ?? 'Не указан'),
+              _buildInfoRow('КПП', company.kpp ?? 'Не указан'),
+              _buildInfoRow('Адрес', company.legalAddress ?? 'Не указан'),
+              _buildInfoRow('Телефон', company.phoneFax ?? 'Не указан'),
+              _buildInfoRow('Email', company.email ?? 'Не указан'),
+              _buildInfoRow('Сотрудников', '${company.employeesCount ?? 0}'),
+              _buildInfoRow('Складов', '${company.warehousesCount ?? 0}'),
+              
+              // Тег статуса архива
+              if (company.isArchived) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade700.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.archive,
+                        size: 14,
+                        color: Colors.orange.shade700,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Архив',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -333,9 +291,42 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
     );
   }
   
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
   /// Обработка действий с компанией
   void _handleCompanyAction(String action, CompanyModel company) {
     switch (action) {
+      case 'view':
+        _viewCompanyDetails(company);
+        break;
       case 'edit':
         _editCompany(company);
         break;

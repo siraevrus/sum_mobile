@@ -516,8 +516,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
               const SizedBox(height: 12),
               
               // Информация о товаре
-              _buildInfoRow('Количество', '${product.quantity} ${product.template?.unit ?? ''}'),
-              _buildInfoRow('Объем', _formatVolume(product.calculatedVolume)),
+              _buildInfoRow('Количество', product.quantity),
+              _buildInfoRow('Объем', '${_formatVolume(product.calculatedVolume)} ${product.template?.unit ?? ''}'),
               _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
               _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
               _buildInfoRow('Дата отгрузки', _formatDate(product.shippingDate)),

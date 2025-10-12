@@ -154,35 +154,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
-        actions: [
-          if (_canReceiveProduct()) ...[
-            ElevatedButton.icon(
-              onPressed: _showCorrectionDialog,
-              icon: const Icon(Icons.edit_note, size: 18),
-              label: const Text('Корректировка'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _receiveProduct,
-              icon: const Icon(Icons.check_circle, size: 18),
-              label: const Text('Принять товар'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -232,6 +203,46 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
               ),
 
             const SizedBox(height: 24),
+
+            // Кнопки действий
+            if (_canReceiveProduct()) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _showCorrectionDialog,
+                      icon: const Icon(Icons.edit_note, size: 18),
+                      label: const Text('Корректировка'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _receiveProduct,
+                      icon: const Icon(Icons.check_circle, size: 18),
+                      label: const Text('Принять товар'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
 
             // Документы
             if (_product.documentPath != null && _product.documentPath.isNotEmpty)

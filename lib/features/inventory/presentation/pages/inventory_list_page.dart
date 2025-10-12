@@ -246,242 +246,79 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
   Widget _buildStockCard(StockModel stock) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: _getStatusColor(stock.stockStatus).withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () => _handleStockAction('view', stock),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок с статусом
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      stock.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Статус остатков
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(stock.stockStatus).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          stock.stockStatus.displayName,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: _getStatusColor(stock.stockStatus),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      
-                      // Меню действий
-                      PopupMenuButton<String>(
-                        onSelected: (action) => _handleStockAction(action, stock),
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'view',
-                            child: Row(
-                              children: [
-                                Icon(Icons.visibility, size: 20),
-                                SizedBox(width: 8),
-                                Text('Просмотр'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'movement',
-                            child: Row(
-                              children: [
-                                Icon(Icons.swap_vert, size: 20),
-                                SizedBox(width: 8),
-                                Text('Движение'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'adjust',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 20),
-                                SizedBox(width: 8),
-                                Text('Корректировка'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // Производитель
-              if (stock.producer.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Icon(Icons.business, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        stock.producer,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+              // Заголовок
+              Text(
+                stock.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 4),
-              ],
-              
-              // Склад
-              Row(
-                children: [
-                  Icon(Icons.warehouse, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    stock.warehouse?.name ?? 'Склад #${stock.warehouseId}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               
-              // Количества и объемы
-              Row(
-                children: [
-                  // Доступное количество
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory, size: 14, color: AppColors.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${stock.availableQuantity.toStringAsFixed(0)} шт',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // Объем
-                  if (stock.availableVolume > 0) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.straighten, size: 14, color: AppColors.success),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${stock.availableVolume.toStringAsFixed(1)} м³',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  
-                  // Количество позиций
-                  if (stock.itemsCount > 1) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.format_list_numbered, size: 14, color: AppColors.info),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${stock.itemsCount} поз.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.info,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // Даты поступления
-              Row(
-                children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Последнее поступление: ${_formatDate(stock.lastArrival)}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // Информация о товаре
+              _buildInfoRow('Производитель', stock.producer.isNotEmpty ? stock.producer : 'Не указан'),
+              _buildInfoRow('Склад', stock.warehouse?.name ?? 'Склад #${stock.warehouseId}'),
+              _buildInfoRow('Доступно', '${stock.availableQuantity.toStringAsFixed(0)} шт.'),
+              _buildInfoRow('Объем', stock.availableVolume > 0 ? '${stock.availableVolume.toStringAsFixed(3)} м³' : 'Не рассчитан'),
+              _buildInfoRow('Зарезервировано', '${stock.reservedQuantity.toStringAsFixed(0)} шт.'),
             ],
           ),
         ),
       ),
     );
+  }
+  
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  IconData _getStatusIcon(StockStatus status) {
+    switch (status) {
+      case StockStatus.inStock:
+        return Icons.check_circle;
+      case StockStatus.lowStock:
+        return Icons.warning;
+      case StockStatus.outOfStock:
+        return Icons.cancel;
+    }
   }
   
   Color _getStatusColor(StockStatus status) {

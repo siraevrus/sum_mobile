@@ -22,166 +22,83 @@ class SaleCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                return _buildMobileLayout();
-              } else {
-                return _buildDesktopLayout();
-              }
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Заголовок с меню
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '№${sale.saleNumber ?? 'Без номера'}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: _handleMenuAction,
+                    itemBuilder: (context) => _buildMenuItems(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              // Информация о продаже
+              _buildInfoRow('Товар', sale.product?.name ?? 'ID ${sale.productId}'),
+              _buildInfoRow('Количество', sale.quantity.toStringAsFixed(2)),
+              _buildInfoRow('Цена за единицу', '${sale.unitPrice.toStringAsFixed(2)} ${sale.currency}'),
+              _buildInfoRow('Общая сумма', '${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}'),
+              _buildInfoRow('Склад', sale.warehouse?.name ?? 'ID ${sale.warehouseId}'),
+              _buildInfoRow('Дата продажи', _formatDate(sale.saleDate)),
+              
+              // Тег статуса оплаты
+              const SizedBox(height: 8),
+              _buildStatusChip(sale.paymentStatus),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMobileLayout() {
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '№${sale.saleNumber ?? 'Без номера'}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFBBBBBB),
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}',
+          ),
+          Expanded(
+            child: Text(
+              value,
               style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black,
+                fontSize: 12,
+                color: Colors.black87,
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            Row(
-              children: [
-                Text(
-                  'Кол-во: ${sale.quantity.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFBBBBBB),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Дата: ${_formatDate(sale.saleDate)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFBBBBBB),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                _buildStatusChip(sale.paymentStatus),
-              ],
-            ),
-          ],
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => _buildMenuItems(),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout() {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            Text(
-              '№${sale.saleNumber ?? 'Без номера'}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Товар: ${sale.product?.name ?? 'ID ${sale.productId}'}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFBBBBBB),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                'Кол-во: ${sale.quantity.toStringAsFixed(2)} • ${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFBBBBBB),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _formatDate(sale.saleDate),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFBBBBBB),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: _buildStatusChip(sale.paymentStatus),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuButton<String>(
-          onSelected: _handleMenuAction,
-          itemBuilder: (context) => _buildMenuItems(),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

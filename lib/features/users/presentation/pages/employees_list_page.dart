@@ -279,176 +279,170 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
   }
 
   Widget _buildUserCard(UserManagementModel user) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => UserFormPage(user: user),
-          ),
-        ).then((updated) {
-          if (updated == true) _loadUsers();
-        });
-      },
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => UserFormPage(user: user),
+            ),
+          ).then((updated) {
+            if (updated == true) _loadUsers();
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                return _buildMobileUserCard(user);
-              } else {
-                return _buildDesktopUserCard(user);
-              }
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Заголовок с меню
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _getFullName(user),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (action) => _handleUserAction(action, user),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility, size: 20),
+                            SizedBox(width: 8),
+                            Text('Просмотр'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: 8),
+                            Text('Редактировать'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: user.isBlocked ? 'unblock' : 'block',
+                        child: Row(
+                          children: [
+                            Icon(
+                              user.isBlocked ? Icons.lock_open : Icons.lock,
+                              size: 20,
+                              color: user.isBlocked ? Colors.green : Colors.orange,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              user.isBlocked ? 'Разблокировать' : 'Заблокировать',
+                              style: TextStyle(color: user.isBlocked ? Colors.green : Colors.orange),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!user.isBlocked)
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 20, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Удалить', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              // Информация о сотруднике
+              _buildInfoRow('Логин', user.username ?? 'Не указан'),
+              _buildInfoRow('Email', user.email),
+              _buildInfoRow('Телефон', user.phone ?? 'Не указан'),
+              _buildInfoRow('Компания', user.company?.name ?? 'Не указана'),
+              _buildInfoRow('Склад', user.warehouse?.name ?? 'Не указан'),
+              _buildInfoRow('Роль', _getRoleDisplayName(user.role)),
+              
+              // Тег статуса блокировки
+              if (user.isBlocked) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade700.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.block,
+                        size: 14,
+                        color: Colors.red.shade700,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Заблокирован',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
     );
   }
-
-  Widget _buildMobileUserCard(UserManagementModel user) {
-    return Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_getFullName(user), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            if (user.username != null && user.username!.isNotEmpty) ...[
-              Text('Логин: ${user.username}', style: const TextStyle(color: Color(0xFF6C757D), fontWeight: FontWeight.w500)),
-              const SizedBox(height: 4),
-            ],
-            Text(user.email, style: const TextStyle(color: Color(0xFF6C757D))),
-            if (user.phone != null) ...[
-              const SizedBox(height: 4),
-              Text('Телефон: ${user.phone}', style: const TextStyle(color: Color(0xFF6C757D))),
-            ],
-            if (user.company != null) ...[
-              const SizedBox(height: 4),
-              Text('Компания: ${user.company!.name}', style: const TextStyle(color: Color(0xFF6C757D))),
-            ],
-            const SizedBox(height: 4),
-            Text('Роль: ${_getRoleDisplayName(user.role)}', style: const TextStyle(color: Color(0xFF6C757D))),
-            const SizedBox(height: 4),
-            // Статус последним
-            _buildStatusBadge(user.isBlocked),
-          ],
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: PopupMenuButton<String>(
-            onSelected: (action) => _handleUserAction(action, user),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'view',
-                child: Row(
-                  children: [Icon(Icons.visibility, size: 20), SizedBox(width: 8), Text('Просмотр')],
-                ),
+  
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
               ),
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
-                ),
-              ),
-              PopupMenuItem(
-                value: user.isBlocked ? 'unblock' : 'block',
-                child: Row(
-                  children: [
-                    Icon(user.isBlocked ? Icons.lock_open : Icons.lock, size: 20, color: user.isBlocked ? Colors.green : Colors.orange),
-                    const SizedBox(width: 8),
-                    Text(user.isBlocked ? 'Разблокировать' : 'Заблокировать', style: TextStyle(color: user.isBlocked ? Colors.green : Colors.orange)),
-                  ],
-                ),
-              ),
-              if (!user.isBlocked)
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: Colors.red))],
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopUserCard(UserManagementModel user) {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_getFullName(user), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              if (user.username != null && user.username!.isNotEmpty) ...[
-                Text('Логин: ${user.username}', style: const TextStyle(color: Color(0xFF6C757D), fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-              ],
-              Text(user.email, style: const TextStyle(color: Color(0xFF6C757D))),
-              if (user.phone != null) ...[
-                const SizedBox(height: 4),
-                Text('Телефон: ${user.phone}', style: const TextStyle(color: Color(0xFF6C757D))),
-              ],
-              if (user.company != null) ...[
-                const SizedBox(height: 4),
-                Text('Компания: ${user.company!.name}', style: const TextStyle(color: Color(0xFF6C757D))),
-              ],
-              const SizedBox(height: 4),
-              Text('Роль: ${_getRoleDisplayName(user.role)}', style: const TextStyle(color: Color(0xFF6C757D))),
-              const SizedBox(height: 4),
-              // Статус последним
-              _buildStatusBadge(user.isBlocked),
-            ],
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: PopupMenuButton<String>(
-            onSelected: (action) => _handleUserAction(action, user),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'view',
-                child: Row(
-                  children: [Icon(Icons.visibility, size: 20), SizedBox(width: 8), Text('Просмотр')],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
-                ),
-              ),
-              PopupMenuItem(
-                value: user.isBlocked ? 'unblock' : 'block',
-                child: Row(
-                  children: [
-                    Icon(user.isBlocked ? Icons.lock_open : Icons.lock, size: 20, color: user.isBlocked ? Colors.green : Colors.orange),
-                    const SizedBox(width: 8),
-                    Text(user.isBlocked ? 'Разблокировать' : 'Заблокировать', style: TextStyle(color: user.isBlocked ? Colors.green : Colors.orange)),
-                  ],
-                ),
-              ),
-              if (!user.isBlocked)
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: Colors.red))],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -526,7 +520,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
             if (user.company != null) Text('Компания: ${user.company!.name}'),
             if (user.warehouse != null) Text('Склад: ${user.warehouse!.name}'),
             Text('Статус: ${user.isBlocked ? "Заблокирован" : "Активен"}'),
-            Text('Создан: ${user.createdAt}'),
+            Text('Создан: ${_formatDate(user.createdAt)}'),
           ],
         ),
         actions: [
@@ -660,6 +654,15 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
       return [last, first, middle].where((s) => s.isNotEmpty).join(' ');
     }
     return user.name;
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    } catch (e) {
+      return dateString;
+    }
   }
 
   Widget _buildEmptyState() {

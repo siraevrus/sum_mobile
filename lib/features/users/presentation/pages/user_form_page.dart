@@ -145,6 +145,16 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
                 controller: _usernameController,
                 label: 'Логин',
                 hint: 'ivanov',
+                isRequired: true,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Логин обязателен';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Логин должен содержать минимум 3 символа';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               
@@ -528,7 +538,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           middleName: _middleNameController.text.isEmpty ? null : _middleNameController.text,
-          username: _usernameController.text.isEmpty ? null : _usernameController.text,
+          username: _usernameController.text,
           email: _emailController.text,
           phone: _phoneController.text.isEmpty ? null : _phoneController.text,
           role: _selectedRole,
@@ -546,7 +556,7 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           middleName: _middleNameController.text.isEmpty ? null : _middleNameController.text,
-          username: _usernameController.text.isEmpty ? null : _usernameController.text,
+          username: _usernameController.text,
           email: _emailController.text,
           phone: _phoneController.text.isEmpty ? null : _phoneController.text,
           password: _passwordController.text,

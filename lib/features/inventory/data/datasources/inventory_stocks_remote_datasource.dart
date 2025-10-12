@@ -3,8 +3,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/error/app_exceptions.dart';
 import '../../../../core/error/error_handler.dart';
-import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/inventory_models.dart' as old_models;
 import '../../../../shared/models/product_model.dart';
+import '../../domain/entities/inventory_aggregation_entity.dart';
 
 part 'inventory_stocks_remote_datasource.g.dart';
 
@@ -18,20 +19,23 @@ abstract class InventoryStocksRemoteDataSource {
     String? status,
   });
 
-  /// Получить список производителей
+  /// Получить список производителей с агрегацией
   Future<List<InventoryProducerModel>> getProducers();
+  
+  /// Получить детальную информацию по производителю
+  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15});
 
-  /// Получить список складов
-  Future<InventoryWarehousesResponse> getWarehouses({
-    int page = 1,
-    int perPage = 50,
-  });
+  /// Получить список складов с агрегацией
+  Future<List<InventoryWarehouseModel>> getWarehouses();
+  
+  /// Получить детальную информацию по складу
+  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15});
 
-  /// Получить список компаний
-  Future<InventoryCompaniesResponse> getCompanies({
-    int page = 1,
-    int perPage = 50,
-  });
+  /// Получить список компаний с агрегацией
+  Future<List<InventoryCompanyModel>> getCompanies();
+  
+  /// Получить детальную информацию по компании
+  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15});
 }
 
 /// Implementation of inventory stocks remote data source
@@ -87,17 +91,18 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<List<InventoryProducerModel>> getProducers() async {
     try {
-      print('🔵 Запрос списка производителей...');
+      print('🔵 Запрос списка производителей с агрегацией...');
       
-      final response = await _dio.get('/producers');
+      final response = await _dio.get('/stocks/producers');
       
       print('📥 Ответ API производителей: ${response.data}');
       
-      // Производители возвращаются как простой массив
-      if (response.data is List) {
-        return (response.data as List)
-            .map((e) => InventoryProducerModel.fromJson(e))
-            .toList();
+      // Парсим ответ
+      if (response.data is Map<String, dynamic> && response.data['data'] is List) {
+        final List<dynamic> producersData = response.data['data'];
+        return producersData.map((e) => InventoryProducerModel.fromJson(e)).toList();
+      } else if (response.data is List) {
+        return (response.data as List).map((e) => InventoryProducerModel.fromJson(e)).toList();
       }
       
       throw const ServerException('Неожиданный формат ответа для производителей');
@@ -108,23 +113,43 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   @override
-  Future<InventoryWarehousesResponse> getWarehouses({
-    int page = 1,
-    int perPage = 50,
-  }) async {
+  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15}) async {
     try {
-      print('🔵 Запрос списка складов...');
+      print('🔵 Запрос деталей производителя $producerId...');
       
       final queryParams = <String, dynamic>{
-        'page': page,
         'per_page': perPage,
       };
       
-      final response = await _dio.get('/warehouses', queryParameters: queryParams);
+      final response = await _dio.get('/stocks/by-producer/$producerId', queryParameters: queryParams);
+      
+      print('📥 Ответ API деталей производителя: ${response.data}');
+      
+      return PaginatedStockDetails.fromJson(response.data);
+    } catch (e) {
+      print('🔴 Ошибка получения деталей производителя: $e');
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<List<InventoryWarehouseModel>> getWarehouses() async {
+    try {
+      print('🔵 Запрос списка складов с агрегацией...');
+      
+      final response = await _dio.get('/stocks/warehouses');
       
       print('📥 Ответ API складов: ${response.data}');
       
-      return InventoryWarehousesResponse.fromJson(response.data);
+      // Парсим ответ
+      if (response.data is Map<String, dynamic> && response.data['data'] is List) {
+        final List<dynamic> warehousesData = response.data['data'];
+        return warehousesData.map((e) => InventoryWarehouseModel.fromJson(e)).toList();
+      } else if (response.data is List) {
+        return (response.data as List).map((e) => InventoryWarehouseModel.fromJson(e)).toList();
+      }
+      
+      throw const ServerException('Неожиданный формат ответа для складов');
     } catch (e) {
       print('🔴 Ошибка получения складов: $e');
       throw _handleError(e);
@@ -132,25 +157,65 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   @override
-  Future<InventoryCompaniesResponse> getCompanies({
-    int page = 1,
-    int perPage = 50,
-  }) async {
+  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15}) async {
     try {
-      print('🔵 Запрос списка компаний...');
+      print('🔵 Запрос деталей склада $warehouseId...');
       
       final queryParams = <String, dynamic>{
-        'page': page,
         'per_page': perPage,
       };
       
-      final response = await _dio.get('/companies', queryParameters: queryParams);
+      final response = await _dio.get('/stocks/by-warehouse/$warehouseId', queryParameters: queryParams);
+      
+      print('📥 Ответ API деталей склада: ${response.data}');
+      
+      return PaginatedStockDetails.fromJson(response.data);
+    } catch (e) {
+      print('🔴 Ошибка получения деталей склада: $e');
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<List<InventoryCompanyModel>> getCompanies() async {
+    try {
+      print('🔵 Запрос списка компаний с агрегацией...');
+      
+      final response = await _dio.get('/stocks/companies');
       
       print('📥 Ответ API компаний: ${response.data}');
       
-      return InventoryCompaniesResponse.fromJson(response.data);
+      // Парсим ответ
+      if (response.data is Map<String, dynamic> && response.data['data'] is List) {
+        final List<dynamic> companiesData = response.data['data'];
+        return companiesData.map((e) => InventoryCompanyModel.fromJson(e)).toList();
+      } else if (response.data is List) {
+        return (response.data as List).map((e) => InventoryCompanyModel.fromJson(e)).toList();
+      }
+      
+      throw const ServerException('Неожиданный формат ответа для компаний');
     } catch (e) {
       print('🔴 Ошибка получения компаний: $e');
+      throw _handleError(e);
+    }
+  }
+
+  @override
+  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15}) async {
+    try {
+      print('🔵 Запрос деталей компании $companyId...');
+      
+      final queryParams = <String, dynamic>{
+        'per_page': perPage,
+      };
+      
+      final response = await _dio.get('/stocks/by-company/$companyId', queryParameters: queryParams);
+      
+      print('📥 Ответ API деталей компании: ${response.data}');
+      
+      return PaginatedStockDetails.fromJson(response.data);
+    } catch (e) {
+      print('🔴 Ошибка получения деталей компании: $e');
       throw _handleError(e);
     }
   }

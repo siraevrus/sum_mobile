@@ -27,6 +27,7 @@ class ProductFormData {
   final Map<String, dynamic> attributes;
   final ProductTemplateModel? template;
   final Map<String, TextEditingController> attributeControllers;
+  final TextEditingController quantityController;
 
   ProductFormData({
     this.productTemplateId,
@@ -36,6 +37,7 @@ class ProductFormData {
     required this.attributes,
     this.template,
     required this.attributeControllers,
+    required this.quantityController,
   });
 }
 
@@ -163,6 +165,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes: attributes,
           template: null, // Загрузим позже в _loadData
           attributeControllers: attributeControllers,
+          quantityController: TextEditingController(text: product.quantity),
         ),
       ];
       print('🔵 ProductInTransitFormPage: Товар для редактирования создан: ${_products[0]}');
@@ -178,6 +181,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes: {},
           template: null,
           attributeControllers: {},
+          quantityController: TextEditingController(),
         ),
       ];
       print('🔵 ProductInTransitFormPage: Пустой товар создан: ${_products[0]}');
@@ -197,6 +201,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes: {},
           template: null,
           attributeControllers: {},
+          quantityController: TextEditingController(),
         ),
       );
     });
@@ -209,6 +214,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         for (final controller in _products[index].attributeControllers.values) {
           controller.dispose();
         }
+        _products[index].quantityController.dispose();
         _products.removeAt(index);
       });
     }
@@ -445,7 +451,19 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
                   _buildProducerDropdown(),
             const SizedBox(height: 16),
 
-                  // 3. Дата поступления
+                  // 3. Дата отгрузки
+            _buildDateField(
+                    label: 'Дата отгрузки',
+                    selectedDate: _selectedShippingDate,
+                    onDateSelected: (date) {
+                      setState(() {
+                        _selectedShippingDate = date;
+                      });
+                    },
+                  ),
+            const SizedBox(height: 16),
+
+                  // 4. Дата поступления
                   _buildDateField(
                     label: 'Дата поступления',
                     selectedDate: _selectedArrivalDate,
@@ -457,30 +475,18 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             ),
             const SizedBox(height: 16),
             
-                  // 4. Номер транспортного средства
+                  // 5. Номер транспортного средства
             _buildTextField(
               controller: _transportNumberController,
               label: 'Номер транспортного средства',
             ),
             const SizedBox(height: 16),
 
-                  // 5. Место отгрузки
+                  // 6. Место отгрузки
             _buildTextField(
               controller: _shippingLocationController,
                     label: 'Место отгрузки',
             ),
-            const SizedBox(height: 16),
-
-                  // 6. Дата отгрузки
-            _buildDateField(
-                    label: 'Дата отгрузки',
-                    selectedDate: _selectedShippingDate,
-                    onDateSelected: (date) {
-                      setState(() {
-                        _selectedShippingDate = date;
-                      });
-                    },
-                  ),
                 ],
               ),
 
@@ -639,7 +645,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     final product = _products[index];
     
     return TextFormField(
-      controller: TextEditingController(text: product.quantity),
+      controller: product.quantityController,
       decoration: InputDecoration(
         labelText: 'Количество *',
         border: const OutlineInputBorder(),
@@ -729,7 +735,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     return DropdownButtonFormField<int>(
             value: _selectedProducerId,
       decoration: InputDecoration(
-              labelText: 'Производитель',
+              labelText: 'Производитель *',
         border: const OutlineInputBorder(),
         filled: widget.isViewMode,
         fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
@@ -745,6 +751,12 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
               setState(() {
                 _selectedProducerId = value;
               });
+      },
+      validator: (value) {
+        if (value == null) {
+          return 'Выберите производителя';
+        }
+        return null;
       },
     );
   }
@@ -1091,6 +1103,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         attributes: _products[index].attributes,
         template: templateId != null ? _productTemplates.firstWhere((t) => t.id == templateId) : null,
         attributeControllers: _products[index].attributeControllers,
+        quantityController: _products[index].quantityController,
       );
     });
     
@@ -1119,6 +1132,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         attributes: _products[index].attributes,
         template: _products[index].template,
         attributeControllers: _products[index].attributeControllers,
+        quantityController: _products[index].quantityController, // Сохраняем контроллер
       );
     });
     
@@ -1171,6 +1185,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes: _products[index].attributes,
           template: template,
           attributeControllers: newAttributeControllers,
+          quantityController: _products[index].quantityController,
         );
       });
       
@@ -1192,6 +1207,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes: product.attributes,
           template: product.template,
           attributeControllers: product.attributeControllers,
+          quantityController: product.quantityController,
         );
         });
         return;
@@ -1212,6 +1228,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         attributes: product.attributes,
         template: product.template,
         attributeControllers: product.attributeControllers,
+        quantityController: product.quantityController,
       );
     });
   }

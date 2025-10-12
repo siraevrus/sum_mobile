@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/inventory_models.dart' as old_models;
 import '../../../../shared/models/product_model.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/inventory_stocks_provider.dart';
+import '../../domain/entities/inventory_aggregation_entity.dart';
 
 /// Экран остатков на складе с табуляцией
 class InventoryTabsPage extends ConsumerStatefulWidget {
@@ -22,22 +23,12 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
-    // Загружаем данные при инициализации
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInitialData();
-    });
   }
   
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _loadInitialData() {
-    // Загружаем остатки по умолчанию
-    ref.read(inventoryStocksProvider.notifier).loadStocks();
   }
 
   @override
@@ -191,62 +182,21 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Заголовок
               Text(
-                producer.name,
+                producer.producer,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2C3E50),
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              if (producer.region != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Регион: ${producer.region}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-              if (producer.productsCount != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Товаров: ${producer.productsCount}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => _showProducerStocks(producer),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Показать остатки',
-                        style: TextStyle(color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              
+              // Информация о производителе
+              _buildInfoRow('Позиций', '${producer.positionsCount}'),
+              _buildInfoRow('Общий объем', '${producer.totalVolume.toStringAsFixed(3)} м³'),
             ],
           ),
         ),
@@ -267,64 +217,23 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Заголовок
               Text(
-                warehouse.name,
+                warehouse.warehouse,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2C3E50),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                warehouse.address,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (warehouse.company != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Компания: ${warehouse.company!.name}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => _showWarehouseStocks(warehouse),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Показать остатки',
-                        style: TextStyle(color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              
+              // Информация о складе
+              _buildInfoRow('Компания', warehouse.company),
+              _buildInfoRow('Адрес', warehouse.address),
+              _buildInfoRow('Позиций', '${warehouse.positionsCount}'),
+              _buildInfoRow('Общий объем', '${warehouse.totalVolume.toStringAsFixed(3)} м³'),
             ],
           ),
         ),
@@ -345,72 +254,22 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Заголовок
               Text(
-                company.name,
+                company.company,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2C3E50),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'ИНН: ${company.inn}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                company.legalAddress,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (company.warehousesCount != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Складов: ${company.warehousesCount}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => _showCompanyStocks(company),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Показать остатки',
-                        style: TextStyle(color: AppColors.primary),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              
+              // Информация о компании
+              _buildInfoRow('Складов', '${company.warehousesCount}'),
+              _buildInfoRow('Позиций', '${company.positionsCount}'),
+              _buildInfoRow('Общий объем', '${company.totalVolume.toStringAsFixed(3)} м³'),
             ],
           ),
         ),
@@ -423,9 +282,9 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _InventoryStocksListPage(
-          title: 'Остатки: ${producer.name}',
+          title: 'Остатки: ${producer.producer}',
           filterType: _FilterType.producer,
-          filterId: producer.id,
+          filterId: producer.producerId,
         ),
       ),
     );
@@ -436,9 +295,9 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _InventoryStocksListPage(
-          title: 'Остатки: ${warehouse.name}',
+          title: 'Остатки: ${warehouse.warehouse}',
           filterType: _FilterType.warehouse,
-          filterId: warehouse.id,
+          filterId: warehouse.warehouseId,
         ),
       ),
     );
@@ -449,18 +308,38 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => _InventoryStocksListPage(
-          title: 'Остатки: ${company.name}',
+          title: 'Остатки: ${company.company}',
           filterType: _FilterType.company,
-          filterId: company.id,
+          filterId: company.companyId,
         ),
       ),
     );
   }
 
   Widget _buildErrorState(String message) {
-    return AppErrorWidget(
-      error: message,
-      onRetry: _loadInitialData,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // Обновляем текущий активный таб
+              ref.invalidate(inventoryProducersProvider);
+              ref.invalidate(inventoryWarehousesProvider);
+              ref.invalidate(inventoryCompaniesProvider);
+            },
+            child: const Text('Повторить'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -474,6 +353,36 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
           Text(
             message,
             style: const TextStyle(color: Colors.grey, fontSize: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -501,33 +410,13 @@ class _InventoryStocksListPage extends ConsumerStatefulWidget {
 
 class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPage> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFilteredStocks();
-    });
-  }
-
-  void _loadFilteredStocks() {
-    switch (widget.filterType) {
-      case _FilterType.warehouse:
-        // Серверная фильтрация по складу
-        ref.read(inventoryStocksProvider.notifier).loadStocks(
-          warehouseId: widget.filterId,
-        );
-        break;
-      case _FilterType.producer:
-      case _FilterType.company:
-        // Для производителя и компании загружаем все остатки
-        // Фильтрация будет на клиенте
-        ref.read(inventoryStocksProvider.notifier).loadStocks();
-        break;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final stocksState = ref.watch(inventoryStocksProvider);
+    // Используем новые провайдеры деталей в зависимости от типа фильтра
+    final AsyncValue<PaginatedStockDetails> detailsAsync = switch (widget.filterType) {
+      _FilterType.producer => ref.watch(producerDetailsProvider(widget.filterId)),
+      _FilterType.warehouse => ref.watch(warehouseDetailsProvider(widget.filterId)),
+      _FilterType.company => ref.watch(companyDetailsProvider(widget.filterId)),
+    };
     
     return Scaffold(
       appBar: AppBar(
@@ -535,124 +424,69 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: _buildStocksContent(stocksState),
+      body: detailsAsync.when(
+        loading: () => const LoadingWidget(),
+        error: (error, stack) => _buildErrorState('Ошибка загрузки данных: $error'),
+        data: (details) {
+          if (details.data.isEmpty) {
+            return _buildEmptyState();
+          }
+          
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(producerDetailsProvider);
+              ref.invalidate(warehouseDetailsProvider);
+              ref.invalidate(companyDetailsProvider);
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: details.data.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                return _buildStockDetailCard(details.data[index]);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildStocksContent(InventoryStocksState state) {
-    switch (state) {
-      case InventoryStocksLoading():
-        return const LoadingWidget();
-      case InventoryStocksError():
-        return _buildErrorState(state.message);
-      case InventoryStocksLoaded():
-        List<ProductModel> filteredStocks = state.stocks;
-        
-        // Клиентская фильтрация для производителя и компании
-        if (widget.filterType == _FilterType.producer) {
-          filteredStocks = state.stocks.where((stock) => stock.producerId == widget.filterId).toList();
-        } else if (widget.filterType == _FilterType.company) {
-          // Фильтрация по компании через склады
-          filteredStocks = state.stocks.where((stock) => 
-            stock.warehouse?.companyId == widget.filterId
-          ).toList();
-        }
-        
-        if (filteredStocks.isEmpty) {
-          return _buildEmptyState();
-        }
-        
-        return RefreshIndicator(
-          onRefresh: () async {
-            _loadFilteredStocks();
-          },
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: filteredStocks.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              return _buildStockCard(filteredStocks[index]);
-            },
-          ),
-        );
-    }
-  }
-
-  Widget _buildStockCard(ProductModel stock) {
+  Widget _buildStockDetailCard(InventoryStockDetail stock) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              stock.name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2C3E50),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            
-            if (stock.warehouse != null && stock.warehouse!.name != null) ...[
-              _buildInfoRow('Склад', stock.warehouse!.name!),
-            ],
-            
-            if (stock.producerInfo != null && stock.producerInfo!.name != null) ...[
-              _buildInfoRow('Производитель', stock.producerInfo!.name!),
-            ],
-            
-            _buildInfoRow('Количество', '${stock.quantity.toStringAsFixed(0)} шт.'),
-            
-            if (stock.calculatedVolume != null) ...[
-              _buildInfoRow('Объем', '${stock.calculatedVolume!.toStringAsFixed(2)} м³'),
-            ],
-            
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: stock.status == 'in_stock' ? Colors.green.shade100 : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    stock.status == 'in_stock' ? 'В наличии' : stock.status ?? 'Неизвестно',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: stock.status == 'in_stock' ? Colors.green.shade800 : Colors.grey.shade800,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+      child: InkWell(
+        onTap: () {
+          // Клик на карточку детального остатка
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Заголовок
+              Text(
+                stock.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                
-                // Статус корректировки
-                if (stock.correctionStatus != null) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getCorrectionStatusColor(stock.correctionStatus!),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _getCorrectionStatusText(stock.correctionStatus!),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _getCorrectionStatusTextColor(stock.correctionStatus!),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              
+              // Информация о товаре
+              _buildInfoRow('Склад', stock.warehouse),
+              _buildInfoRow('Производитель', stock.producer ?? 'Не указан'),
+              _buildInfoRow('Количество', '${stock.quantity.toStringAsFixed(0)} шт.'),
+              _buildInfoRow('Доступно', '${stock.availableQuantity.toStringAsFixed(0)} шт.'),
+              _buildInfoRow('Продано', '${stock.soldQuantity.toStringAsFixed(0)} шт.'),
+              _buildInfoRow('Объем', '${stock.totalVolume.toStringAsFixed(3)} м³'),
+            ],
+          ),
         ),
       ),
     );
@@ -662,14 +496,15 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 140,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
               ),
             ),
           ),
@@ -677,7 +512,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -688,9 +523,29 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
   }
 
   Widget _buildErrorState(String message) {
-    return AppErrorWidget(
-      error: message,
-      onRetry: _loadFilteredStocks,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // Обновляем провайдеры
+              ref.invalidate(producerDetailsProvider);
+              ref.invalidate(warehouseDetailsProvider);
+              ref.invalidate(companyDetailsProvider);
+            },
+            child: const Text('Повторить'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -743,6 +598,17 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         return Colors.yellow.shade800; // Темно-желтый текст
       default:
         return Colors.grey.shade800;
+    }
+  }
+
+  IconData _getCorrectionStatusIcon(String status) {
+    switch (status) {
+      case 'revised':
+        return Icons.warning; // Предупреждение для "Требует корректировки"
+      case 'correction':
+        return Icons.edit_note; // Заметка для "Учтена корректировка"
+      default:
+        return Icons.info;
     }
   }
 }

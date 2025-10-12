@@ -316,25 +316,27 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
   }
 
   Widget _buildWarehouseCard(WarehouseModel warehouse) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => WarehouseFormPage(warehouse: warehouse),
-          ),
-        ).then((_) => setState(() {}));
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => WarehouseFormPage(warehouse: warehouse),
+            ),
+          ).then((_) => setState(() {}));
+        },
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Заголовок с меню
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
@@ -342,76 +344,109 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C3E50),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Троеточие справа вверху
                   PopupMenuButton<String>(
                     onSelected: (action) => _handleWarehouseAction(action, warehouse),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          children: [Icon(Icons.visibility, size: 20), SizedBox(width: 8), Text('Просмотр')],
-                        ),
-                      ),
-                      const PopupMenuItem(
                         value: 'edit',
                         child: Row(
-                          children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: 8),
+                            Text('Редактировать'),
+                          ],
                         ),
                       ),
                       const PopupMenuItem(
                         value: 'delete',
                         child: Row(
-                          children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: Colors.red))],
+                          children: [
+                            Icon(Icons.delete, size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Удалить', style: TextStyle(color: Colors.red)),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-              // Адрес
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16, color: Color(0xFF6C757D)),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      warehouse.address,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              const SizedBox(height: 12),
+              
+              // Информация о складе
+              _buildInfoRow('Адрес', warehouse.address),
+              _buildInfoRow('Компания', warehouse.company?.name ?? 'Не указана'),
+              _buildInfoRow('Сотрудников', '${warehouse.actualEmployeesCount ?? 0}'),
+              
+              // Тег статуса активности
+              if (!warehouse.isActive) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade700.withOpacity(0.3)),
                   ),
-                ],
-              ),
-              // Компания
-              if (warehouse.company != null)
-                Row(
-                  children: [
-                    const Icon(Icons.business, size: 16, color: Color(0xFF6C757D)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        warehouse.company!.name!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.block,
+                        size: 14,
+                        color: Colors.grey.shade700,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        'Неактивен',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              // Статистика
-              Text('Сотрудники: ${warehouse.actualEmployeesCount}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-              ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+  
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

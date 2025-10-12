@@ -1,7 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../shared/models/inventory_models.dart';
+import '../../../../shared/models/inventory_models.dart' as old_models;
 import '../../../../shared/models/product_model.dart';
 import '../../data/datasources/inventory_stocks_remote_datasource.dart';
+import '../../domain/entities/inventory_aggregation_entity.dart';
 
 part 'inventory_stocks_provider.g.dart';
 
@@ -12,7 +13,7 @@ class InventoryStocksLoading extends InventoryStocksState {}
 
 class InventoryStocksLoaded extends InventoryStocksState {
   final List<ProductModel> stocks;
-  final InventoryPaginationModel? pagination;
+  final old_models.InventoryPaginationModel? pagination;
   
   InventoryStocksLoaded({
     required this.stocks,
@@ -98,8 +99,7 @@ class InventoryWarehouses extends _$InventoryWarehouses {
   @override
   Future<List<InventoryWarehouseModel>> build() async {
     final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-    final response = await dataSource.getWarehouses();
-    return response.data;
+    return await dataSource.getWarehouses();
   }
 
   /// Обновить список складов
@@ -107,8 +107,7 @@ class InventoryWarehouses extends _$InventoryWarehouses {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-      final response = await dataSource.getWarehouses();
-      return response.data;
+      return await dataSource.getWarehouses();
     });
   }
 }
@@ -119,8 +118,7 @@ class InventoryCompanies extends _$InventoryCompanies {
   @override
   Future<List<InventoryCompanyModel>> build() async {
     final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-    final response = await dataSource.getCompanies();
-    return response.data;
+    return await dataSource.getCompanies();
   }
 
   /// Обновить список компаний
@@ -128,8 +126,43 @@ class InventoryCompanies extends _$InventoryCompanies {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-      final response = await dataSource.getCompanies();
-      return response.data;
+      return await dataSource.getCompanies();
     });
   }
+}
+
+/// Provider для деталей производителя
+@riverpod
+Future<PaginatedStockDetails> producerDetails(
+  ProducerDetailsRef ref,
+  int producerId, {
+  int page = 1,
+  int perPage = 15,
+}) async {
+  final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
+  return await dataSource.getProducerDetails(producerId, page: page, perPage: perPage);
+}
+
+/// Provider для деталей склада
+@riverpod
+Future<PaginatedStockDetails> warehouseDetails(
+  WarehouseDetailsRef ref,
+  int warehouseId, {
+  int page = 1,
+  int perPage = 15,
+}) async {
+  final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
+  return await dataSource.getWarehouseDetails(warehouseId, page: page, perPage: perPage);
+}
+
+/// Provider для деталей компании
+@riverpod
+Future<PaginatedStockDetails> companyDetails(
+  CompanyDetailsRef ref,
+  int companyId, {
+  int page = 1,
+  int perPage = 15,
+}) async {
+  final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
+  return await dataSource.getCompanyDetails(companyId, page: page, perPage: perPage);
 }
