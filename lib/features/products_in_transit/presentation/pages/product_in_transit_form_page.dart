@@ -1137,6 +1137,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     });
     
     print('🔵 ProductInTransitFormPage: _products после изменения: $_products');
+    
+    // Пересчитываем наименование и объем
+    _calculateProductNameAndVolume(index);
   }
 
   void _onProductAttributeChanged(TextEditingController controller) {
@@ -1511,16 +1514,17 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           print('🔵 ProductInTransitFormPage: Создаем товары по одному через старый API');
           final createdProducts = <ProductInTransitModel>[];
           
-          for (int i = 0; i < products.length; i++) {
-            final product = products[i];
+          for (int i = 0; i < _products.length; i++) {
+            final product = _products[i];
             print('🔵 ProductInTransitFormPage: Создаем товар $i через старый API');
             
             // Создаем запрос для одного товара через старый API
             final singleRequest = CreateProductInTransitRequest(
               warehouseId: _selectedWarehouseId!,
-              productTemplateId: product.productTemplateId,
+              productTemplateId: product.productTemplateId!,
               quantity: product.quantity,
               name: product.name,
+              calculatedVolume: product.calculatedVolume,
               attributes: product.attributes,
               transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
               arrivalDate: _selectedArrivalDate?.toIso8601String(),

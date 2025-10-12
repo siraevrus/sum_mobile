@@ -46,6 +46,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
   Widget _buildSearchSection() {
     return Container(
       padding: const EdgeInsets.all(16),
+      color: Colors.white,
       child: TextField(
         onChanged: (value) {
           setState(() => _searchQuery = value);
@@ -56,12 +57,9 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
         ),
       ),
     );
@@ -127,50 +125,74 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
   }
 
   Widget _buildEmptyState() {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.point_of_sale,
-                size: 64,
-                color: Color(0xFFBDC3C7),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Продажи не найдены',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF6C757D),
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Создайте первую продажу или измените фильтры поиска',
-                style: TextStyle(color: Color(0xFF6C757D)),
-                textAlign: TextAlign.center,
-              ),
-            ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.point_of_sale,
+            size: 64,
+            color: Colors.grey.shade400,
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            'Продажи не найдены',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Создайте первую продажу или измените фильтры поиска',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildErrorState(Object error) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: AppErrorWidget(
-          error: error,
-          onRetry: () => ref.invalidate(salesListProvider),
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red.shade300,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ошибка загрузки продаж',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.red.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error.toString(),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              ref.invalidate(salesListProvider);
+            },
+            child: const Text('Попробовать снова'),
+          ),
+        ],
       ),
     );
   }
@@ -196,7 +218,12 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           isViewMode: true,
         ),
       ),
-    );
+    ).then((result) {
+      // Обновляем список если продажа была отменена или изменена
+      if (result == true) {
+        ref.invalidate(salesListProvider);
+      }
+    });
   }
 
   void _navigateToEditSale(SaleModel sale) {
@@ -240,7 +267,12 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(cancelSaleProvider.notifier).cancel(sale.id);
+        // Вызываем repository напрямую, без провайдера
+        final repository = ref.read(salesRepositoryProvider);
+        await repository.cancelSale(sale.id);
+        
+        // Инвалидируем провайдеры после успешной отмены
+        ref.invalidate(salesListProvider);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

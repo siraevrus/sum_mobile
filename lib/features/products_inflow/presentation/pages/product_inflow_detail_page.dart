@@ -138,14 +138,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
         actions: [
-          // Кнопка корректировки, если товар требует корректировки
-          if (_product.correctionStatus == 'correction') ...[
-            IconButton(
-              onPressed: _showCorrectionConfirmationDialog,
-              icon: const Icon(Icons.check_circle, color: Colors.green),
-              tooltip: 'Скорректировано',
-            ),
-          ],
           IconButton(
             onPressed: () async {
               final result = await Navigator.of(context).push(
@@ -212,6 +204,27 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
               ),
 
             const SizedBox(height: 24),
+
+            // Кнопка подтверждения корректировки
+            if (_product.correctionStatus == 'correction') ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _showCorrectionConfirmationDialog,
+                  icon: const Icon(Icons.check_circle, size: 20),
+                  label: const Text('Скорректировано'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
 
             // Документы
             if (_product.documentPath != null && _product.documentPath.isNotEmpty)

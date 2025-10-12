@@ -236,10 +236,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   Widget _buildViewMode() {
     final sale = widget.sale!;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Основная информация
           _buildViewSection('Основная информация', [
             _buildViewField('Номер продажи', sale.saleNumber ?? 'Не указан'),
             _buildViewField('Склад', sale.warehouse?.name ?? 'ID: ${sale.warehouseId}'),
@@ -249,14 +250,20 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             _buildViewField('Общая сумма', '${sale.totalPrice} ${sale.currency}'),
             _buildViewField('Дата продажи', _formatDate(sale.saleDate)),
           ]),
+          
           const SizedBox(height: 24),
+          
+          // Информация о покупателе
           _buildViewSection('Информация о покупателе', [
             _buildViewField('Имя покупателя', sale.customerName ?? 'Не указан'),
             _buildViewField('Телефон', sale.customerPhone ?? 'Не указан'),
             _buildViewField('Email', sale.customerEmail ?? 'Не указан'),
             _buildViewField('Адрес', sale.customerAddress ?? 'Не указан'),
           ]),
+          
           const SizedBox(height: 24),
+          
+          // Платежная информация
           _buildViewSection('Платежная информация', [
             _buildViewField('Способ оплаты', _getPaymentMethodDisplayName(sale.paymentMethod)),
             _buildViewField('Статус оплаты', _getPaymentStatusDisplayName(sale.paymentStatus)),
@@ -267,14 +274,32 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             if (sale.invoiceNumber != null)
               _buildViewField('Номер счета', sale.invoiceNumber!),
           ]),
+          
+          // Дополнительная информация
           if (sale.notes != null && sale.notes!.isNotEmpty) ...[
             const SizedBox(height: 24),
             _buildViewSection('Дополнительная информация', [
-              _buildViewField('Заметки', sale.notes!),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Text(
+                  sale.notes!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF2D3748),
+                    height: 1.5,
+                  ),
+                ),
+              ),
             ]),
           ],
         ],
-            ),
+      ),
     );
   }
   
@@ -332,13 +357,31 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A1A1A),
           ),
         ),
-        const SizedBox(height: 16),
-        ...children,
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
       ],
     );
   }
@@ -362,27 +405,28 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   
   Widget _buildViewField(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 2,
+          SizedBox(
+            width: 120,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.grey,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
-            flex: 3,
             child: Text(
               value,
               style: const TextStyle(
-                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: Color(0xFF1A1A1A),
               ),
             ),
           ),
@@ -806,7 +850,12 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(cancelSaleProvider.notifier).cancel(widget.sale!.id);
+        // Вызываем repository напрямую, без провайдера
+        final repository = ref.read(salesRepositoryProvider);
+        await repository.cancelSale(widget.sale!.id);
+        
+        // Инвалидируем провайдеры после успешной отмены
+        ref.invalidate(salesListProvider);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -815,7 +864,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.of(context).pop();
+          // Возвращаемся на главный экран "Реализация" с флагом обновления
+          Navigator.of(context).pop(true);
         }
       } catch (e) {
       if (mounted) {

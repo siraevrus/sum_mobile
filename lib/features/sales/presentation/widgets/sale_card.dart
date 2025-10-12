@@ -77,24 +77,23 @@ class SaleCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFBBBBBB),
-              fontWeight: FontWeight.w500,
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black87,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -105,6 +104,7 @@ class SaleCard extends StatelessWidget {
   Widget _buildStatusChip(String status) {
     final color = _getStatusColor(status);
     final displayName = _getStatusDisplayName(status);
+    final icon = _getStatusIcon(status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -113,15 +113,41 @@ class SaleCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Text(
-        displayName,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            displayName,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'paid':
+        return Icons.check_circle;
+      case 'cancelled':
+        return Icons.cancel;
+      case 'pending':
+        return Icons.schedule;
+      case 'partially_paid':
+        return Icons.payments;
+      default:
+        return Icons.info;
+    }
   }
 
   List<PopupMenuEntry<String>> _buildMenuItems() {

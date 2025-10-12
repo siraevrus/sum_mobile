@@ -130,19 +130,10 @@ class CancelSale extends _$CancelSale {
       await repository.cancelSale(id);
       print('🔵 CancelSaleProvider: Продажа успешно отменена');
       
-      // Сначала устанавливаем успешное состояние
+      // Устанавливаем успешное состояние
+      // НЕ инвалидируем провайдеры здесь - это делается в UI после получения результата
       state = const AsyncValue.data(true);
-      
-      // Затем инвалидируем провайдеры (используем Future.microtask чтобы избежать "Future already completed")
-      Future.microtask(() {
-        try {
-          ref.invalidate(salesListProvider);
-          ref.invalidate(saleDetailProvider);
-          print('🔵 CancelSaleProvider: Провайдеры инвалидированы');
-        } catch (e) {
-          print('🔴 CancelSaleProvider: Ошибка инвалидации провайдеров: $e');
-        }
-      });
+      print('🔵 CancelSaleProvider: Состояние установлено в success');
     } catch (e, stackTrace) {
       print('🔴 CancelSaleProvider: Ошибка отмены продажи: $e');
       print('🔴 CancelSaleProvider: Stack trace: $stackTrace');
