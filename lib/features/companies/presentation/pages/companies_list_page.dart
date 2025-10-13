@@ -197,16 +197,6 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
                     onSelected: (action) => _handleCompanyAction(action, company),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility, size: 20),
-                            SizedBox(width: 8),
-                            Text('Просмотр'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
@@ -324,9 +314,6 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
   /// Обработка действий с компанией
   void _handleCompanyAction(String action, CompanyModel company) {
     switch (action) {
-      case 'view':
-        _viewCompanyDetails(company);
-        break;
       case 'edit':
         _editCompany(company);
         break;

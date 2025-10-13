@@ -56,7 +56,7 @@ class DashboardPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('СкладOnline'),
+        title: const Text('Expert Wood'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [

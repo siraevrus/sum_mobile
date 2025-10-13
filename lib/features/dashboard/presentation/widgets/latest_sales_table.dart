@@ -216,54 +216,74 @@ class MobileLatestSalesCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Количество',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
+              // Колонка 1: Количество
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Количество',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  Text(
-                    sale.quantity.toStringAsFixed(1),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
+                    Text(
+                      sale.quantity.toInt().toString(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Сумма',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
+              // Колонка 2: Дата
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Дата',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '₽${sale.totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.green,
+                    Text(
+                      DateFormat('dd.MM.yyyy').format(sale.saleDate),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              // Колонка 3: Сумма
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Сумма',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      '₽${sale.totalAmount.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            DateFormat('dd.MM.yyyy').format(sale.saleDate),
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-            ),
           ),
         ],
       ),

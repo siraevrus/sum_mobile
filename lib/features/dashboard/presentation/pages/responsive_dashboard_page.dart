@@ -354,8 +354,8 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                       title: 'Товары в пути',
                       section: 'products-in-transit',
                     ),
-                  // Приемка - админ и оператор
-                  if (_hasAccess(widget.user, ['admin', 'operator']))
+                  // Приемка - только админ
+                  if (_hasAccess(widget.user, ['admin']))
                     _buildDrawerMenuItem(
                       context,
                       icon: Icons.inventory_2,

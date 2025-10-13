@@ -16,6 +16,7 @@ class RequestModel with _$RequestModel {
     required String status,
     WarehouseReference? warehouse,
     UserReference? user,
+    @JsonKey(name: 'product_template') ProductTemplateReference? productTemplate,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
   }) = _RequestModel;
@@ -36,6 +37,7 @@ RequestModel _requestModelFromJsonSafe(Map<String, dynamic> json) {
     status: json['status'] as String,
     warehouse: json['warehouse'] != null ? WarehouseReference.fromJson(json['warehouse'] as Map<String, dynamic>) : null,
     user: json['user'] != null ? UserReference.fromJson(json['user'] as Map<String, dynamic>) : null,
+    productTemplate: json['product_template'] != null ? ProductTemplateReference.fromJson(json['product_template'] as Map<String, dynamic>) : null,
     createdAt: json['created_at'] as String,
     updatedAt: json['updated_at'] as String,
   );
@@ -98,7 +100,7 @@ class CreateRequestRequest with _$CreateRequestRequest {
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     required String title,
-    required double quantity,
+    required int quantity, // Изменено с double на int для отправки без .0
     required RequestPriority priority,
     String? description,
     String? status,
@@ -116,7 +118,7 @@ class UpdateRequestRequest with _$UpdateRequestRequest {
     @JsonKey(name: 'warehouse_id') int? warehouseId,
     @JsonKey(name: 'product_template_id') int? productTemplateId,
     String? title,
-    double? quantity,
+    int? quantity, // Изменено с double на int для отправки без .0
     RequestPriority? priority,
     String? description,
     String? status,

@@ -174,11 +174,8 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
                 _buildInfoRow('Дата отгрузки', _product.shippingDate != null 
                     ? _formatDate(_product.shippingDate!) 
                     : 'Не указана'),
-                _buildInfoRow('Ожидаемая дата прибытия', _product.expectedArrivalDate != null 
-                    ? _formatDate(_product.expectedArrivalDate!) 
-                    : 'Не указана'),
-                _buildInfoRow('Дата поступления', _product.arrivalDate != null 
-                    ? _formatDate(_product.arrivalDate!) 
+                _buildInfoRow('Ожидаемая дата прибытия', _product.expectedArrivalDate != null
+                    ? _formatDate(_product.expectedArrivalDate!)
                     : 'Не указана'),
               ],
             ),

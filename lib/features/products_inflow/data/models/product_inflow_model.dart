@@ -4,6 +4,18 @@ import 'package:sum_warehouse/shared/models/common_references.dart';
 part 'product_inflow_model.freezed.dart';
 part 'product_inflow_model.g.dart';
 
+/// Конвертер для quantity - обрабатывает int, double и String
+String _quantityFromJson(dynamic value) {
+  if (value is int) {
+    return value.toString();
+  } else if (value is double) {
+    return value.toString();
+  } else if (value is String) {
+    return value;
+  }
+  return '0';
+}
+
 /// Модель товара для раздела "Поступление товаров"
 @freezed
 class ProductInflowModel with _$ProductInflowModel {
@@ -16,7 +28,7 @@ class ProductInflowModel with _$ProductInflowModel {
     String? description,
     dynamic attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
-    required String quantity,
+    @JsonKey(fromJson: _quantityFromJson) required String quantity,
     @JsonKey(name: 'sold_quantity') @Default(0) int soldQuantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
     @JsonKey(name: 'producer_id') int? producerId,

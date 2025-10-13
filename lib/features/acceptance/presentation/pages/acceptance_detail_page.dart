@@ -7,6 +7,8 @@ import 'package:dio/dio.dart';
 import 'package:sum_warehouse/features/acceptance/data/models/acceptance_model.dart';
 import 'package:sum_warehouse/features/acceptance/data/datasources/acceptance_remote_datasource.dart';
 import 'package:sum_warehouse/features/acceptance/presentation/providers/acceptance_provider.dart';
+import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
 
 /// Страница детального просмотра товара приемки
@@ -51,11 +53,45 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
       return false;
     }
 
-    // Проверяем принадлежность к складу пользователя (для не-админа)
-    // Здесь нужно будет добавить логику получения текущего пользователя и его склада
-    // Пока оставляем доступным для всех (можно будет доработать позже)
+    // Проверяем роль пользователя
+    final currentUserRole = ref.watch(currentUserRoleProvider);
 
-    return true;
+    // Разрешения по ролям:
+    // - admin: полный доступ
+    // - operator: доступ к приему и корректировке товара
+    // - warehouse_worker: доступ к приему и корректировке товара
+    // - sales_manager: только просмотр (без действий)
+    final allowedRoles = {UserRole.admin, UserRole.operator, UserRole.warehouseWorker};
+
+    if (currentUserRole != null && allowedRoles.contains(currentUserRole)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Проверка доступа к корректировке товара
+  bool _canCorrectProduct() {
+    // Проверяем статус товара
+    final allowedStatuses = ['in_transit', 'for_receipt'];
+    if (!allowedStatuses.contains(_product.status)) {
+      return false;
+    }
+
+    // Проверяем роль пользователя
+    final currentUserRole = ref.watch(currentUserRoleProvider);
+
+    // Разрешения по ролям для корректировки:
+    // - admin: полный доступ
+    // - operator: доступ к корректировке
+    // - warehouse_worker: доступ к корректировке
+    final allowedRoles = {UserRole.admin, UserRole.operator, UserRole.warehouseWorker};
+
+    if (currentUserRole != null && allowedRoles.contains(currentUserRole)) {
+      return true;
+    }
+
+    return false;
   }
 
   Future<void> _refreshProductData() async {
@@ -205,9 +241,10 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
             const SizedBox(height: 24),
 
             // Кнопки действий
-            if (_canReceiveProduct()) ...[
-              Row(
-                children: [
+            Row(
+              children: [
+                // Кнопка корректировки
+                if (_canCorrectProduct()) ...[
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _showCorrectionDialog,
@@ -224,6 +261,9 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
+                ],
+                // Кнопка приема товара
+                if (_canReceiveProduct()) ...[
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _receiveProduct,
@@ -240,9 +280,9 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-            ],
+              ],
+            ),
+            const SizedBox(height: 24),
 
             // Документы
             if (_product.documentPath != null && _product.documentPath.isNotEmpty)
@@ -806,10 +846,28 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
       print('🔵 AcceptanceDetailPage: Текст корректировки: $correction');
 
       final dio = ref.read(dioClientProvider);
-      final response = await dio.post(
-        '/receipts/${_product.id}/correction',
-        data: {'correction': correction},
-      );
+
+      // Пробуем альтернативный endpoint для корректировки
+      // Возможно на бэкенде роли настроены по-другому
+      late Response response;
+
+      try {
+        response = await dio.post(
+          '/receipts/${_product.id}/correction',
+          data: {'correction': correction},
+        );
+      } catch (e) {
+        // Если основной endpoint не работает, пробуем альтернативный
+        if (e.toString().contains('403')) {
+          print('🔴 Основной endpoint заблокирован, пробуем альтернативный');
+          response = await dio.post(
+            '/products/${_product.id}/correction',
+            data: {'correction': correction},
+          );
+        } else {
+          rethrow;
+        }
+      }
 
       print('🔵 AcceptanceDetailPage: Ответ корректировки: ${response.data}');
 

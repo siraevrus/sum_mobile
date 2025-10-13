@@ -69,7 +69,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
   int? _selectedWarehouseId;
   int? _selectedProducerId;
   int? _selectedProductTemplateId;
-  DateTime? _selectedArrivalDate;
+  DateTime? _selectedExpectedArrivalDate;
   DateTime? _selectedShippingDate;
   
   List<WarehouseModel> _warehouses = [];
@@ -126,7 +126,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _selectedWarehouseId = product.warehouseId;
       _selectedProducerId = product.producerId;
       _selectedProductTemplateId = product.productTemplateId;
-      _selectedArrivalDate = product.arrivalDate != null ? DateTime.parse(product.arrivalDate!) : null;
+      _selectedExpectedArrivalDate = product.expectedArrivalDate != null ? DateTime.parse(product.expectedArrivalDate!) : null;
       _shippingLocationController.text = product.shippingLocation ?? '';
       _selectedShippingDate = product.shippingDate != null ? DateTime.parse(product.shippingDate!) : null;
       _notesController.text = product.notes ?? '';
@@ -463,13 +463,13 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
                   ),
             const SizedBox(height: 16),
 
-                  // 4. Дата поступления
+                  // 4. Ожидаемая дата прибытия
                   _buildDateField(
-                    label: 'Дата поступления',
-                    selectedDate: _selectedArrivalDate,
+                    label: 'Ожидаемая дата прибытия',
+                    selectedDate: _selectedExpectedArrivalDate,
                     onDateSelected: (date) {
                 setState(() {
-                        _selectedArrivalDate = date;
+                        _selectedExpectedArrivalDate = date;
                       });
               },
             ),
@@ -808,35 +808,35 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
 
   Widget _buildArrivalDateField() {
     return InkWell(
-      onTap: widget.isViewMode ? null : _selectArrivalDate,
+      onTap: widget.isViewMode ? null : _selectExpectedArrivalDate,
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Дата поступления',
+          labelText: 'Ожидаемая дата прибытия',
           border: const OutlineInputBorder(),
           filled: true,
           fillColor: Colors.grey.shade50,
           suffixIcon: const Icon(Icons.calendar_today),
         ),
         child: Text(
-          _selectedArrivalDate != null
-              ? DateFormat('dd.MM.yyyy').format(_selectedArrivalDate!)
+          _selectedExpectedArrivalDate != null
+              ? DateFormat('dd.MM.yyyy').format(_selectedExpectedArrivalDate!)
               : 'Выберите дату',
         ),
       ),
     );
   }
 
-  Future<void> _selectArrivalDate() async {
+  Future<void> _selectExpectedArrivalDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: _selectedArrivalDate ?? DateTime.now(),
+      initialDate: _selectedExpectedArrivalDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
     
     if (date != null) {
       setState(() {
-        _selectedArrivalDate = date;
+        _selectedExpectedArrivalDate = date;
       });
     }
   }
@@ -1331,7 +1331,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         calculatedVolume: _calculatedVolumeController.text,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-        arrivalDate: _selectedArrivalDate?.toIso8601String(),
+        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String(),
         shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
         shippingDate: _selectedShippingDate?.toIso8601String(),
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
@@ -1383,7 +1383,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         calculatedVolume: _calculatedVolumeController.text,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-        arrivalDate: _selectedArrivalDate?.toIso8601String(),
+        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String(),
         shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
         shippingDate: _selectedShippingDate?.toIso8601String(),
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
@@ -1505,8 +1505,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
             shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
             shippingDate: _selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null,
-            arrivalDate: _selectedArrivalDate?.toIso8601String(),
-            expectedArrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
+            expectedArrivalDate: _selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null,
             notes: _notesController.text.isNotEmpty ? _notesController.text : null,
             products: products,
           );
@@ -1527,7 +1526,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
               calculatedVolume: product.calculatedVolume,
               attributes: product.attributes,
               transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-              arrivalDate: _selectedArrivalDate?.toIso8601String(),
+              expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String(),
               shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
               shippingDate: _selectedShippingDate?.toIso8601String(),
               notes: _notesController.text.isNotEmpty ? _notesController.text : null,

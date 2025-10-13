@@ -108,11 +108,12 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     } else {
       // Default values for new sale
       _generateSaleNumber();
-      _quantityController.text = '1';
-      _cashAmountController.text = '0.00';
-      _nocashAmountController.text = '0.00';
-      _totalPriceController.text = '0.00';
-      _exchangeRateController.text = '1.0';
+      // Оставляем поля пустыми, без предустановленных значений
+      _quantityController.text = '';
+      _cashAmountController.text = '';
+      _nocashAmountController.text = '';
+      _totalPriceController.text = '';
+      _exchangeRateController.text = '';
       _customerNameController.text = '';
       _customerPhoneController.text = '';
       _customerEmailController.text = '';
@@ -212,15 +213,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       );
     }
 
-    if (_isViewMode && widget.sale?.paymentStatus != 'cancelled') {
-      actions.add(
-        IconButton(
-          onPressed: _editSale,
-          icon: const Icon(Icons.edit),
-          tooltip: 'Редактировать',
-        ),
-      );
-    }
+    // Удалена кнопка "Редактировать" из режима просмотра
 
     return actions;
   }
@@ -245,9 +238,13 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             _buildViewField('Номер продажи', sale.saleNumber ?? 'Не указан'),
             _buildViewField('Склад', sale.warehouse?.name ?? 'ID: ${sale.warehouseId}'),
             _buildViewField('Товар', sale.product?.name ?? 'ID: ${sale.productId}'),
-            _buildViewField('Количество', sale.quantity.toString()),
+            _buildViewField('Количество', sale.quantity.toInt().toString()),
             _buildViewField('Цена за единицу', '${sale.unitPrice} ${sale.currency}'),
             _buildViewField('Общая сумма', '${sale.totalPrice} ${sale.currency}'),
+            _buildViewField('Сумма наличными', '${sale.cashAmount} ${sale.currency}'),
+            _buildViewField('Сумма безналичными', '${sale.nocashAmount} ${sale.currency}'),
+            _buildViewField('Статус оплаты', _getPaymentStatusDisplayName(sale.paymentStatus)),
+            _buildViewField('Курс', sale.exchangeRate.toString()),
             _buildViewField('Дата продажи', _formatDate(sale.saleDate)),
           ]),
           
@@ -261,19 +258,13 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             _buildViewField('Адрес', sale.customerAddress ?? 'Не указан'),
           ]),
           
-          const SizedBox(height: 24),
-          
           // Платежная информация
-          _buildViewSection('Платежная информация', [
-            _buildViewField('Способ оплаты', _getPaymentMethodDisplayName(sale.paymentMethod)),
-            _buildViewField('Статус оплаты', _getPaymentStatusDisplayName(sale.paymentStatus)),
-            _buildViewField('Сумма наличными', '${sale.cashAmount} ${sale.currency}'),
-            _buildViewField('Сумма безналичными', '${sale.nocashAmount} ${sale.currency}'),
-            _buildViewField('НДС ставка', '${sale.vatRate}%'),
-            _buildViewField('Сумма НДС', '${sale.vatAmount} ${sale.currency}'),
-            if (sale.invoiceNumber != null)
+          if (sale.invoiceNumber != null) ...[
+            const SizedBox(height: 24),
+            _buildViewSection('Платежная информация', [
               _buildViewField('Номер счета', sale.invoiceNumber!),
-          ]),
+            ]),
+          ],
           
           // Дополнительная информация
           if (sale.notes != null && sale.notes!.isNotEmpty) ...[

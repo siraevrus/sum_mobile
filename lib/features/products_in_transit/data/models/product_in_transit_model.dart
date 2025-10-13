@@ -4,6 +4,18 @@ import 'package:sum_warehouse/shared/models/common_references.dart';
 part 'product_in_transit_model.freezed.dart';
 part 'product_in_transit_model.g.dart';
 
+/// Преобразование quantity из int или String в String
+String _quantityFromJson(dynamic value) {
+  if (value is int) {
+    return value.toString();
+  } else if (value is double) {
+    return value.toString();
+  } else if (value is String) {
+    return value;
+  }
+  return '0';
+}
+
 /// Модель товара для раздела "Товары в пути"
 @freezed
 class ProductInTransitModel with _$ProductInTransitModel {
@@ -16,7 +28,7 @@ class ProductInTransitModel with _$ProductInTransitModel {
     String? description,
     dynamic attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
-    required String quantity,
+    @JsonKey(fromJson: _quantityFromJson) required String quantity,
     @JsonKey(name: 'sold_quantity') @Default(0) int soldQuantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
     @JsonKey(name: 'producer_id') int? producerId,
@@ -58,7 +70,7 @@ class ProductInTransitFilters with _$ProductInTransitFilters {
     @JsonKey(name: 'correction_status') String? correctionStatus,
     @JsonKey(name: 'company_id') int? companyId,
     @JsonKey(name: 'employee_id') int? employeeId,
-    // Поля фильтра по дате прихода (от/до). На API должны уйти как date_from/date_to
+    // Поля фильтра по ожидаемой дате прибытия (от/до). На API должны уйти как date_from/date_to
     String? arrivalDateFrom,
     String? arrivalDateTo,
     @JsonKey(name: 'created_by') int? createdBy,
@@ -83,7 +95,7 @@ extension ProductInTransitFiltersExtension on ProductInTransitFilters {
     if (correctionStatus != null) params['correction_status'] = correctionStatus;
     if (companyId != null) params['company_id'] = companyId;
     if (employeeId != null) params['employee_id'] = employeeId;
-    // Отправляем в API как date_from/date_to (YYYY-MM-DD)
+    // Отправляем в API как date_from/date_to для ожидаемой даты прибытия (YYYY-MM-DD)
     if (arrivalDateFrom != null) params['date_from'] = arrivalDateFrom;
     if (arrivalDateTo != null) params['date_to'] = arrivalDateTo;
     if (createdBy != null) params['created_by'] = createdBy;

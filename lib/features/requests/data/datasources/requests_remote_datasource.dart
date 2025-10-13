@@ -47,8 +47,8 @@ class RequestsRemoteDataSourceImpl implements RequestsRemoteDataSource {
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'page': page,
         'per_page': perPage,
+        // page не отправляем - используем упрощенный запрос для быстрой загрузки
       };
       
       if (status != null) queryParams['status'] = status;
@@ -128,7 +128,11 @@ class RequestsRemoteDataSourceImpl implements RequestsRemoteDataSource {
   @override
   Future<void> processRequest(int id) async {
     try {
-      await _dio.post('/requests/$id/process');
+      // Backend не поддерживает /requests/{id}/process
+      // Используем PUT /requests/{id} для смены статуса на approved
+      await _dio.put('/requests/$id', data: {
+        'status': 'approved',
+      });
     } catch (e) {
       throw _handleError(e);
     }

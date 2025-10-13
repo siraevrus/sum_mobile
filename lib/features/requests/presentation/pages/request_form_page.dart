@@ -8,6 +8,8 @@ import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_re
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/product_template_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_template_model.dart';
+import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 
 /// Экран создания/редактирования запроса
 class RequestFormPage extends ConsumerStatefulWidget {
@@ -59,12 +61,11 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
       final request = widget.request!;
       _titleController.text = request.title;
       _descriptionController.text = request.description ?? '';
-      _quantityController.text = request.quantity.toString();
+      _quantityController.text = request.quantity.toInt().toString(); // Убираем .0
       _selectedStatusCode = request.status;
       // Безопасно получаем ID из вложенных объектов
       _selectedWarehouseId = request.warehouse?.id;
-      // Здесь нужно будет загрузить шаблон товара, но пока оставляем пустым
-      // _selectedProductTemplateId будет загружен в _loadData
+      _selectedProductTemplateId = request.productTemplate?.id; // Загружаем product_template_id
     } else {
       // Автогенерация заголовка для нового запроса
       _generateTitle();
@@ -181,9 +182,8 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         ),
         const SizedBox(height: 16),
 
-        _buildStatusDropdown(),
-        const SizedBox(height: 16),
-
+        // Статус dropdown полностью удален из интерфейса
+        
         _buildTextField(
           controller: _descriptionController,
           label: 'Описание',
@@ -348,34 +348,63 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
   }
   
   Widget _buildBottomButtons() {
-    return Row(
+    final currentUserRole = ref.watch(currentUserRoleProvider);
+    final isAdmin = currentUserRole == UserRole.admin;
+    
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-            child: const Text('Отмена'),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveRequest,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+        // Кнопка смены статуса для администратора (только в режиме редактирования)
+        if (_isEditing && isAdmin) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _toggleRequestStatus,
+              icon: Icon(
+                _selectedStatusCode == 'pending' ? Icons.check_circle : Icons.pending,
+                size: 20,
+              ),
+              label: Text(_selectedStatusCode == 'pending' ? 'Одобрить' : 'На рассмотрение'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _selectedStatusCode == 'pending' ? Colors.green : Colors.orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
             ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(_isEditing ? 'Сохранить' : 'Создать'),
           ),
+          const SizedBox(height: 16),
+        ],
+        
+        // Основные кнопки
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Отмена'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveRequest,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(_isEditing ? 'Сохранить' : 'Создать'),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -400,8 +429,9 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
           warehouseId: _selectedWarehouseId!,
           productTemplateId: _selectedProductTemplateId!,
           title: _titleController.text,
-          quantity: int.parse(_quantityController.text).toDouble(),
+          quantity: int.parse(_quantityController.text),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+          // status НЕ отправляем при обновлении через форму
         );
 
         await dataSource.updateRequest(widget.request!.id, updateRequest);
@@ -411,9 +441,10 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
           warehouseId: _selectedWarehouseId!,
           productTemplateId: _selectedProductTemplateId!,
           title: _titleController.text,
-          quantity: int.parse(_quantityController.text).toDouble(),
+          quantity: int.parse(_quantityController.text),
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           priority: shared_models.RequestPriority.normal,
+          // status НЕ отправляем - убран параметр
         );
 
         await dataSource.createRequest(createRequest);
@@ -435,6 +466,89 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  /// Переключение статуса запроса (pending <-> approved)
+  Future<void> _toggleRequestStatus() async {
+    if (!_isEditing) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final dataSource = ref.read(requestsRemoteDataSourceProvider);
+      final requestId = widget.request!.id;
+      
+    if (_selectedStatusCode == 'pending') {
+      // Одобрить запрос (pending -> approved)
+      // Используем updateRequest вместо processRequest, так как endpoint /process не существует
+      await dataSource.updateRequest(
+        requestId,
+        shared_models.UpdateRequestRequest(
+          warehouseId: _selectedWarehouseId!,
+          productTemplateId: _selectedProductTemplateId!,
+          title: _titleController.text,
+          quantity: int.parse(_quantityController.text),
+          description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+          status: 'approved',
+        ),
+      );
+      _selectedStatusCode = 'approved';
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Запрос одобрен'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } else {
+        // Вернуть на рассмотрение (approved -> pending)
+        await dataSource.updateRequest(
+          requestId,
+          shared_models.UpdateRequestRequest(
+            warehouseId: _selectedWarehouseId!,
+            productTemplateId: _selectedProductTemplateId!,
+            title: _titleController.text,
+            quantity: int.parse(_quantityController.text),
+            description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+            status: 'pending',
+          ),
+        );
+        _selectedStatusCode = 'pending';
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Запрос возвращен на рассмотрение'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+      
+      // Обновляем UI
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка смены статуса: $e'),
             backgroundColor: AppColors.error,
           ),
         );

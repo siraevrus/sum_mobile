@@ -245,7 +245,7 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
           ),
         const SizedBox(height: 8),
         Text(
-          'Количество: ${request.quantity}',
+          'Количество: ${request.quantity.toInt()}',
           style: const TextStyle(
             fontSize: 14,
             color: Colors.black,
@@ -253,7 +253,7 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
           ),
         ),
         Text(
-          'Шаблон: Не указан',
+          'Шаблон: ${request.productTemplate?.name ?? 'Не указан'}',
           style: const TextStyle(
             fontSize: 14,
             color: Colors.black,
@@ -262,6 +262,14 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
         ),
         Text(
           'Склад: ${request.warehouse?.name ?? 'ID ${request.warehouse?.id}'}',
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          'Сотрудник: ${request.user?.name ?? 'Не указан'}',
           style: const TextStyle(
             fontSize: 14,
             color: Colors.black,
@@ -308,12 +316,20 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
           ),
         ),
         Expanded(
-          child: Text('${request.quantity}'),
+          child: Text('${request.quantity.toInt()}'),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            'Не указан',
+            request.productTemplate?.name ?? 'Не указан',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            request.user?.name ?? 'Не указан',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

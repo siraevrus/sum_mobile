@@ -317,16 +317,6 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
                     onSelected: (action) => _handleUserAction(action, user),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility, size: 20),
-                            SizedBox(width: 8),
-                            Text('Просмотр'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [
@@ -488,9 +478,6 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
 
   void _handleUserAction(String action, UserManagementModel user) {
     switch (action) {
-      case 'view':
-        _viewUser(user);
-        break;
       case 'edit':
         _editUser(user);
         break;

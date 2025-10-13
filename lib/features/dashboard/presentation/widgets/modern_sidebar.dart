@@ -198,8 +198,8 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     section: 'products-in-transit',
                     isSelected: widget.selectedSection == 'products-in-transit',
                   ),
-                // Приемка - админ и оператор
-                if (_hasAccess(['admin', 'operator']))
+                // Приемка - только админ
+                if (_hasAccess(['admin']))
                   _buildMenuItem(
                     icon: Icons.inventory_2,
                     title: 'Приемка',

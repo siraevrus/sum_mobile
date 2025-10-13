@@ -353,12 +353,6 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
                     onSelected: (action) => _handleWarehouseAction(action, warehouse),
                     itemBuilder: (context) => [
                       const PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          children: [Icon(Icons.visibility, size: 20), SizedBox(width: 8), Text('Просмотр')],
-                        ),
-                      ),
-                      const PopupMenuItem(
                         value: 'edit',
                         child: Row(
                           children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
@@ -462,9 +456,6 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
 
   void _handleWarehouseAction(String action, WarehouseModel warehouse) {
     switch (action) {
-      case 'view':
-        // TODO: Просмотр деталей склада
-        break;
       case 'edit':
         Navigator.of(context).push(
           MaterialPageRoute(

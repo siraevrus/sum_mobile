@@ -119,7 +119,7 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
                 
                 // Название приложения
                 const Text(
-                  'СкладOnline',
+                  'Expert Wood',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,

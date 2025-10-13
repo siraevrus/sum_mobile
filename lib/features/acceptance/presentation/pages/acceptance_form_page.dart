@@ -450,19 +450,21 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
                   // 5. Место отгрузки
             _buildTextField(
               controller: _shippingLocationController,
-                    label: 'Место отгрузки',
+                    label: 'Место отгрузки *',
+                    isRequired: true,
             ),
             const SizedBox(height: 16),
 
                   // 6. Дата отгрузки
             _buildDateField(
-                    label: 'Дата отгрузки',
+                    label: 'Дата отгрузки *',
                     selectedDate: _selectedShippingDate,
                     onDateSelected: (date) {
                       setState(() {
                         _selectedShippingDate = date;
                       });
                     },
+                    isRequired: true,
                   ),
                 ],
               ),
@@ -736,6 +738,7 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
     required String label,
     required DateTime? selectedDate,
     required Function(DateTime?) onDateSelected,
+    bool isRequired = false,
   }) {
     return TextFormField(
       readOnly: true,
@@ -760,6 +763,12 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
               );
               onDateSelected(picked);
             },
+      validator: (value) {
+        if (isRequired && (selectedDate == null || selectedDate.toString().isEmpty)) {
+          return 'Выберите дату';
+        }
+        return null;
+      },
     );
   }
 

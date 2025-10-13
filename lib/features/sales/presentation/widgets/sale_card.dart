@@ -55,7 +55,7 @@ class SaleCard extends StatelessWidget {
               
               // Информация о продаже
               _buildInfoRow('Товар', sale.product?.name ?? 'ID ${sale.productId}'),
-              _buildInfoRow('Количество', sale.quantity.toStringAsFixed(2)),
+              _buildInfoRow('Количество', sale.quantity.toInt().toString()),
               _buildInfoRow('Цена за единицу', '${sale.unitPrice.toStringAsFixed(2)} ${sale.currency}'),
               _buildInfoRow('Общая сумма', '${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}'),
               _buildInfoRow('Склад', sale.warehouse?.name ?? 'ID ${sale.warehouseId}'),
