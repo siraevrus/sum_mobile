@@ -9,7 +9,7 @@ import 'package:sum_warehouse/features/dashboard/presentation/widgets/latest_sal
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/revenue_dashboard.dart';
 
 /// Адаптивное содержимое дашборда
-class ResponsiveDashboardContent extends StatelessWidget {
+class ResponsiveDashboardContent extends ConsumerWidget {
   final VoidCallback? onShowAllProductsPressed;
   
   const ResponsiveDashboardContent({
@@ -18,88 +18,104 @@ class ResponsiveDashboardContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 768;
         
         if (isMobile) {
-          return _buildMobileLayout();
+          return _buildMobileLayout(ref);
         } else {
-          return _buildDesktopLayout();
+          return _buildDesktopLayout(ref);
         }
       },
     );
   }
 
   /// Мобильная версия дашборда
-  Widget _buildMobileLayout() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Карточки статистики в колонну для мобильных
-          const MobileStatsCards(),
-          const SizedBox(height: 20),
-          
-          // Последние продажи
-          Consumer(
-            builder: (context, ref, child) {
-              final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
-              return dashboardStats.when(
-                loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
-                error: (error, stack) => const SizedBox.shrink(),
-                data: (stats) => MobileLatestSalesCard(latestSales: stats.latestSales),
-              );
-            },
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Дашборд выручки
-          const RevenueDashboard(),
-          
-          // Популярные товары - скрыто
-          // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
-        ],
+  Widget _buildMobileLayout(WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () => _refreshDashboardData(ref),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Карточки статистики в колонну для мобильных
+            const MobileStatsCards(),
+            const SizedBox(height: 20),
+            
+            // Последние продажи
+            Consumer(
+              builder: (context, ref, child) {
+                final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
+                return dashboardStats.when(
+                  loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
+                  error: (error, stack) => const SizedBox.shrink(),
+                  data: (stats) => MobileLatestSalesCard(latestSales: stats.latestSales),
+                );
+              },
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Дашборд выручки
+            const RevenueDashboard(),
+            
+            // Популярные товары - скрыто
+            // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
+          ],
+        ),
       ),
     );
   }
 
   /// Десктопная версия дашборда
-  Widget _buildDesktopLayout() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Карточки со статистикой
-          const DashboardStatsCards(),
-          const SizedBox(height: 24),
-                  
-          // Последние продажи
-          Consumer(
-            builder: (context, ref, child) {
-              final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
-              return dashboardStats.when(
-                loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
-                error: (error, stack) => const SizedBox.shrink(),
-                data: (stats) => LatestSalesTable(latestSales: stats.latestSales),
-              );
-            },
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Дашборд выручки
-          const RevenueDashboard(),
-          
-          // Популярные товары - скрыто
-          // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
-        ],
+  Widget _buildDesktopLayout(WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () => _refreshDashboardData(ref),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Карточки со статистикой
+            const DashboardStatsCards(),
+            const SizedBox(height: 24),
+                    
+            // Последние продажи
+            Consumer(
+              builder: (context, ref, child) {
+                final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
+                return dashboardStats.when(
+                  loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
+                  error: (error, stack) => const SizedBox.shrink(),
+                  data: (stats) => LatestSalesTable(latestSales: stats.latestSales),
+                );
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Дашборд выручки
+            const RevenueDashboard(),
+            
+            // Популярные товары - скрыто
+            // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
+          ],
+        ),
       ),
     );
+  }
+
+  /// Обновление данных дашборда
+  Future<void> _refreshDashboardData(WidgetRef ref) async {
+    await Future.wait([
+      ref.refresh(dashboardStatsNoCachingProvider.future),
+      ref.refresh(dashboardStatsProvider.future),
+    ]);
   }
 }
 

@@ -284,99 +284,115 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
             
             // Навигационное меню
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
                 children: [
-                  // Инфопанель: показываем только админу
-                  if (_hasAccess(widget.user, ['admin']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.dashboard,
-                      title: 'Инфопанель',
-                      section: 'dashboard',
-                    ),
-                  
-                  // Раздел "Инфо" с подменю - только админ
-                  if (_hasAccess(widget.user, ['admin']))
-                    _buildExpandableDrawerMenuItem(
-                      context,
-                      icon: Icons.info_outline,
-                      title: 'Инфо',
-                      isExpanded: _infoExpanded,
-                      onTap: () {
-                        setState(() {
-                          _infoExpanded = !_infoExpanded;
-                        });
-                      },
+                  // Основное меню
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
-                        _buildSubDrawerMenuItem(
-                          context,
-                          icon: Icons.business,
-                          title: 'Компании',
-                          section: 'companies',
-                        ),
-                        _buildSubDrawerMenuItem(
-                          context,
-                          icon: Icons.warehouse,
-                          title: 'Склад',
-                          section: 'warehouses',
-                        ),
-                        _buildSubDrawerMenuItem(
-                          context,
-                          icon: Icons.people,
-                          title: 'Сотрудники',
-                          section: 'employees',
-                        ),
+                        // Инфопанель: показываем только админу
+                        if (_hasAccess(widget.user, ['admin']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.dashboard,
+                            title: 'Инфопанель',
+                            section: 'dashboard',
+                          ),
+                        
+                        // Остатки - админ, оператор, работник склада, менеджер по продажам
+                        if (_hasAccess(widget.user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.storage,
+                            title: 'Остатки на складе',
+                            section: 'inventory',
+                          ),
+                        // Поступление товаров - админ и оператор
+                        if (_hasAccess(widget.user, ['admin', 'operator']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.input,
+                            title: 'Поступление товаров',
+                            section: 'products-inflow',
+                          ),
+                        // Товары в пути - админ и оператор
+                        if (_hasAccess(widget.user, ['admin', 'operator']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.local_shipping,
+                            title: 'Товары в пути',
+                            section: 'products-in-transit',
+                          ),
+                        // Приемка - только админ
+                        if (_hasAccess(widget.user, ['admin']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.inventory_2,
+                            title: 'Приемка',
+                            section: 'acceptance',
+                          ),
+                        // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
+                        if (_hasAccess(widget.user, ['admin', 'warehouse_worker', 'sales_manager']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.assignment,
+                            title: 'Запросы',
+                            section: 'requests',
+                          ),
+                        // Реализация - админ, работник склада
+                        if (_hasAccess(widget.user, ['admin', 'warehouse_worker']))
+                          _buildDrawerMenuItem(
+                            context,
+                            icon: Icons.point_of_sale,
+                            title: 'Реализация',
+                            section: 'sales',
+                          ),
                       ],
                     ),
+                  ),
                   
-                  // Остатки - админ, оператор, работник склада, менеджер по продажам
-                  if (_hasAccess(widget.user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.storage,
-                      title: 'Остатки на складе',
-                      section: 'inventory',
-                    ),
-                  // Поступление товаров - админ и оператор
-                  if (_hasAccess(widget.user, ['admin', 'operator']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.input,
-                      title: 'Поступление товаров',
-                      section: 'products-inflow',
-                    ),
-                  // Товары в пути - админ и оператор
-                  if (_hasAccess(widget.user, ['admin', 'operator']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.local_shipping,
-                      title: 'Товары в пути',
-                      section: 'products-in-transit',
-                    ),
-                  // Приемка - только админ
+                  // Раздел "Инфо" в нижней части - только админ
                   if (_hasAccess(widget.user, ['admin']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.inventory_2,
-                      title: 'Приемка',
-                      section: 'acceptance',
-                    ),
-                  // Запросы - админ, работник склада, менеджер по продажам (БЕЗ оператора)
-                  if (_hasAccess(widget.user, ['admin', 'warehouse_worker', 'sales_manager']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.assignment,
-                      title: 'Запросы',
-                      section: 'requests',
-                    ),
-                  // Реализация - админ, работник склада
-                  if (_hasAccess(widget.user, ['admin', 'warehouse_worker']))
-                    _buildDrawerMenuItem(
-                      context,
-                      icon: Icons.point_of_sale,
-                      title: 'Реализация',
-                      section: 'sales',
+                    Column(
+                      children: [
+                        const Divider(
+                          color: Color(0xFF34495E),
+                          thickness: 1,
+                          height: 1,
+                        ),
+                        _buildExpandableDrawerMenuItem(
+                          context,
+                          icon: Icons.info_outline,
+                          title: 'Инфо',
+                          isExpanded: _infoExpanded,
+                          onTap: () {
+                            setState(() {
+                              _infoExpanded = !_infoExpanded;
+                            });
+                          },
+                          children: [
+                            _buildSubDrawerMenuItem(
+                              context,
+                              icon: Icons.business,
+                              title: 'Компании',
+                              section: 'companies',
+                            ),
+                            _buildSubDrawerMenuItem(
+                              context,
+                              icon: Icons.warehouse,
+                              title: 'Склад',
+                              section: 'warehouses',
+                            ),
+                            _buildSubDrawerMenuItem(
+                              context,
+                              icon: Icons.people,
+                              title: 'Сотрудники',
+                              section: 'employees',
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                 ],
               ),

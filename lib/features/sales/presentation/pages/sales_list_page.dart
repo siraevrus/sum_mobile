@@ -100,16 +100,23 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       },
       child: salesAsync.when(
         loading: () => const LoadingWidget(),
-        error: (error, stack) => SingleChildScrollView(child: _buildErrorState(error)),
+        error: (error, stack) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [_buildErrorState(error)],
+        ),
         data: (salesResponse) {
           final sales = salesResponse.data;
           
           if (sales.isEmpty) {
-            return SingleChildScrollView(child: _buildEmptyState());
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [_buildEmptyState()],
+            );
           }
 
           return ListView.builder(
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             itemCount: sales.length,
             itemBuilder: (context, index) => SaleCard(

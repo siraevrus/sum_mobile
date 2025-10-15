@@ -8,6 +8,7 @@ import 'package:sum_warehouse/features/dashboard/presentation/widgets/dashboard_
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/recent_activities_card.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/quick_actions_card.dart';
 import 'package:sum_warehouse/features/products/presentation/pages/products_list_page.dart';
+import 'package:sum_warehouse/features/sales/presentation/pages/sales_list_page.dart';
 
 /// Современный дашборд в стиле веб-интерфейса
 class ModernDashboardPage extends ConsumerWidget {
@@ -108,12 +109,7 @@ class ModernDashboardPage extends ConsumerWidget {
           ),
         );
       case 'sales':
-        return const Center(
-          child: Text(
-            'Модуль продаж в разработке',
-            style: TextStyle(fontSize: 18, color: Color(0xFF666666)),
-          ),
-        );
+        return const SalesListPage();
       case 'requests':
         return const Center(
           child: Text(

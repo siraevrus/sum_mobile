@@ -198,8 +198,8 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     section: 'sales',
                     isSelected: widget.selectedSection == 'sales',
                   ),
-
-                // Раздел "Инфо" с подменю - только админ
+                
+                // Раздел "Инфо" с подменю в конце списка - только админ
                 if (_hasAccess(['admin']))
                   _buildExpandableMenuItem(
                     icon: Icons.info_outline,

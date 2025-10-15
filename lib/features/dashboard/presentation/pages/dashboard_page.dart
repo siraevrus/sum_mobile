@@ -11,6 +11,7 @@ import 'package:sum_warehouse/features/products/presentation/pages/products_list
 import 'package:sum_warehouse/features/requests/presentation/pages/requests_list_page.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/stocks_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
+import 'package:sum_warehouse/features/sales/presentation/pages/sales_list_page.dart';
 
 /// Главный экран дашборда
 class DashboardPage extends ConsumerWidget {
@@ -284,7 +285,11 @@ class DashboardPage extends ConsumerWidget {
             title: 'Реализация',
             subtitle: 'Продажи и оформление',
             onTap: () {
-              // TODO: Navigate to sales
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SalesListPage(),
+                ),
+              );
             },
           ),
         ]);
