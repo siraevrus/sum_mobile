@@ -90,7 +90,6 @@ class ErrorHandlerInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     // Логируем ошибку для отладки
-    print('🔴 Network Error: ${err.type} - ${err.message}');
     
     // Преобразуем DioException в AppException через ErrorHandler
     final appException = ErrorHandler.handleError(err);

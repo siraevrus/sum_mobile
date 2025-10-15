@@ -21,22 +21,17 @@ GoRouter router(RouterRef ref) {
       final isDashboardRoute = currentLocation == '/dashboard';
       final isSplashRoute = currentLocation == '/';
       
-      print('🔄 Router redirect check: $currentLocation (auth: ${authState.runtimeType})');
-      
       final redirect = authState.when(
         initial: () {
           // Во время инициализации показываем splash
           if (!isSplashRoute) {
-            print('🔄 Router: Initial state, redirect to splash');
             return '/';
           }
           return null;
         },
         loading: () {
           // ВО ВРЕМЯ LOADING показываем splash
-          print('🔄 Router: Loading state, staying on $currentLocation');
           if (!isSplashRoute) {
-            print('🔄 Router: Loading - redirect to splash');
             return '/';
           }
           return null;
@@ -60,11 +55,9 @@ GoRouter router(RouterRef ref) {
           final target = defaultForRole();
 
           if (isSplashRoute) {
-            print('🔄 Router: Авторизован, переход с splash на $target');
             return target;
           }
           if (isLoginRoute) {
-            print('🔄 Router: Авторизован, переход с логина на $target');
             return target;
           }
           return null;
@@ -72,7 +65,6 @@ GoRouter router(RouterRef ref) {
         unauthenticated: () {
           // Если не авторизован - ВСЕГДА перенаправляем на логин (кроме уже на логине)
           if (!isLoginRoute) {
-            print('🔄 Router: Не авторизован, переход с $currentLocation на логин');
             return '/login';
           }
           return null;
@@ -80,7 +72,6 @@ GoRouter router(RouterRef ref) {
         error: (message) {
           // При ошибке авторизации - перенаправляем на логин ТОЛЬКО если не на логине
           if (!isLoginRoute) {
-            print('🔄 Router: Ошибка авторизации ($message), переход на логин');
             return '/login';
           }
           return null;
@@ -88,7 +79,6 @@ GoRouter router(RouterRef ref) {
       );
       
       if (redirect != null) {
-        print('🔄 Router redirect: $currentLocation → $redirect');
       }
       
       return redirect;

@@ -61,16 +61,13 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print('🔵 ProductsInflowListPage: Нажата кнопка + (добавить товар)');
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) {
-                print('🔵 ProductsInflowListPage: Переход к ProductInflowFormPage');
                 return const ProductInflowFormPage();
               },
             ),
           ).then((_) {
-            print('🔵 ProductsInflowListPage: Возврат из ProductInflowFormPage, обновляем список');
             setState(() {});
           });
         },
@@ -335,13 +332,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       page: 1,
     );
     
-    print('🔵 ProductsInflowListPage: Применяем фильтры:');
-    print('🔵 - Поиск: ${filters.search}');
-    print('🔵 - Склад: ${filters.warehouseId}');
-    print('🔵 - Производитель: ${filters.producerId}');
-    print('🔵 - Дата от: ${filters.arrivalDateFrom}');
-    print('🔵 - Дата до: ${filters.arrivalDateTo}');
-    print('🔵 - Параметры запроса: ${filters.toQueryParams()}');
     
     ref.read(productsInflowProvider.notifier).filterProducts(filters);
   }
@@ -526,7 +516,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               _buildInfoRow('Количество', product.quantity),
               _buildInfoRow('Объем', '${_formatVolume(product.calculatedVolume)} ${product.template?.unit ?? ''}'),
               _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
-              _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
               _buildInfoRow('Дата поступления', product.arrivalDate != null ? _formatDate(product.arrivalDate!) : 'Не указана'),
               
               // Тег статуса коррекции
@@ -743,11 +732,9 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
   }
 
   void _handleMenuAction(String action, ProductInflowModel product) {
-    print('🔵 ProductsInflowListPage: Выбрано действие "$action" для товара ID: ${product.id}');
     
     switch (action) {
       case 'preview':
-        print('🔵 ProductsInflowListPage: Переход к превью товара ID: ${product.id}');
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ProductInflowDetailPage(product: product),
@@ -756,13 +743,11 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
         break;
         
       case 'edit':
-        print('🔵 ProductsInflowListPage: Переход к редактированию товара ID: ${product.id}');
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ProductInflowFormPage(product: product),
           ),
         ).then((_) {
-          print('🔵 ProductsInflowListPage: Возврат из редактирования, обновляем список');
           ref.read(productsInflowProvider.notifier).refresh();
         });
         break;
@@ -787,7 +772,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              print('🔵 ProductsInflowListPage: Удаляем товар ID: ${product.id}');
               
               try {
                 await ref.read(productsInflowProvider.notifier).deleteProduct(product.id);
@@ -797,7 +781,6 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                   );
                 }
               } catch (e) {
-                print('🔴 ProductsInflowListPage: Ошибка удаления товара: $e');
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Ошибка удаления товара: $e')),

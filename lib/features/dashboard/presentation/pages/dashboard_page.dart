@@ -23,23 +23,18 @@ class DashboardPage extends ConsumerWidget {
     
     // Слушаем изменения состояния авторизации для logout
     ref.listen<AuthState>(authProvider, (previous, next) {
-      print('🟡 Dashboard: Состояние изменилось: ${previous?.runtimeType} → ${next.runtimeType}');
       
       next.maybeWhen(
         unauthenticated: () {
-          print('🔴 Dashboard: Пользователь вышел, переходим на логин');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              print('🚀 Dashboard: Выполняем go на /login');
               context.go('/login');
             }
           });
         },
         error: (message) {
-          print('🔴 Dashboard: Ошибка авторизации: $message');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
-              print('🚀 Dashboard: Ошибка, переходим на логин');
               context.go('/login');
             }
           });

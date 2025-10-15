@@ -110,55 +110,36 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
     try {
       final requestData = request.toJson();
       
-      print('🔵 === СОЗДАНИЕ ПРОДАЖИ ===');
-      print('🔵 Полный JSON запрос: $requestData');
 
       final response = await _dio.post('/sales', data: requestData);
       
-      print('🟢 Sale created successfully: ${response.statusCode}');
-      print('🔵 Raw response data: ${response.data}');
 
       final responseData = response.data;
-      print('🔵 Response data type: ${responseData.runtimeType}');
       
       if (responseData is Map<String, dynamic>) {
         Map<String, dynamic> saleData;
         
         if (responseData.containsKey('sale')) {
           saleData = responseData['sale'] as Map<String, dynamic>;
-          print('🔵 Using sale field structure');
         } else if (responseData.containsKey('data')) {
           saleData = responseData['data'] as Map<String, dynamic>;
-          print('🔵 Using nested data structure');
         } else {
           saleData = responseData;
-          print('🔵 Using direct response structure');
         }
         
-        print('🔵 Sale data before parsing: $saleData');
         
         try {
           final sale = SaleModel.fromJson(saleData);
-          print('🟢 Sale parsed successfully');
           return sale;
         } catch (e) {
-          print('🔴 Error parsing sale: $e');
-          print('🔴 Sale data that failed: $saleData');
           rethrow;
         }
       } else {
         throw Exception('Неожиданный формат ответа: ${responseData.runtimeType}');
       }
     } catch (e) {
-      print('🔴 === ОШИБКА СОЗДАНИЯ ПРОДАЖИ ===');
-      print('🔴 Error creating sale: $e');
       
       if (e is DioException) {
-        print('🔴 DioException details:');
-        print('🔴 Status code: ${e.response?.statusCode}');
-        print('🔴 Response data: ${e.response?.data}');
-        print('🔴 Request data: ${e.requestOptions.data}');
-        print('🔴 Request URL: ${e.requestOptions.uri}');
       }
       
       throw _handleError(e);
@@ -168,11 +149,9 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   @override
   Future<SaleModel> updateSale(int id, UpdateSaleRequest request) async {
     try {
-      print('🔵 Updating sale $id with data: ${request.toJson()}');
       
       final response = await _dio.put('/sales/$id', data: request.toJson());
       
-      print('🟢 Sale updated successfully: ${response.statusCode}');
 
       final responseData = response.data;
       if (responseData is Map<String, dynamic>) {
@@ -185,7 +164,6 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
         throw Exception('Неожиданный формат ответа: ${responseData.runtimeType}');
       }
     } catch (e) {
-      print('🔴 Error updating sale: $e');
       throw _handleError(e);
     }
   }
@@ -211,20 +189,15 @@ class SalesRemoteDataSourceImpl implements SalesRemoteDataSource {
   @override
   Future<void> cancelSale(int id) async {
     try {
-      print('🔵 Отправляем запрос на отмену продажи ID: $id');
       final response = await _dio.post('/sales/$id/cancel');
 
-      print('🔵 Ответ отмены продажи: ${response.statusCode}');
-      print('🔵 Ответ данные: ${response.data}');
 
       if (response.statusCode == 200) {
-        print('🔵 Продажа успешно отменена');
         return;
       } else {
         throw Exception('Ошибка сервера: ${response.statusCode}');
       }
     } catch (e) {
-      print('🔴 Ошибка отмены продажи: $e');
       throw _handleError(e);
     }
   }

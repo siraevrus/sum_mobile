@@ -64,7 +64,6 @@ class UsersRemoteDataSourceImpl implements UsersRemoteDataSource {
       queryParams['_ts'] = DateTime.now().millisecondsSinceEpoch;
       // Debug log to inspect requests and responses when list doesn't update
       try {
-        print('🔍 getUsers request params: $queryParams');
       } catch (_) {}
       final response = await _dio.get(
         '/users',
@@ -72,7 +71,6 @@ class UsersRemoteDataSourceImpl implements UsersRemoteDataSource {
         options: Options(headers: {'Cache-Control': 'no-cache'}),
       );
       try {
-        print('🔍 getUsers response.data: ${response.data}');
       } catch (_) {}
       
       return PaginatedResponse<UserManagementModel>.fromJson(

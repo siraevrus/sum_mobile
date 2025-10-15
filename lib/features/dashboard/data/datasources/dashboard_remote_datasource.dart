@@ -43,11 +43,9 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
   @override
   Future<DashboardStats> getDashboardStats() async {
     try {
-      print('🔵 Dashboard: Получение агрегатов через /dashboard/summary ...');
       final resp = await _dio.get('/dashboard/summary');
       final data = resp.data as Map<String, dynamic>;
       
-      print('📊 Dashboard API Response: $data');
       
       // Парсим последние продажи
       final latestSalesList = (data['latest_sales'] as List<dynamic>? ?? [])
@@ -65,7 +63,6 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
-      print('🔴 Dashboard: Ошибка получения статистики: $e');
       throw ErrorHandler.handleError(e);
     }
   }
@@ -192,7 +189,6 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
     String? dateTo,
   }) async {
     try {
-      print('🔵 Dashboard: Получение данных о выручке через /dashboard/revenue API...');
       
       // Определяем даты для запроса
       String calculatedDateFrom;
@@ -224,7 +220,6 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         }
       }
       
-      print('📅 Период: $period, с $calculatedDateFrom по $calculatedDateTo');
       
       // Используем правильный эндпоинт для выручки
       final queryParams = <String, dynamic>{
@@ -235,8 +230,6 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       
       final response = await _dio.get('/dashboard/revenue', queryParameters: queryParams);
       
-      print('📊 Получен ответ от /dashboard/revenue: ${response.statusCode}');
-      print('📄 Данные ответа: ${response.data}');
       
       // Парсим ответ от API
       final data = response.data as Map<String, dynamic>;
@@ -273,15 +266,11 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         revenue: revenue,
       );
       
-      print('✅ Данные о выручке успешно получены через /dashboard/revenue API');
       return result;
       
     } on DioException catch (e) {
-      print('🔴 Revenue: Ошибка получения данных о выручке: ${e.response?.statusCode} - ${e.message}');
-      print('🔴 Response data: ${e.response?.data}');
       
       // В случае ошибки API, возвращаем пустые данные
-      print('⚠️ Используем пустые данные из-за ошибки API');
       
       final emptyRevenue = {
         'RUB': const CurrencyAmount(amount: 0.0, formatted: '0 ₽'),
@@ -296,7 +285,6 @@ class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         revenue: emptyRevenue,
       );
     } catch (e) {
-      print('🔴 Revenue: Общая ошибка: $e');
       throw ErrorHandler.handleError(e);
     }
   }

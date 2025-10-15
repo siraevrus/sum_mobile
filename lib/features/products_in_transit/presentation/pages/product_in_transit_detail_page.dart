@@ -40,12 +40,10 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     if (_currentProduct == null) return;
 
     try {
-      print('🔵 ProductInTransitDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/products/${_currentProduct!.id}');
       
-      print('🔵 ProductInTransitDetailPage: Обновленные данные товара: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final updatedProduct = ProductInTransitModel.fromJson(response.data);
@@ -57,7 +55,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       }
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка обновления данных товара: $e');
     }
   }
 
@@ -69,12 +66,10 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     });
 
     try {
-      print('🔵 ProductInTransitDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/product-templates/${_product.productTemplateId}');
       
-      print('🔵 ProductInTransitDetailPage: Ответ API /product-templates: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data;
@@ -101,7 +96,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
             }
           }
           
-          print('🔵 ProductInTransitDetailPage: Названия атрибутов загружены: $attributeNames');
           
           if (mounted) {
             setState(() {
@@ -111,7 +105,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       }
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка загрузки шаблона товара: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -123,11 +116,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInTransitDetailPage: build вызван для товара ID: ${_product.id}');
-    print('🔵 ProductInTransitDetailPage: product.name = ${_product.name}');
-    print('🔵 ProductInTransitDetailPage: product.warehouse = ${_product.warehouse?.name}');
-    print('🔵 ProductInTransitDetailPage: product.producer = ${_product.producer?.name}');
-    print('🔵 ProductInTransitDetailPage: product.template = ${_product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
@@ -256,7 +244,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     required String title,
     required List<Widget> children,
   }) {
-    print('🔵 ProductInTransitDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     try {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +280,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         ],
       );
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка в _buildSection "$title": $e');
       return Container(
         padding: const EdgeInsets.all(16),
         child: Text('Ошибка отображения секции: $e'),
@@ -302,7 +288,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
   }
 
   Widget _buildInfoRow(String label, String value) {
-    print('🔵 ProductInTransitDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     try {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -334,7 +319,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         ),
       );
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка в _buildInfoRow "$label": $e');
       return Container(
         padding: const EdgeInsets.all(8),
         child: Text('Ошибка отображения: $e'),
@@ -484,7 +468,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
 
   Future<void> _openDocument(String path) async {
     try {
-      print('🔵 ProductInTransitDetailPage: Скачиваем документ: $path');
 
       // Формируем полную ссылку на документ
       String documentUrl;
@@ -501,7 +484,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
 
-      print('🔵 ProductInTransitDetailPage: Полная ссылка на документ: $documentUrl');
 
       // Показываем диалог загрузки
       showDialog(
@@ -579,7 +561,6 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         }
       } catch (e) {
         // Если внешнее хранилище недоступно, используем внутреннее
-        print('🔵 ProductInTransitDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
         directory = await getApplicationDocumentsDirectory();
         downloadsDir = Directory('${directory.path}/Downloads');
       }
@@ -622,10 +603,8 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         );
       }
 
-      print('🔵 ProductInTransitDetailPage: Документ успешно сохранен: ${file.path}');
 
     } catch (e) {
-      print('🔴 ProductInTransitDetailPage: Ошибка скачивания документа: $e');
 
       // Закрываем диалог загрузки если он открыт
       if (mounted && Navigator.of(context).canPop()) {

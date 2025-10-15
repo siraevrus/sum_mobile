@@ -57,10 +57,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
   @override
   void initState() {
     super.initState();
-    print('🔵 ProductInflowFormPage: initState начат');
     _initializeForm();
     _loadData();
-    print('🔵 ProductInflowFormPage: initState завершен');
   }
 
   @override
@@ -90,25 +88,19 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       _selectedArrivalDate = product.arrivalDate != null ? DateTime.parse(product.arrivalDate!) : null;
       _notesController.text = product.notes ?? '';
       
-      print('🔵 ProductInflowFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
-      print('🔵 ProductInflowFormPage: product_template_id: ${product.productTemplateId}');
     }
   }
 
   Future<void> _loadData() async {
-    print('🔵 ProductInflowFormPage: _loadData начат');
     setState(() => _isLoading = true);
 
     try {
       // Загружаем склады
-      print('🔵 ProductInflowFormPage: Загружаем склады...');
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
-      print('🔵 ProductInflowFormPage: Склады загружены: ${_warehouses.length} шт');
 
       // Загружаем производителей
-      print('🔵 ProductInflowFormPage: Загружаем производителей...');
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
@@ -121,28 +113,20 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
           createdAt: entity.createdAt,
           updatedAt: entity.updatedAt,
         )).toList();
-        print('🔵 ProductInflowFormPage: Производители загружены: ${_producers.length} шт');
       } else {
-        print('🔵 ProductInflowFormPage: Производители не загружены');
       }
 
       // Загружаем шаблоны товаров
-      print('🔵 ProductInflowFormPage: Загружаем шаблоны товаров...');
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       _productTemplates = await templateDataSource.getProductTemplates();
-      print('🔵 ProductInflowFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
 
       // Если редактируем товар, загружаем атрибуты шаблона
       if (_isEditing && _selectedProductTemplateId != null) {
-        print('🔵 ProductInflowFormPage: Загружаем атрибуты для редактирования товара...');
         await _loadTemplateAttributes();
       }
 
       setState(() {});
-      print('🔵 ProductInflowFormPage: setState вызван, _isLoading = false');
     } catch (e) {
-      print('🔴 ProductInflowFormPage: Ошибка загрузки данных: $e');
-      print('🔴 ProductInflowFormPage: Stack trace: ${StackTrace.current}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка загрузки данных: $e')),
@@ -150,7 +134,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       }
     } finally {
       setState(() => _isLoading = false);
-      print('🔵 ProductInflowFormPage: _loadData завершен, _isLoading = false');
     }
   }
 
@@ -175,7 +158,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     }
 
     try {
-      print('🔵 ProductInflowFormPage: Загружаем атрибуты шаблона ID: $_selectedProductTemplateId');
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       _selectedTemplate = await templateDataSource.getProductTemplate(_selectedProductTemplateId!);
       
@@ -190,7 +172,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
           if (attributes != null && attributes.containsKey(attribute.variable)) {
             final value = attributes[attribute.variable];
             _attributeControllers[attribute.variable]!.text = value.toString();
-            print('🔵 ProductInflowFormPage: Загружен атрибут ${attribute.variable} = $value');
           }
         }
         
@@ -198,10 +179,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         _attributeControllers[attribute.variable]!.addListener(_onAttributeChanged);
       }
       
-      print('🔵 ProductInflowFormPage: Загружено атрибутов: ${_selectedTemplate!.attributes.length}');
       setState(() {});
     } catch (e) {
-      print('🔴 ProductInflowFormPage: Ошибка загрузки атрибутов шаблона: $e');
       _selectedTemplate = null;
       _clearAttributeControllers();
     }
@@ -283,7 +262,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         formula = formula.replaceAll(attribute.variable, numValue.toString());
       }
       
-      print('🔵 ProductInflowFormPage: Формула для расчета: $formula');
       
       // Простой парсер математических выражений
       // В реальном проекте лучше использовать библиотеку для парсинга математических выражений
@@ -291,7 +269,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       
       return result.toStringAsFixed(3);
     } catch (e) {
-      print('🔴 ProductInflowFormPage: Ошибка расчета объема: $e');
       return '0';
     }
   }
@@ -306,18 +283,12 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       final result = expression.evaluate(EvaluationType.REAL, contextModel);
       return result as double;
     } catch (e) {
-      print('🔴 ProductInflowFormPage: Ошибка парсинга формулы: $e');
-      print('🔴 ProductInflowFormPage: Формула: $formula');
       return 0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInflowFormPage: build вызван, _isLoading = $_isLoading');
-    print('🔵 ProductInflowFormPage: _warehouses.length = ${_warehouses.length}');
-    print('🔵 ProductInflowFormPage: _producers.length = ${_producers.length}');
-    print('🔵 ProductInflowFormPage: _productTemplates.length = ${_productTemplates.length}');
     
     return Scaffold(
       appBar: AppBar(
@@ -545,11 +516,17 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     return DropdownButtonFormField<int>(
       value: _selectedProducerId,
       decoration: InputDecoration(
-        labelText: 'Производитель',
+        labelText: 'Производитель *',
         border: const OutlineInputBorder(),
         filled: widget.isViewMode,
         fillColor: widget.isViewMode ? Colors.grey.shade100 : null,
       ),
+      validator: (value) {
+        if (value == null) {
+          return 'Выберите производителя';
+        }
+        return null;
+      },
       items: [
         const DropdownMenuItem(value: null, child: Text('Выберите производителя')),
         ..._producers.map((producer) => DropdownMenuItem(
@@ -656,7 +633,6 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
           options = (attribute.options as List).map((e) => e.toString()).toList();
         }
       } catch (e) {
-        print('🔴 ProductInflowFormPage: Ошибка парсинга опций: $e');
       }
     }
 

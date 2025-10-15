@@ -49,7 +49,6 @@ class SalesRepositoryImpl implements SalesRepository {
 
   @override
   Future<void> cancelSale(int id) async {
-    print('🔵 SalesRepository: Запрос на отмену продажи ID: $id');
     return await _remoteDataSource.cancelSale(id);
   }
 }

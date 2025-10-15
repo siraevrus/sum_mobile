@@ -646,7 +646,6 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   
   /// Обновить все данные
   Future<void> _refreshData() async {
-    print('🔄 Обновление данных дашборда...');
     await Future.wait([
       ref.refresh(dashboardStatsNoCachingProvider.future), // Используем новый провайдер
       ref.refresh(dashboardStatsProvider.future),
@@ -654,7 +653,6 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       ref.refresh(topProductsProvider().future),
       ref.refresh(recentActivitiesProvider().future),
     ]);
-    print('✅ Данные дашборда обновлены');
   }
   
   /// Форматирование числа

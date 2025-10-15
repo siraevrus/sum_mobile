@@ -20,7 +20,6 @@ class DashboardStats extends _$DashboardStats {
   
   /// Обновить статистику
   Future<void> refresh() async {
-    print('🔄 DashboardStats: Принудительное обновление...');
     // Инвалидируем кэш
     ref.invalidateSelf();
     state = const AsyncValue.loading();
@@ -31,10 +30,8 @@ class DashboardStats extends _$DashboardStats {
 /// Провайдер для прямого получения статистики без кэширования (для отладки)
 @riverpod
 Future<models.DashboardStats> dashboardStatsNoCaching(DashboardStatsNoCachingRef ref) async {
-  print('🚀 Прямой вызов API без кэширования...');
   final dataSource = ref.read(dashboardRemoteDataSourceProvider);
   final stats = await dataSource.getDashboardStats();
-  print('✅ Получена статистика: Компании=${stats.companiesActive}, Сотрудники=${stats.employeesActive}, Склады=${stats.warehousesActive}, Товары=${stats.productsTotal}, В пути=${stats.productsInTransit}, Запросы=${stats.requestsPending}');
   return stats;
 }
 

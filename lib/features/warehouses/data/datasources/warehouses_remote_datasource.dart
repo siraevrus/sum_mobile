@@ -46,7 +46,6 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
     String? search,
   }) async {
     try {
-      print('🔵 WarehousesRemoteDataSource: getWarehouses вызван с параметрами: page=$page, perPage=$perPage');
       final queryParams = <String, dynamic>{
         'page': page,
         'per_page': perPage,
@@ -56,9 +55,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
       if (isActive != null) queryParams['is_active'] = isActive;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
       
-      print('🔵 WarehousesRemoteDataSource: Отправляем запрос на /warehouses с параметрами: $queryParams');
       final response = await _dio.get('/warehouses', queryParameters: queryParams);
-      print('🔵 WarehousesRemoteDataSource: Получен ответ: ${response.statusCode}');
       
       return PaginatedResponse<WarehouseModel>.fromJson(
         response.data,
@@ -152,21 +149,38 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
   }) async {
     try {
       final queryParams = {
+        'aggregate': 'true',
+        'status': 'in_stock',
+        'warehouse_id': id.toString(),
         'page': page,
         'per_page': perPage,
       };
-      
-      final response = await _dio.get('/warehouses/$id/products', 
+
+      final response = await _dio.get('/products',
         queryParameters: queryParams);
-      
+
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
-        if (data.containsKey('data')) {
-          return List<Map<String, dynamic>>.from(data['data']);
+        if (data.containsKey('data') && data['data'] is List) {
+          final products = data['data'] as List;
+          // Преобразуем данные товаров в ожидаемый формат
+          return products.map((product) {
+            if (product is Map<String, dynamic>) {
+              final productId = product['id'];
+              final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
+              return {
+                'id': id,
+                'name': product['name'] ?? 'Без названия',
+                'quantity': product['available_quantity'] ?? product['quantity'] ?? 0,
+                'warehouse_id': id,
+              };
+            }
+            return <String, dynamic>{};
+          }).toList();
         }
       }
-      
-      return List<Map<String, dynamic>>.from(response.data);
+
+      return <Map<String, dynamic>>[];
     } catch (e) {
       throw _handleError(e);
     }

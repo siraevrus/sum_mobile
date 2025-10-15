@@ -39,7 +39,6 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         });
       }
     } catch (e) {
-      print('Ошибка загрузки компаний: $e');
     }
   }
 

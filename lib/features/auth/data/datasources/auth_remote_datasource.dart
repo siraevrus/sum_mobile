@@ -43,7 +43,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      print('🔵 AuthRemoteDataSource: Отправляем запрос логина для $email');
       
       final response = await _dio.post(
         '/auth/login',
@@ -53,11 +52,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ).toJson(),
       );
       
-      print('🟢 AuthRemoteDataSource: Получен ответ от API: ${response.statusCode}');
       
       return AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка: $e');
       throw ErrorHandler.handleError(e);
     }
   }
@@ -65,31 +62,24 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     try {
-      print('🔵 AuthRemoteDataSource: Отправляем запрос logout');
       
       await _dio.post('/auth/logout');
       
-      print('🟢 AuthRemoteDataSource: Logout успешен');
     } on DioException catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка logout: ${e.message}');
       // Не выбрасываем исключение для logout, так как локальные данные все равно нужно очистить
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Неожиданная ошибка logout: $e');
     }
   }
   
   @override
   Future<UserModel> getCurrentUser() async {
     try {
-      print('🔵 AuthRemoteDataSource: Получаем текущего пользователя');
       
       final response = await _dio.get('/auth/me');
       
-      print('🟢 AuthRemoteDataSource: Получены данные пользователя');
       
       return UserModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка получения пользователя: $e');
       throw ErrorHandler.handleError(e);
     }
   }
@@ -120,7 +110,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final responseData = response.data as Map<String, dynamic>;
       return UserModel.fromJson(responseData['user'] as Map<String, dynamic>);
     } catch (e) {
-      print('🔴 AuthRemoteDataSource: Ошибка обновления профиля: $e');
       throw ErrorHandler.handleError(e);
     }
   }

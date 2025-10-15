@@ -52,7 +52,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
     String? status,
   }) async {
     try {
-      print('🔵 Запрос остатков на складах...');
       
       final queryParams = <String, dynamic>{
         'page': page,
@@ -65,12 +64,10 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
         queryParams['warehouse_id'] = warehouseId;
       }
       
-      print('🔵 Параметры запроса к /products: $queryParams');
       
       // Используем эндпоинт /products со статусом in_stock
       final response = await _dio.get('/products', queryParameters: queryParams);
       
-      print('📥 Ответ API товаров (поступление): ${response.data}');
       
       // Парсим ответ как список товаров
       if (response.data is Map<String, dynamic> && response.data['data'] is List) {
@@ -83,7 +80,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
         throw const ServerException('Неожиданный формат ответа для товаров');
       }
     } catch (e) {
-      print('🔴 Ошибка получения остатков: $e');
       throw _handleError(e);
     }
   }
@@ -91,11 +87,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<List<InventoryProducerModel>> getProducers() async {
     try {
-      print('🔵 Запрос списка производителей с агрегацией...');
       
       final response = await _dio.get('/stocks/producers');
       
-      print('📥 Ответ API производителей: ${response.data}');
       
       // Парсим ответ
       if (response.data is Map<String, dynamic> && response.data['data'] is List) {
@@ -107,7 +101,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       throw const ServerException('Неожиданный формат ответа для производителей');
     } catch (e) {
-      print('🔴 Ошибка получения производителей: $e');
       throw _handleError(e);
     }
   }
@@ -115,7 +108,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15}) async {
     try {
-      print('🔵 Запрос деталей производителя $producerId...');
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
@@ -123,11 +115,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       final response = await _dio.get('/stocks/by-producer/$producerId', queryParameters: queryParams);
       
-      print('📥 Ответ API деталей производителя: ${response.data}');
       
       return PaginatedStockDetails.fromJson(response.data);
     } catch (e) {
-      print('🔴 Ошибка получения деталей производителя: $e');
       throw _handleError(e);
     }
   }
@@ -135,11 +125,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<List<InventoryWarehouseModel>> getWarehouses() async {
     try {
-      print('🔵 Запрос списка складов с агрегацией...');
       
       final response = await _dio.get('/stocks/warehouses');
       
-      print('📥 Ответ API складов: ${response.data}');
       
       // Парсим ответ
       if (response.data is Map<String, dynamic> && response.data['data'] is List) {
@@ -151,7 +139,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       throw const ServerException('Неожиданный формат ответа для складов');
     } catch (e) {
-      print('🔴 Ошибка получения складов: $e');
       throw _handleError(e);
     }
   }
@@ -159,7 +146,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15}) async {
     try {
-      print('🔵 Запрос деталей склада $warehouseId...');
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
@@ -167,11 +153,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       final response = await _dio.get('/stocks/by-warehouse/$warehouseId', queryParameters: queryParams);
       
-      print('📥 Ответ API деталей склада: ${response.data}');
       
       return PaginatedStockDetails.fromJson(response.data);
     } catch (e) {
-      print('🔴 Ошибка получения деталей склада: $e');
       throw _handleError(e);
     }
   }
@@ -179,11 +163,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<List<InventoryCompanyModel>> getCompanies() async {
     try {
-      print('🔵 Запрос списка компаний с агрегацией...');
       
       final response = await _dio.get('/stocks/companies');
       
-      print('📥 Ответ API компаний: ${response.data}');
       
       // Парсим ответ
       if (response.data is Map<String, dynamic> && response.data['data'] is List) {
@@ -195,7 +177,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       throw const ServerException('Неожиданный формат ответа для компаний');
     } catch (e) {
-      print('🔴 Ошибка получения компаний: $e');
       throw _handleError(e);
     }
   }
@@ -203,7 +184,6 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   @override
   Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15}) async {
     try {
-      print('🔵 Запрос деталей компании $companyId...');
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
@@ -211,11 +191,9 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
       
       final response = await _dio.get('/stocks/by-company/$companyId', queryParameters: queryParams);
       
-      print('📥 Ответ API деталей компании: ${response.data}');
       
       return PaginatedStockDetails.fromJson(response.data);
     } catch (e) {
-      print('🔴 Ошибка получения деталей компании: $e');
       throw _handleError(e);
     }
   }

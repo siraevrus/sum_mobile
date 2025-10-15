@@ -226,12 +226,10 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
     
     return companiesAsyncValue.when(
       data: (companies) {
-        print('🔵 Загружено компаний: ${companies.length}');
         return DropdownButtonFormField<int>(
           dropdownColor: Colors.white,
           value: _selectedCompanyId,
           onChanged: (value) {
-            print('🔵 Выбрана компания ID: $value');
             setState(() => _selectedCompanyId = value);
           },
           decoration: InputDecoration(
@@ -257,7 +255,6 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
                 )
               ]
             : companies.map((company) {
-                print('🔵 Компания: ${company.name} (ID: ${company.id})');
                 return DropdownMenuItem(
                   value: company.id,
                   child: Text(company.name),
@@ -280,8 +277,6 @@ class _WarehouseFormPageState extends ConsumerState<WarehouseFormPage> {
         ),
       ),
       error: (error, stack) {
-        print('🔴 Ошибка загрузки компаний: $error');
-        print('🔴 Stack trace: $stack');
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

@@ -14,20 +14,16 @@ class LoginPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Слушаем изменения состояния аутентификации
     ref.listen<AuthState>(authProvider, (previous, next) {
-      print('🟡 LoginPage: Состояние изменилось: ${previous?.runtimeType} → ${next.runtimeType}');
       
       next.maybeWhen(
         authenticated: (user, token) {
           // Успешная авторизация - переходим на секцию по роли
-          print('🟢 LoginPage: Успешная авторизация для ${user.email}, переходим по роли');
           final target = user.role == UserRole.admin ? '/dashboard' : '/inventory';
           if (context.mounted) {
-            print('🟢 LoginPage: Выполняем go на $target');
             context.go(target);
           }
         },
         error: (message) {
-          print('🔴 LoginPage: Ошибка авторизации: $message');
           // Показываем сообщение об ошибке пользователю
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -39,10 +35,8 @@ class LoginPage extends ConsumerWidget {
           }
         },
         loading: () {
-          print('🟡 LoginPage: Состояние loading');
         },
         orElse: () {
-          print('🟡 LoginPage: Другое состояние: ${next.runtimeType}');
         },
       );
     });

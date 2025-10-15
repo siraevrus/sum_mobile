@@ -16,11 +16,9 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
   @override
   Future<List<ProductTemplateModel>> getProductTemplates() async {
     try {
-      print('🔵 ProductTemplateRemoteDataSource: Запрос GET /product-templates');
       
       final response = await _dio.get('/product-templates');
       
-      print('🔵 ProductTemplateRemoteDataSource: Ответ API /product-templates: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -28,7 +26,6 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
         if (data['success'] == true && data['data'] != null) {
           final templatesList = data['data'] as List<dynamic>;
           final templates = templatesList.map((json) => ProductTemplateModel.fromJson(json as Map<String, dynamic>)).toList();
-          print('🔵 ProductTemplateRemoteDataSource: Загружено шаблонов: ${templates.length}');
           return templates;
         } else {
           throw Exception('Некорректный формат ответа API');
@@ -37,7 +34,6 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
         throw Exception('Ожидался объект, получен ${response.data.runtimeType}');
       }
     } catch (e) {
-      print('🔴 ProductTemplateRemoteDataSource: Ошибка загрузки шаблонов товаров: $e');
       rethrow;
     }
   }
@@ -45,11 +41,9 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
   @override
   Future<ProductTemplateModel> getProductTemplate(int id) async {
     try {
-      print('🔵 ProductTemplateRemoteDataSource: Запрос GET /product-templates/$id');
       
       final response = await _dio.get('/product-templates/$id');
       
-      print('🔵 ProductTemplateRemoteDataSource: Ответ API /product-templates/$id: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -57,7 +51,6 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
         if (data['success'] == true && data['data'] != null) {
           final templateData = data['data'] as Map<String, dynamic>;
           final template = ProductTemplateModel.fromJson(templateData);
-          print('🔵 ProductTemplateRemoteDataSource: Загружен шаблон: ${template.name}');
           return template;
         } else {
           throw Exception('Некорректный формат ответа API');
@@ -66,7 +59,6 @@ class ProductTemplateRemoteDataSourceImpl implements ProductTemplateRemoteDataSo
         throw Exception('Ожидался объект, получен ${response.data.runtimeType}');
       }
     } catch (e) {
-      print('🔴 ProductTemplateRemoteDataSource: Ошибка загрузки шаблона товара ID $id: $e');
       rethrow;
     }
   }

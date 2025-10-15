@@ -33,20 +33,16 @@ class AcceptanceRemoteDataSourceImpl implements AcceptanceRemoteDataSource {
       
       // include не нужен — API уже возвращает связанные объекты
       
-      print('🔵 Запрос на /products (приемка) с параметрами: $queryParams');
       final response = await _dio.get('/products', queryParameters: queryParams);
       
-      print('🔵 Ответ API /products (приемка): ${response.data.toString().substring(0, response.data.toString().length > 500 ? 500 : response.data.toString().length)}...');
       
       return PaginatedResponse<AcceptanceModel>.fromJson(
         response.data,
         (json) {
-          print('🔵 Парсинг товара приемки: $json');
           return AcceptanceModel.fromJson(json as Map<String, dynamic>);
         },
       );
     } catch (e) {
-      print('🔴 Ошибка в getProducts (приемка): $e');
       throw _handleError(e);
     }
   }
@@ -66,14 +62,11 @@ class AcceptanceRemoteDataSourceImpl implements AcceptanceRemoteDataSource {
   @override
   Future<AcceptanceModel> createProduct(CreateAcceptanceRequest request) async {
     try {
-      print('🔵 Создание товара приемки: ${request.toJson()}');
       final response = await _dio.post('/products', data: request.toJson());
       
-      print('🔵 Ответ создания товара приемки: ${response.data}');
       
       return AcceptanceModel.fromJson(response.data['product']);
     } catch (e) {
-      print('🔴 Ошибка создания товара приемки: $e');
       throw _handleError(e);
     }
   }
@@ -81,14 +74,11 @@ class AcceptanceRemoteDataSourceImpl implements AcceptanceRemoteDataSource {
   @override
   Future<AcceptanceModel> updateProduct(int id, UpdateAcceptanceRequest request) async {
     try {
-      print('🔵 Обновление товара приемки $id: ${request.toJson()}');
       final response = await _dio.put('/products/$id', data: request.toJson());
       
-      print('🔵 Ответ обновления товара приемки: ${response.data}');
       
       return AcceptanceModel.fromJson(response.data['product']);
     } catch (e) {
-      print('🔴 Ошибка обновления товара приемки: $e');
       throw _handleError(e);
     }
   }
@@ -96,11 +86,8 @@ class AcceptanceRemoteDataSourceImpl implements AcceptanceRemoteDataSource {
   @override
   Future<void> deleteProduct(int id) async {
     try {
-      print('🔵 Удаление товара приемки $id');
       await _dio.delete('/products/$id');
-      print('🔵 Товар приемки $id успешно удален');
     } catch (e) {
-      print('🔴 Ошибка удаления товара приемки: $e');
       throw _handleError(e);
     }
   }

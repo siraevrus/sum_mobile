@@ -218,7 +218,7 @@ class _StockMovementFormPageState extends ConsumerState<StockMovementFormPage> {
     final quantity = double.parse(_quantityController.text);
     
     await ref.read(stockMovementNotifierProvider.notifier).createStockMovement(
-      inventoryId: _selectedInventory!.id,
+      stockId: _selectedInventory!.id,
       type: _selectedType!,
       quantity: quantity,
       reason: _reasonController.text.isEmpty ? null : _reasonController.text,

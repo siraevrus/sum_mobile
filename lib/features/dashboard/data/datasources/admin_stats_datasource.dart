@@ -33,7 +33,6 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
         return ProductStatsResponse(success: true, data: productData);
       }
     } on DioException catch (e) {
-      print('⚠️ API /products/stats не работает: ${e.response?.statusCode} - ${e.message}.');
       throw Exception('Нет данных о товарах');
     }
   }
@@ -42,7 +41,6 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
   Future<SalesStatsResponse> getSalesStats() async {
     try {
       final response = await _dio.get('/sales/stats');
-      print('🟢 SalesStats API response: ${response.data}');
       
       // Попробуем разные варианты структуры ответа
       if (response.data is Map<String, dynamic>) {
@@ -62,10 +60,8 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
       
       return SalesStatsResponse(success: true, data: SalesStatsModel.fromJson(response.data));
     } on DioException catch (e) {
-      print('⚠️ API /sales/stats не работает: ${e.response?.statusCode} - ${e.message}.');
       throw Exception('Нет данных о продажах');
     } catch (e) {
-      print('⚠️ Ошибка парсинга /sales/stats: $e.');
       throw Exception('Нет данных о продажах');
     }
   }
@@ -75,7 +71,6 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
     try {
       // API не предоставляет эндпоинт /users/stats, используем /users для получения базовой статистики
       final response = await _dio.get('/users');
-      print('🟢 Users API response for stats: ${response.data}');
       
       final usersData = response.data is Map<String, dynamic> && response.data['data'] != null
           ? response.data['data'] as List<dynamic>
@@ -112,10 +107,8 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
         ),
       );
     } on DioException catch (e) {
-      print('⚠️ API /users не работает: ${e.response?.statusCode} - ${e.message}.');
       throw Exception('Нет данных о пользователях');
     } catch (e) {
-      print('⚠️ Ошибка обработки пользователей: $e.');
       throw Exception('Нет данных о пользователях');
     }
   }
@@ -125,7 +118,6 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
     try {
       // API не предоставляет эндпоинт /warehouses/stats, используем /warehouses для получения базовой статистики
       final response = await _dio.get('/warehouses');
-      print('🟢 Warehouses API response for stats: ${response.data}');
       
       final warehousesData = response.data is Map<String, dynamic> && response.data['data'] != null
           ? response.data['data'] as List<dynamic>
@@ -156,10 +148,8 @@ class AdminStatsRemoteDataSource implements AdminStatsDataSource {
         ),
       );
     } on DioException catch (e) {
-      print('⚠️ API /warehouses не работает: ${e.response?.statusCode} - ${e.message}.');
       throw Exception('Нет данных о складах');
     } catch (e) {
-      print('⚠️ Ошибка обработки складов: $e.');
       throw Exception('Нет данных о складах');
     }
   }

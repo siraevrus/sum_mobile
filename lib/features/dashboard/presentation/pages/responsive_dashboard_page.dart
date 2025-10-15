@@ -219,7 +219,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Складской учет',
+                      'Expert Wood',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,

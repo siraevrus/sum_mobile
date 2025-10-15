@@ -126,17 +126,12 @@ class CancelSale extends _$CancelSale {
     final repository = ref.watch(salesRepositoryProvider);
 
     try {
-      print('🔵 CancelSaleProvider: Начинаем отмену продажи ID: $id');
       await repository.cancelSale(id);
-      print('🔵 CancelSaleProvider: Продажа успешно отменена');
       
       // Устанавливаем успешное состояние
       // НЕ инвалидируем провайдеры здесь - это делается в UI после получения результата
       state = const AsyncValue.data(true);
-      print('🔵 CancelSaleProvider: Состояние установлено в success');
     } catch (e, stackTrace) {
-      print('🔴 CancelSaleProvider: Ошибка отмены продажи: $e');
-      print('🔴 CancelSaleProvider: Stack trace: $stackTrace');
       state = AsyncValue.error(e, stackTrace);
       rethrow;
     }

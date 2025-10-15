@@ -91,7 +91,6 @@ ProductTemplateRef? _parseProductTemplate(dynamic value) {
     try {
       return ProductTemplateRef.fromJson(value);
     } catch (e) {
-      print('🔴 Ошибка парсинга template: $e');
       return null;
     }
   }
@@ -105,7 +104,6 @@ WarehouseRef? _parseWarehouse(dynamic value) {
     try {
       return WarehouseRef.fromJson(value);
     } catch (e) {
-      print('🔴 Ошибка парсинга warehouse: $e');
       return null;
     }
   }
@@ -119,7 +117,6 @@ UserRef? _parseUser(dynamic value) {
     try {
       return UserRef.fromJson(value);
     } catch (e) {
-      print('🔴 Ошибка парсинга creator: $e');
       return null;
     }
   }
@@ -133,7 +130,6 @@ ProducerRef? _parseProducer(dynamic value) {
     try {
       return ProducerRef.fromJson(value);
     } catch (e) {
-      print('🔴 Ошибка парсинга producer: $e');
       return null;
     }
   }

@@ -33,20 +33,16 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
       
       // include не нужен — API уже возвращает связанные объекты
       
-      print('🔵 Запрос на /products с параметрами: $queryParams');
       final response = await _dio.get('/products', queryParameters: queryParams);
       
-      print('🔵 Ответ API /products: ${response.data.toString().substring(0, response.data.toString().length > 500 ? 500 : response.data.toString().length)}...');
       
       return PaginatedResponse<ProductInflowModel>.fromJson(
         response.data,
         (json) {
-          print('🔵 Парсинг товара: $json');
           return ProductInflowModel.fromJson(json as Map<String, dynamic>);
         },
       );
     } catch (e) {
-      print('🔴 Ошибка в getProducts: $e');
       throw _handleError(e);
     }
   }
@@ -66,14 +62,11 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
   @override
   Future<ProductInflowModel> createProduct(CreateProductInflowRequest request) async {
     try {
-      print('🔵 Создание товара: ${request.toJson()}');
       final response = await _dio.post('/products', data: request.toJson());
       
-      print('🔵 Ответ создания товара: ${response.data}');
       
       return ProductInflowModel.fromJson(response.data['product']);
     } catch (e) {
-      print('🔴 Ошибка создания товара: $e');
       throw _handleError(e);
     }
   }
@@ -81,14 +74,11 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
   @override
   Future<ProductInflowModel> updateProduct(int id, UpdateProductInflowRequest request) async {
     try {
-      print('🔵 Обновление товара $id: ${request.toJson()}');
       final response = await _dio.put('/products/$id', data: request.toJson());
       
-      print('🔵 Ответ обновления товара: ${response.data}');
       
       return ProductInflowModel.fromJson(response.data['product']);
     } catch (e) {
-      print('🔴 Ошибка обновления товара: $e');
       throw _handleError(e);
     }
   }
@@ -96,11 +86,8 @@ class ProductsInflowRemoteDataSourceImpl implements ProductsInflowRemoteDataSour
   @override
   Future<void> deleteProduct(int id) async {
     try {
-      print('🔵 Удаление товара $id');
       await _dio.delete('/products/$id');
-      print('🔵 Товар $id успешно удален');
     } catch (e) {
-      print('🔴 Ошибка удаления товара: $e');
       throw _handleError(e);
     }
   }

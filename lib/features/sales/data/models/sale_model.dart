@@ -103,6 +103,7 @@ class CreateSaleRequest with _$CreateSaleRequest {
     @JsonKey(name: 'customer_phone') String? customerPhone,
     @JsonKey(name: 'customer_email') String? customerEmail,
     @JsonKey(name: 'customer_address') String? customerAddress,
+    @JsonKey(name: 'composite_product_key') String? compositeProductKey,
   }) = _CreateSaleRequest;
 
   factory CreateSaleRequest.fromJson(Map<String, dynamic> json) =>

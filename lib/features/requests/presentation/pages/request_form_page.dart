@@ -92,7 +92,6 @@ class _RequestFormPageState extends ConsumerState<RequestFormPage> {
 
       setState(() {});
     } catch (e) {
-      print('Ошибка загрузки данных: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

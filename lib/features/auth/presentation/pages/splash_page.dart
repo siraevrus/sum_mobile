@@ -56,7 +56,6 @@ class _SplashPageState extends ConsumerState<SplashPage>
     if (_authInitialized) return;
     _authInitialized = true;
     
-    print('🟡 SplashPage: Единственная инициализация проверки авторизации');
     
     // Задержка для анимации, затем проверяем авторизацию
     Future.delayed(const Duration(milliseconds: 800), () {

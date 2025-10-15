@@ -26,7 +26,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? false) {
-      print('🔵 LoginForm: Начинаем логин для ${_emailController.text}');
       ref.read(authProvider.notifier).login(
         email: _emailController.text,
         password: _passwordController.text,

@@ -58,7 +58,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                 ),
                 SizedBox(width: 12),
                 Text(
-                  'Складской учет',
+                  'Expert Wood',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -141,39 +141,6 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     isSelected: widget.selectedSection == 'dashboard',
                   ),
                 
-                // Раздел "Инфо" с подменю - только админ
-                if (_hasAccess(['admin']))
-                  _buildExpandableMenuItem(
-                    icon: Icons.info_outline,
-                    title: 'Инфо',
-                    isExpanded: _infoExpanded,
-                    onTap: () {
-                      setState(() {
-                        _infoExpanded = !_infoExpanded;
-                      });
-                    },
-                    children: [
-                      _buildSubMenuItem(
-                        icon: Icons.business,
-                        title: 'Компании',
-                        section: 'companies',
-                        isSelected: widget.selectedSection == 'companies',
-                      ),
-                      _buildSubMenuItem(
-                        icon: Icons.warehouse,
-                        title: 'Склад',
-                        section: 'warehouses',
-                        isSelected: widget.selectedSection == 'warehouses',
-                      ),
-                      _buildSubMenuItem(
-                        icon: Icons.people,
-                        title: 'Сотрудники',
-                        section: 'employees',
-                        isSelected: widget.selectedSection == 'employees',
-                      ),
-                    ],
-                  ),
-                
                 // Производители - только админ
                 if (_hasAccess(['admin']))
                   _buildMenuItem(
@@ -222,6 +189,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     section: 'inventory',
                     isSelected: widget.selectedSection == 'inventory',
                   ),
+
                 // Реализация - админ, работник склада
                 if (_hasAccess(['admin', 'warehouse_worker']))
                   _buildMenuItem(
@@ -229,6 +197,39 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     title: 'Реализация',
                     section: 'sales',
                     isSelected: widget.selectedSection == 'sales',
+                  ),
+
+                // Раздел "Инфо" с подменю - только админ
+                if (_hasAccess(['admin']))
+                  _buildExpandableMenuItem(
+                    icon: Icons.info_outline,
+                    title: 'Инфо',
+                    isExpanded: _infoExpanded,
+                    onTap: () {
+                      setState(() {
+                        _infoExpanded = !_infoExpanded;
+                      });
+                    },
+                    children: [
+                      _buildSubMenuItem(
+                        icon: Icons.business,
+                        title: 'Компании',
+                        section: 'companies',
+                        isSelected: widget.selectedSection == 'companies',
+                      ),
+                      _buildSubMenuItem(
+                        icon: Icons.warehouse,
+                        title: 'Склад',
+                        section: 'warehouses',
+                        isSelected: widget.selectedSection == 'warehouses',
+                      ),
+                      _buildSubMenuItem(
+                        icon: Icons.people,
+                        title: 'Сотрудники',
+                        section: 'employees',
+                        isSelected: widget.selectedSection == 'employees',
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -400,9 +401,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
 
   bool _hasAccess(List<String> allowedRoles) {
     final userRole = _getRoleCode(widget.currentUser.role);
-    print('🔍 DEBUG: Проверка доступа - Роль пользователя: $userRole, Разрешенные роли: $allowedRoles');
     final hasAccess = allowedRoles.contains(userRole);
-    print('🔍 DEBUG: Результат проверки доступа: $hasAccess');
     return hasAccess;
   }
 

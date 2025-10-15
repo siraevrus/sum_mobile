@@ -40,12 +40,10 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     if (_currentProduct == null) return;
 
     try {
-      print('🔵 ProductInflowDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
       
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/products/${_currentProduct!.id}');
       
-      print('🔵 ProductInflowDetailPage: Обновленные данные товара: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -53,13 +51,11 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         if (data['success'] == true && data['data'] != null) {
           final productData = data['data'] as Map<String, dynamic>;
           _currentProduct = ProductInflowModel.fromJson(productData);
-          print('🔵 ProductInflowDetailPage: Товар успешно обновлен');
         }
       }
       
       setState(() {});
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка обновления данных товара: $e');
     }
   }
 
@@ -69,16 +65,13 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     setState(() => _isLoadingAttributes = true);
     
     try {
-      print('🔵 ProductInflowDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
       
       // Отправляем запрос на /product-templates/{id}
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/product-templates/${_product.productTemplateId}');
       
-      print('🔵 ProductInflowDetailPage: Ответ API /product-templates: ${response.data}');
       
       final data = response.data;
-      print('🔵 ProductInflowDetailPage: Тип ответа: ${data.runtimeType}');
       
       // Проверяем структуру ответа - может быть {success: true, data: {...}} или прямая структура
       Map<String, dynamic>? templateData;
@@ -86,11 +79,9 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         if (data['success'] == true && data['data'] != null) {
           // Формат {success: true, data: {...}}
           templateData = data['data'] as Map<String, dynamic>;
-          print('🔵 ProductInflowDetailPage: Используем data из success/data структуры');
         } else {
           // Прямой формат
           templateData = data;
-          print('🔵 ProductInflowDetailPage: Используем прямой формат');
         }
       }
       
@@ -108,31 +99,23 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
           }
         }
         
-        print('🔵 ProductInflowDetailPage: Загружены названия атрибутов: $attributeNames');
         setState(() {
           _attributeNames = attributeNames;
           _isLoadingAttributes = false;
         });
       } else {
-        print('🔵 ProductInflowDetailPage: Атрибуты не найдены в ответе');
         setState(() {
           _attributeNames = {};
           _isLoadingAttributes = false;
         });
       }
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка загрузки шаблона товара: $e');
       setState(() => _isLoadingAttributes = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 ProductInflowDetailPage: build вызван для товара ID: ${_product.id}');
-    print('🔵 ProductInflowDetailPage: product.name = ${_product.name}');
-    print('🔵 ProductInflowDetailPage: product.warehouse = ${_product.warehouse?.name}');
-    print('🔵 ProductInflowDetailPage: product.producer = ${_product.producer?.name}');
-    print('🔵 ProductInflowDetailPage: product.template = ${_product.template?.name}');
     
     return Scaffold(
       appBar: AppBar(
@@ -175,7 +158,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                 _buildInfoRow('Создатель', _product.creator?.name ?? 'Не указан'),
                 _buildInfoRow('Шаблон товара', _product.template?.name ?? 'Не указан'),
                 _buildInfoRow('Номер транспорта', _product.transportNumber ?? 'Не указан'),
-                _buildInfoRow('Место отгрузки', _product.shippingLocation ?? 'Не указано'),
                 _buildInfoRow('Дата отгрузки', _product.shippingDate != null 
                     ? _formatDate(_product.shippingDate!) 
                     : 'Не указана'),
@@ -293,7 +275,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     required String title,
     required List<Widget> children,
   }) {
-    print('🔵 ProductInflowDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     try {
       return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,7 +309,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       ],
     );
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _buildSection "$title": $e');
       return Container(
         padding: const EdgeInsets.all(16),
         child: Text('Ошибка отображения секции: $e'),
@@ -337,7 +317,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
   }
 
   Widget _buildInfoRow(String label, String value) {
-    print('🔵 ProductInflowDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     try {
       return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -369,7 +348,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
       ),
     );
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _buildInfoRow "$label": $e');
       return Container(
         padding: const EdgeInsets.all(8),
         child: Text('Ошибка отображения: $e'),
@@ -422,7 +400,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
 
   Future<void> _openDocument(String path) async {
     try {
-      print('🔵 ProductInflowDetailPage: Скачиваем документ: $path');
       
       // Формируем полную ссылку на документ
       String documentUrl;
@@ -439,7 +416,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
       
-      print('🔵 ProductInflowDetailPage: Полная ссылка на документ: $documentUrl');
       
       // Показываем диалог загрузки
       showDialog(
@@ -517,7 +493,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         }
       } catch (e) {
         // Если внешнее хранилище недоступно, используем внутреннее
-        print('🔵 ProductInflowDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
         directory = await getApplicationDocumentsDirectory();
         downloadsDir = Directory('${directory.path}/Downloads');
       }
@@ -560,10 +535,8 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         );
       }
       
-      print('🔵 ProductInflowDetailPage: Документ успешно сохранен: ${file.path}');
       
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка скачивания документа: $e');
       
       // Закрываем диалог загрузки если он открыт
       if (mounted && Navigator.of(context).canPop()) {
@@ -616,13 +589,10 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
 
   String _formatDateTime(String dateTimeString) {
     try {
-      print('🔵 ProductInflowDetailPage: _formatDateTime вызван для "$dateTimeString"');
       final dateTime = DateTime.parse(dateTimeString);
       final result = '${dateTime.day.toString().padLeft(2, '0')}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-      print('🔵 ProductInflowDetailPage: _formatDateTime результат: "$result"');
       return result;
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка в _formatDateTime: $e');
       return dateTimeString;
     }
   }
@@ -670,37 +640,15 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
   /// Подтвердить корректировку товара
   Future<void> _confirmCorrection() async {
     try {
-      print('🔵 ProductInflowDetailPage: Подтверждаем корректировку товара ID: ${_product.id}');
-      print('🔵 ProductInflowDetailPage: Текущий статус товара: ${_product.status}');
-      print('🔵 ProductInflowDetailPage: Текущий correction_status: ${_product.correctionStatus}');
-
       final dio = ref.read(dioClientProvider);
 
-      // Пробуем альтернативный endpoint - возможно, сервер ожидает другой маршрут
-      // Попробуем PUT запрос вместо POST
-      try {
-        final response = await dio.put(
-          '/products/${_product.id}',
-          data: {
-            'correction_status': 'revised',
-          },
-        );
-        print('🔵 ProductInflowDetailPage: PUT запрос успешен');
-      } catch (putError) {
-        print('🔴 ProductInflowDetailPage: PUT запрос не удался, пробуем POST: $putError');
-
-        // Если PUT не работает, пробуем POST
-        final response = await dio.post(
-          '/products/${_product.id}/correction-confirm',
-          data: {
-            'correction_status': 'revised',
-          },
-        );
-
-        print('🔵 ProductInflowDetailPage: POST запрос успешен');
-      }
-
-      print('🔵 ProductInflowDetailPage: Ответ подтверждения корректировки получен');
+      // Отправляем POST запрос на подтверждение корректировки
+      final response = await dio.post(
+        '/products/${_product.id}/correction-confirm',
+        data: {
+          'correction_status': 'revised',
+        },
+      );
 
       // Закрываем диалог
       Navigator.of(context).pop();
@@ -713,8 +661,6 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      print('🔴 ProductInflowDetailPage: Ошибка подтверждения корректировки: $e');
-
       // Закрываем диалог
       Navigator.of(context).pop();
 

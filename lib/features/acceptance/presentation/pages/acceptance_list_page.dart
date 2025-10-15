@@ -326,13 +326,6 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
       page: 1,
     );
     
-    print('🔵 AcceptanceListPage: Применяем фильтры:');
-    print('🔵 - Поиск: ${filters.search}');
-    print('🔵 - Склад: ${filters.warehouseId}');
-    print('🔵 - Производитель: ${filters.producerId}');
-    print('🔵 - Дата от: ${filters.arrivalDateFrom}');
-    print('🔵 - Дата до: ${filters.arrivalDateTo}');
-    print('🔵 - Параметры запроса: ${filters.toQueryParams()}');
     
     ref.read(acceptanceNotifierProvider.notifier).filterProducts(filters);
   }
@@ -558,7 +551,6 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
       final year = date.year.toString();
       return '$day.$month.$year';
     } catch (e) {
-      print('🔴 Ошибка форматирования даты $dateString: $e');
       return dateString; // Возвращаем исходное значение если не удалось распарсить
     }
   }

@@ -156,9 +156,19 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     try {
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       _warehouseProducts = await warehousesDataSource.getWarehouseProducts(warehouseId);
+      
+      // Отладочная информация
+      print('Загружено товаров: ${_warehouseProducts.length}');
+      for (final product in _warehouseProducts) {
+        print('Товар: ${product['name']}, ID: ${product['id']}, тип ID: ${product['id'].runtimeType}');
+      }
+      
       setState(() {});
     } catch (e) {
-      print('Ошибка загрузки товаров склада: $e');
+      print('Ошибка загрузки товаров: $e');
+      // Очищаем список товаров при ошибке
+      _warehouseProducts.clear();
+      setState(() {});
     }
   }
 
@@ -236,16 +246,16 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           // Основная информация
           _buildViewSection('Основная информация', [
             _buildViewField('Номер продажи', sale.saleNumber ?? 'Не указан'),
-            _buildViewField('Склад', sale.warehouse?.name ?? 'ID: ${sale.warehouseId}'),
+            _buildViewField('Дата продажи', _formatDate(sale.saleDate)),
             _buildViewField('Товар', sale.product?.name ?? 'ID: ${sale.productId}'),
             _buildViewField('Количество', sale.quantity.toInt().toString()),
-            _buildViewField('Цена за единицу', '${sale.unitPrice} ${sale.currency}'),
+            _buildViewField('Склад', sale.warehouse?.name ?? 'ID: ${sale.warehouseId}'),
+            _buildViewField('Сумма (нал)', '${sale.cashAmount} ${sale.currency}'),
+            _buildViewField('Сумма (безнал)', '${sale.nocashAmount} ${sale.currency}'),
             _buildViewField('Общая сумма', '${sale.totalPrice} ${sale.currency}'),
-            _buildViewField('Сумма наличными', '${sale.cashAmount} ${sale.currency}'),
-            _buildViewField('Сумма безналичными', '${sale.nocashAmount} ${sale.currency}'),
+            _buildViewField('Курс валюты', sale.exchangeRate.toString()),
+            _buildViewField('Продавец', sale.user?.name ?? 'ID: ${sale.userId}'),
             _buildViewField('Статус оплаты', _getPaymentStatusDisplayName(sale.paymentStatus)),
-            _buildViewField('Курс', sale.exchangeRate.toString()),
-            _buildViewField('Дата продажи', _formatDate(sale.saleDate)),
           ]),
           
           const SizedBox(height: 24),
@@ -498,16 +508,22 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           : 'Выберите товар',
       ),
       isExpanded: true,
-      items: _warehouseProducts.map((product) => DropdownMenuItem(
-        value: product['id'] as int,
-        child: Text(
-          '${product['name']} (остаток: ${product['quantity']})',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      )).toList(),
+      items: _warehouseProducts.map((product) {
+        final productId = product['id'];
+        final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
+        return DropdownMenuItem(
+          value: id,
+          child: Text(
+            '${product['name']} (остаток: ${product['quantity']})',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      }).toList(),
       selectedItemBuilder: (BuildContext context) {
         return _warehouseProducts.map<Widget>((product) {
+          final productId = product['id'];
+          final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
           return Text(
             '${product['name']} (остаток: ${product['quantity']})',
             maxLines: 2,
@@ -516,6 +532,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         }).toList();
       },
       onChanged: _selectedWarehouseId == null ? null : (productId) {
+        print('Выбран товар с ID: $productId, тип: ${productId.runtimeType}');
         setState(() => _selectedProductId = productId);
       },
       validator: (value) {
@@ -634,7 +651,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     
     setState(() => _isLoading = true);
     
-    print('🔵 Начало сохранения продажи (режим: ${_isEditing ? "редактирование" : "создание"})');
     bool success = false;
 
     try {
@@ -655,10 +671,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           await ref.read(updateSaleProvider.notifier).updateSale(widget.sale!.id, request);
           success = true;
         } catch (updateError) {
-          print('🔴 Ошибка при обновлении продажи: $updateError');
           
           if (updateError.toString().contains('Future already completed')) {
-            print('🔵 Игнорируем ошибку Future already completed при обновлении');
             success = true; // Считаем операцию успешной
           } else {
             throw updateError;
@@ -670,10 +684,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           await _createSaleWithRetry();
           success = true;
         } catch (createError) {
-          print('🔴 Ошибка при создании продажи: $createError');
           
           if (createError.toString().contains('Future already completed')) {
-            print('🔵 Игнорируем ошибку Future already completed при создании');
             success = true; // Считаем операцию успешной
           } else {
             throw createError;
@@ -682,7 +694,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       }
       
       if (mounted && success) {
-        print('🟢 Продажа успешно ${_isEditing ? "обновлена" : "создана"}');
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -695,12 +706,10 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         await Future.delayed(const Duration(milliseconds: 300));
         
         if (mounted) {
-          print('🔵 Закрытие формы с результатом true');
           Navigator.of(context).pop(true); // Возвращаем true при успешном создании
         }
       }
     } catch (e) {
-      print('🔴 Финальная ошибка при сохранении продажи: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -713,7 +722,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-      print('🔵 Завершение процесса сохранения продажи');
     }
   }
 
@@ -721,11 +729,9 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     int maxRetries = 10;
     int currentRetry = 0;
     
-    print('🔵 Начало создания продажи');
 
     while (currentRetry < maxRetries) {
       try {
-        print('🔵 Попытка #${currentRetry + 1} создания продажи');
         
         final cashAmount = double.parse(_cashAmountController.text);
         final nocashAmount = double.parse(_nocashAmountController.text);
@@ -735,6 +741,28 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
 
         // Фиксированный способ оплаты - поля cash_amount и nocash_amount просто цифры
         String paymentMethod = 'cash';
+
+        // Проверяем, что товар выбран
+        if (_selectedProductId == null || _selectedProductId == 0) {
+          throw Exception('Выберите товар для продажи');
+        }
+
+        // Формируем composite_product_key на основе выбранного товара
+        String? compositeProductKey;
+        final selectedProduct = _warehouseProducts.firstWhere(
+          (product) {
+            final productId = product['id'];
+            final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
+            return id == _selectedProductId;
+          },
+          orElse: () => <String, dynamic>{},
+        );
+        
+        if (selectedProduct.isNotEmpty) {
+          // Формируем ключ в правильном формате: producer_id|warehouse_id|template_id|product_name
+          // Пока используем упрощенный формат, так как у нас нет всех данных
+          compositeProductKey = '${_selectedProductId}|${_selectedWarehouseId}|${selectedProduct['name']}';
+        }
 
         final request = CreateSaleRequest(
           saleNumber: _saleNumberController.text,
@@ -752,21 +780,18 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
           customerEmail: _customerEmailController.text.isEmpty ? null : _customerEmailController.text,
           customerAddress: _customerAddressController.text.isEmpty ? null : _customerAddressController.text,
+          compositeProductKey: compositeProductKey,
         );
 
-        print('🔵 Отправка запроса на создание продажи: ${request.toJson()}');
         
         // Оборачиваем в try-catch для отлова ошибки Future already completed
         try {
           await ref.read(createSaleProvider.notifier).create(request);
-          print('🟢 Продажа успешно создана');
           break; // Успешное создание, выходим из цикла
         } catch (innerError) {
-          print('🔴 Внутренняя ошибка при создании продажи: $innerError');
           
           // Проверяем на ошибку Future already completed
           if (innerError.toString().contains('Future already completed')) {
-            print('🔴 Обнаружена ошибка Future already completed - продолжаем выполнение');
             // Продажа, вероятно, была создана успешно
             break;
           } else {
@@ -776,7 +801,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         }
         
       } catch (e) {
-        print('🔴 Ошибка при создании продажи: $e');
         final errorString = e.toString();
         
         if (errorString.contains('duplicate_sale_number') || 
@@ -786,13 +810,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           _saleNumberCounter++;
           _generateSaleNumber();
           
-          print('🔄 Попытка #$currentRetry: Сгенерирован новый номер продажи: ${_saleNumberController.text}');
           
           // Небольшая задержка перед повторной попыткой
           await Future.delayed(const Duration(milliseconds: 500));
         } else if (errorString.contains('Future already completed')) {
           // Если ошибка связана с Future already completed, считаем операцию успешной
-          print('🔵 Обработана ошибка Future already completed - считаем операцию успешной');
           break;
         } else {
           // Другие ошибки пробрасываем выше
@@ -805,7 +827,6 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       throw Exception('Не удалось создать продажу после $maxRetries попыток');
     }
     
-    print('🟢 Завершение создания продажи');
   }
 
   void _editSale() {

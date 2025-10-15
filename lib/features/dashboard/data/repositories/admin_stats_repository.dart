@@ -22,24 +22,15 @@ class AdminStatsRepositoryImpl implements AdminStatsRepository {
   @override
   Future<AdminDashboardStats> getDashboardStats() async {
     try {
-      print('🔵 AdminStatsRepository: Начинаем загрузку статистики...');
       
       // Последовательно получаем все статистики для лучшей диагностики
-      print('🔵 Загружаем статистику товаров...');
       final productsResponse = await _dataSource.getProductsStats();
-      print('✅ Статистика товаров загружена');
       
-      print('🔵 Загружаем статистику продаж...');
       final salesResponse = await _dataSource.getSalesStats();
-      print('✅ Статистика продаж загружена');
       
-      print('🔵 Загружаем статистику пользователей...');
       final usersResponse = await _dataSource.getUsersStats();
-      print('✅ Статистика пользователей загружена');
       
-      print('🔵 Загружаем статистику складов...');
       final warehousesResponse = await _dataSource.getWarehousesStats();
-      print('✅ Статистика складов загружена');
 
       final result = AdminDashboardStats(
         products: productsResponse.data,
@@ -48,11 +39,8 @@ class AdminStatsRepositoryImpl implements AdminStatsRepository {
         warehouses: warehousesResponse.data,
       );
       
-      print('✅ AdminStatsRepository: Вся статистика успешно загружена');
       return result;
     } catch (e, stackTrace) {
-      print('🔴 AdminStatsRepository: Ошибка загрузки статистики: $e');
-      print('🔴 StackTrace: $stackTrace');
       rethrow;
     }
   }

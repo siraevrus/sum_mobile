@@ -71,7 +71,6 @@ class ProductsInflow extends _$ProductsInflow {
         filters: nextFilters,
       );
     } catch (e) {
-      print('Ошибка загрузки следующей страницы: $e');
     }
   }
 
@@ -143,8 +142,6 @@ class ProductsInflow extends _$ProductsInflow {
         filters: filters,
       );
     } catch (e, stackTrace) {
-      print('🔴 Ошибка загрузки товаров: $e');
-      print('🔴 Stack trace: $stackTrace');
       state = ProductsInflowState.error('Ошибка загрузки товаров: $e');
     }
   }

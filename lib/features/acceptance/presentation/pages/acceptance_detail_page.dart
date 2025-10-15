@@ -98,13 +98,9 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     if (_currentProduct == null) return;
 
     try {
-      print('🔵 AcceptanceDetailPage: Обновляем данные товара ID: ${_currentProduct!.id}');
-      
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/products/${_currentProduct!.id}');
-      
-      print('🔵 AcceptanceDetailPage: Обновленные данные товара: ${response.data}');
-      
+
       if (response.data is Map<String, dynamic>) {
         final updatedProduct = AcceptanceModel.fromJson(response.data);
         
@@ -115,7 +111,7 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         }
       }
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка обновления данных товара: $e');
+      // Обработка ошибки обновления данных товара
     }
   }
 
@@ -127,13 +123,9 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     });
 
     try {
-      print('🔵 AcceptanceDetailPage: Загружаем шаблон товара ID: ${_product.productTemplateId}');
-      
       final dio = ref.read(dioClientProvider);
       final response = await dio.get('/product-templates/${_product.productTemplateId}');
-      
-      print('🔵 AcceptanceDetailPage: Ответ API /product-templates: ${response.data}');
-      
+
       if (response.data is Map<String, dynamic>) {
         final data = response.data;
         
@@ -158,9 +150,7 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
               }
             }
           }
-          
-          print('🔵 AcceptanceDetailPage: Названия атрибутов загружены: $attributeNames');
-          
+
           if (mounted) {
             setState(() {
               _attributeNames = attributeNames;
@@ -169,7 +159,7 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         }
       }
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка загрузки шаблона товара: $e');
+      // Обработка ошибки загрузки шаблона товара
     } finally {
       if (mounted) {
         setState(() {
@@ -181,12 +171,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 AcceptanceDetailPage: build вызван для товара ID: ${_product.id}');
-    print('🔵 AcceptanceDetailPage: product.name = ${_product.name}');
-    print('🔵 AcceptanceDetailPage: product.warehouse = ${_product.warehouse?.name}');
-    print('🔵 AcceptanceDetailPage: product.producer = ${_product.producer?.name}');
-    print('🔵 AcceptanceDetailPage: product.template = ${_product.template?.name}');
-    
     return Scaffold(
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
@@ -343,7 +327,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     required String title,
     required List<Widget> children,
   }) {
-    print('🔵 AcceptanceDetailPage: _buildSection вызван для "$title" с ${children.length} детьми');
     try {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +363,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         ],
       );
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка в _buildSection "$title": $e');
       return Container(
         padding: const EdgeInsets.all(16),
         child: Text('Ошибка отображения секции: $e'),
@@ -389,7 +371,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    print('🔵 AcceptanceDetailPage: _buildInfoRow вызван для "$label" = "$value"');
     try {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
@@ -421,7 +402,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         ),
       );
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка в _buildInfoRow "$label": $e');
       return Container(
         padding: const EdgeInsets.all(8),
         child: Text('Ошибка отображения: $e'),
@@ -571,8 +551,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
 
   Future<void> _openDocument(String path) async {
     try {
-      print('🔵 AcceptanceDetailPage: Скачиваем документ: $path');
-
       // Формируем полную ссылку на документ
       String documentUrl;
       if (path.startsWith('http')) {
@@ -587,8 +565,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         }
         documentUrl = 'http://93.189.230.65$normalizedPath';
       }
-
-      print('🔵 AcceptanceDetailPage: Полная ссылка на документ: $documentUrl');
 
       // Показываем диалог загрузки
       showDialog(
@@ -666,7 +642,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         }
       } catch (e) {
         // Если внешнее хранилище недоступно, используем внутреннее
-        print('🔵 AcceptanceDetailPage: Внешнее хранилище недоступно, используем внутреннее: $e');
         directory = await getApplicationDocumentsDirectory();
         downloadsDir = Directory('${directory.path}/Downloads');
       }
@@ -709,10 +684,9 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         );
       }
 
-      print('🔵 AcceptanceDetailPage: Документ успешно сохранен: ${file.path}');
-
+      // Документ успешно сохранен
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка скачивания документа: $e');
+      // Обработка ошибки скачивания документа
 
       // Закрываем диалог загрузки если он открыт
       if (mounted && Navigator.of(context).canPop()) {
@@ -744,12 +718,8 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
   /// Прием товара
   Future<void> _receiveProduct() async {
     try {
-      print('🔵 AcceptanceDetailPage: Принимаем товар ID: ${_product.id}');
-
       final dio = ref.read(dioClientProvider);
       final response = await dio.post('/receipts/${_product.id}/receive');
-
-      print('🔵 AcceptanceDetailPage: Ответ приема товара: ${response.data}');
 
       if (response.data['success'] == true) {
         // Обновляем локальные данные
@@ -766,7 +736,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         throw Exception(response.data['message'] ?? 'Ошибка приема товара');
       }
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка приема товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -842,9 +811,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     }
 
     try {
-      print('🔵 AcceptanceDetailPage: Отправляем корректировку для товара ID: ${_product.id}');
-      print('🔵 AcceptanceDetailPage: Текст корректировки: $correction');
-
       final dio = ref.read(dioClientProvider);
 
       // Пробуем альтернативный endpoint для корректировки
@@ -859,7 +825,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
       } catch (e) {
         // Если основной endpoint не работает, пробуем альтернативный
         if (e.toString().contains('403')) {
-          print('🔴 Основной endpoint заблокирован, пробуем альтернативный');
           response = await dio.post(
             '/products/${_product.id}/correction',
             data: {'correction': correction},
@@ -868,8 +833,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
           rethrow;
         }
       }
-
-      print('🔵 AcceptanceDetailPage: Ответ корректировки: ${response.data}');
 
       if (response.data['success'] == true) {
         // Очищаем контроллер
@@ -892,7 +855,6 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
         throw Exception(response.data['message'] ?? 'Ошибка корректировки товара');
       }
     } catch (e) {
-      print('🔴 AcceptanceDetailPage: Ошибка корректировки товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

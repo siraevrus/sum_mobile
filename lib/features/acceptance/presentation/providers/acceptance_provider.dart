@@ -74,7 +74,6 @@ class AcceptanceNotifier extends _$AcceptanceNotifier {
         filters: nextFilters,
       );
     } catch (e) {
-      print('🔴 Ошибка загрузки следующей страницы приемки: $e');
     }
   }
 
@@ -146,8 +145,6 @@ class AcceptanceNotifier extends _$AcceptanceNotifier {
         filters: filters,
       );
     } catch (e, stackTrace) {
-      print('🔴 Ошибка загрузки товаров приемки: $e');
-      print('🔴 Stack trace: $stackTrace');
       state = AcceptanceState.error('Ошибка загрузки товаров приемки: $e');
     }
   }

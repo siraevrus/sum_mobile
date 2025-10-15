@@ -100,12 +100,12 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       },
       child: salesAsync.when(
         loading: () => const LoadingWidget(),
-        error: (error, stack) => _buildErrorState(error),
+        error: (error, stack) => SingleChildScrollView(child: _buildErrorState(error)),
         data: (salesResponse) {
           final sales = salesResponse.data;
           
           if (sales.isEmpty) {
-            return _buildEmptyState();
+            return SingleChildScrollView(child: _buildEmptyState());
           }
 
           return ListView.builder(
@@ -283,7 +283,6 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           );
         }
       } catch (e) {
-        print('🔴 Ошибка отмены продажи в UI: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

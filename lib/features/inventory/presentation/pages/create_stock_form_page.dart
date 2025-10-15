@@ -77,7 +77,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
       
       setState(() {});
     } catch (e) {
-      print('Ошибка загрузки данных: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -110,7 +109,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
       
       setState(() {});
     } catch (e) {
-      print('Ошибка загрузки атрибутов шаблона: $e');
     }
   }
 
@@ -555,7 +553,6 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
         );
       }
     } catch (e) {
-      print('Ошибка создания остатка: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

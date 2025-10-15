@@ -74,7 +74,6 @@ class ProductsInTransit extends _$ProductsInTransit {
         filters: nextFilters,
       );
     } catch (e) {
-      print('🔴 Ошибка загрузки следующей страницы: $e');
     }
   }
 
@@ -161,8 +160,6 @@ class ProductsInTransit extends _$ProductsInTransit {
         filters: filters,
       );
     } catch (e, stackTrace) {
-      print('🔴 Ошибка загрузки товаров в пути: $e');
-      print('🔴 Stack trace: $stackTrace');
       state = ProductsInTransitState.error('Ошибка загрузки товаров в пути: $e');
     }
   }

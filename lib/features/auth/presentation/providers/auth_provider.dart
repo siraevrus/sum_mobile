@@ -16,27 +16,22 @@ class Auth extends _$Auth {
   AuthState build() {
     // Просто возвращаем начальное состояние
     // Инициализация будет происходить из SplashPage
-    print('🏁 AuthProvider: build() вызван, возвращаем initial state');
     return const AuthState.initial();
   }
   
   /// Публичный метод для проверки статуса аутентификации
   Future<void> checkAuthStatus() async {
-    print('🔄 AuthProvider: Начинаем проверку статуса авторизации');
     
     // Проверяем, не выполняется ли уже операция
     if (_isProcessing) {
-      print('🟡 AuthProvider: Операция уже выполняется, пропускаем');
       return;
     }
     
     if (state.maybeWhen(loading: () => true, orElse: () => false)) {
-      print('🟡 AuthProvider: Состояние уже loading, пропускаем');
       return;
     }
     
     _isProcessing = true;
-    print('🔄 AuthProvider: Устанавливаем состояние loading');
     state = const AuthState.loading();
     
     try {
@@ -60,12 +55,10 @@ class Auth extends _$Auth {
           );
           
           if (!userEntity.isBlocked) {
-                      print('🟢 AuthProvider: Найдены сохраненные данные, пользователь авторизован: ${userEntity.email}');
           state = AuthState.authenticated(user: userEntity, token: token);
           _isProcessing = false;
           return;
           } else {
-            print('🔴 AuthProvider: Пользователь заблокирован: ${userEntity.email}');
           }
         } catch (e) {
           // Если ошибка парсинга - очищаем данные
@@ -75,16 +68,11 @@ class Auth extends _$Auth {
       }
       
       // Если нет сохраненных данных или они невалидны - пользователь не авторизован
-      print('🔴 AuthProvider: Нет сохраненных данных, пользователь не авторизован');
-      print('🔄 AuthProvider: Устанавливаем состояние unauthenticated');
       state = const AuthState.unauthenticated();
     } catch (e) {
-      print('🔴 AuthProvider: Ошибка проверки статуса: $e');
-      print('🔄 AuthProvider: Устанавливаем состояние unauthenticated (catch)');
       state = const AuthState.unauthenticated();
     } finally {
       _isProcessing = false;
-      print('🔄 AuthProvider: Сброс флага _isProcessing, текущее состояние: ${state.runtimeType}');
     }
   }
   
@@ -102,7 +90,6 @@ class Auth extends _$Auth {
     
     // Проверяем, не выполняется ли уже операция
     if (_isProcessing) {
-      print('🟡 AuthProvider: Login уже выполняется, пропускаем');
       return;
     }
     
@@ -110,29 +97,23 @@ class Auth extends _$Auth {
     state = const AuthState.loading();
     
     try {
-      print('🔵 AuthProvider: Вызываем loginUseCase');
       final loginUseCase = ref.read(loginUseCaseProvider);
       
-      print('🔵 AuthProvider: Получаем данные от useCase');  
       final (user, token) = await loginUseCase.call(
         email: email.trim(),
         password: password,
       );
       
-      print('🔵 AuthProvider: Получены данные - user: ${user.email}, token: $token');
       
       if (user.isBlocked) {
-        print('🔴 AuthProvider: Пользователь заблокирован: ${user.email}');
         state = const AuthState.error('Ваш аккаунт заблокирован');
         return;
       }
       
-      print('🔵 AuthProvider: Начинаем сохранение токена и данных пользователя');
       
       // Сохраняем токен и данные пользователя
       final localDataSource = await ref.read(authLocalDataSourceProvider.future);
       
-      print('🔵 AuthProvider: Сохраняем токен: $token');
       await localDataSource.saveToken(token);
       
       // Преобразуем UserEntity в UserModel для сохранения
@@ -145,14 +126,10 @@ class Auth extends _$Auth {
         isBlocked: user.isBlocked,
       );
       
-      print('🔵 AuthProvider: Сохраняем данные пользователя: ${userModel.toJson()}');
       await localDataSource.saveUserData(userModel.toJson());
       
-      print('🟢 AuthProvider: Авторизация успешна для ${user.email}');
       state = AuthState.authenticated(user: user, token: token);
     } catch (e) {
-      print('🔴 AuthProvider: Ошибка при входе: $e');
-      print('🔴 AuthProvider: Stack trace: ${StackTrace.current}');
       
       String errorMessage = 'Произошла ошибка при входе';
       
@@ -164,7 +141,6 @@ class Auth extends _$Auth {
         errorMessage = 'Проблемы с сетью. Проверьте подключение к интернету';
       }
       
-      print('🔴 AuthProvider: Устанавливаем состояние ошибки: $errorMessage');
       state = AuthState.error(errorMessage);
     } finally {
       _isProcessing = false;
@@ -175,17 +151,14 @@ class Auth extends _$Auth {
   Future<void> logout() async {
     // Проверяем, не выполняется ли уже операция
     if (_isProcessing) {
-      print('🟡 AuthProvider: Logout уже выполняется, пропускаем');
       return;
     }
     
     _isProcessing = true;
-    print('🔵 AuthProvider: Начинаем выход из системы');
     state = const AuthState.loading();
     
     try {
       // Очищаем локальные данные
-      print('🔵 AuthProvider: Очищаем локальные данные');
       final localDataSource = await ref.read(authLocalDataSourceProvider.future);
       await localDataSource.removeToken();
       await localDataSource.removeUserData();
@@ -194,15 +167,12 @@ class Auth extends _$Auth {
       final logoutUseCase = ref.read(logoutUseCaseProvider);
       await logoutUseCase.call();
       
-      print('🟢 AuthProvider: Выход успешен, устанавливаем unauthenticated');
       state = const AuthState.unauthenticated();
     } catch (e) {
       // Даже если logout на сервере не удался, локально выходим
-      print('🟡 AuthProvider: Logout error (ignored): $e');
       state = const AuthState.unauthenticated();
     } finally {
       _isProcessing = false;
-      print('🔄 AuthProvider: Сброс флага _isProcessing после logout, состояние: ${state.runtimeType}');
     }
   }
   

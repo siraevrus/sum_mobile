@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/features/users/data/datasources/users_remote_datasource.dart';
 import 'package:sum_warehouse/features/users/presentation/pages/user_form_page.dart';
 import 'package:sum_warehouse/shared/models/user_management_model.dart';
+import 'package:sum_warehouse/shared/models/paginated_response.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
@@ -634,7 +635,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
   void _editUser(UserManagementModel user) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => UserFormPage(user: _convertToUserEntity(user)),
+        builder: (context) => UserFormPage(user: user),
       ),
     ).then((updated) {
       if (updated == true) _loadUsers();

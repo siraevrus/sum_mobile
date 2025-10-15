@@ -83,11 +83,9 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
   @override
   void initState() {
     super.initState();
-    print('🔵 AcceptanceFormPage: initState начат');
     _initializeForm();
     _initializeProducts();
     _loadData();
-    print('🔵 AcceptanceFormPage: initState завершен');
   }
 
   @override
@@ -119,9 +117,8 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
       _shippingLocationController.text = product.shippingLocation ?? '';
       _selectedShippingDate = product.shippingDate != null ? DateTime.parse(product.shippingDate!) : null;
       _notesController.text = product.notes ?? '';
-      
-      print('🔵 AcceptanceFormPage: Инициализация формы для редактирования товара ID: ${product.id}');
-      print('🔵 AcceptanceFormPage: product_template_id: ${product.productTemplateId}');
+
+      // Инициализация формы для редактирования товара
     }
   }
 
@@ -165,19 +162,15 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
   }
 
   Future<void> _loadData() async {
-    print('🔵 AcceptanceFormPage: _loadData начат');
     setState(() => _isLoading = true);
 
     try {
       // Загружаем склады
-      print('🔵 AcceptanceFormPage: Загружаем склады...');
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
-      print('🔵 AcceptanceFormPage: Склады загружены: ${_warehouses.length} шт');
 
       // Загружаем производителей
-      print('🔵 AcceptanceFormPage: Загружаем производителей...');
       await ref.read(producersProvider.notifier).loadProducers();
       final producersState = ref.read(producersProvider);
       if (producersState.hasValue) {
@@ -190,25 +183,19 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
           createdAt: entity.createdAt,
           updatedAt: entity.updatedAt,
         )).toList();
-        print('🔵 AcceptanceFormPage: Производители загружены: ${_producers.length} шт');
-      } else {
-        print('🔵 AcceptanceFormPage: Производители не загружены');
       }
 
       // Загружаем шаблоны товаров
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       final templatesResponse = await templateDataSource.getProductTemplates();
       _productTemplates = templatesResponse;
-      print('🔵 AcceptanceFormPage: Шаблоны товаров загружены: ${_productTemplates.length} шт');
 
       // Если редактируем, загружаем атрибуты выбранного шаблона
       if (_isEditing && _selectedProductTemplateId != null) {
-        print('🔵 AcceptanceFormPage: Загружаем атрибуты для редактирования товара...');
         await _loadTemplateAttributes();
       }
 
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка загрузки данных: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -222,7 +209,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         setState(() {
           _isLoading = false;
         });
-        print('🔵 AcceptanceFormPage: _loadData завершен, _isLoading = false');
       }
     }
   }
@@ -235,7 +221,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
     }
 
     try {
-      print('🔵 AcceptanceFormPage: Загружаем атрибуты шаблона ID: $_selectedProductTemplateId');
       final templateDataSource = ref.read(productTemplateRemoteDataSourceProvider);
       _selectedTemplate = await templateDataSource.getProductTemplate(_selectedProductTemplateId!);
       
@@ -257,10 +242,8 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         _attributeControllers[attribute.variable]!.addListener(() => _onAttributeChanged());
       }
 
-      print('🔵 AcceptanceFormPage: Атрибуты шаблона загружены: ${_selectedTemplate!.attributes.length} шт');
       setState(() {});
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка загрузки атрибутов шаблона: $e');
       _selectedTemplate = null;
       _clearAttributeControllers();
     }
@@ -343,14 +326,12 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         formula = formula.replaceAll(attribute.variable, numValue.toString());
       }
       
-      print('🔵 AcceptanceFormPage: Формула для расчета: $formula');
       
       // Простой парсер математических выражений
       final result = _evaluateFormula(formula);
       
       return result.toStringAsFixed(3);
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка расчета объема: $e');
       return '0';
     }
   }
@@ -375,18 +356,12 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
       
       return result;
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка парсинга формулы: $e');
       return 0;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 AcceptanceFormPage: build вызван, _isLoading = $_isLoading');
-    print('🔵 AcceptanceFormPage: _warehouses.length = ${_warehouses.length}');
-    print('🔵 AcceptanceFormPage: _producers.length = ${_producers.length}');
-    print('🔵 AcceptanceFormPage: _productTemplates.length = ${_productTemplates.length}');
-
     if (_isLoading) {
     return Scaffold(
       appBar: AppBar(
@@ -912,7 +887,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         final decoded = json.decode(attribute.options as String) as List;
         options = decoded.cast<String>();
       } catch (e) {
-        print('🔴 Ошибка парсинга опций: $e');
         options = [];
       }
     } else if (attribute.options is List) {
@@ -1042,7 +1016,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
       
       _calculateProductNameAndVolume(index);
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка загрузки атрибутов шаблона: $e');
     }
   }
 
@@ -1139,14 +1112,12 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         formula = formula.replaceAll(attribute.variable, numValue.toString());
       }
       
-      print('🔵 AcceptanceFormPage: Формула для расчета: $formula');
       
       // Простой парсер математических выражений
       final result = _evaluateFormula(formula);
       
       return result.toStringAsFixed(3);
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка расчета объема: $e');
       return '0';
     }
   }
@@ -1157,7 +1128,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      print('🔵 AcceptanceFormPage: Создание товара');
       
       final provider = ref.read(acceptanceNotifierProvider.notifier);
       
@@ -1189,7 +1159,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка создания товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1211,7 +1180,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      print('🔵 AcceptanceFormPage: Обновление товара ID: ${widget.product!.id}');
       
       final provider = ref.read(acceptanceNotifierProvider.notifier);
       
@@ -1241,7 +1209,6 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      print('🔴 AcceptanceFormPage: Ошибка обновления товара: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

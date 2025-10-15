@@ -154,7 +154,7 @@ class ProductInTransitItem with _$ProductInTransitItem {
   const factory ProductInTransitItem({
     @JsonKey(name: 'product_template_id') required int productTemplateId,
     required String quantity,
-    String? producer,
+    @JsonKey(name: 'producer_id') int? producerId,
     String? description,
     String? name,
     dynamic attributes,

@@ -64,7 +64,6 @@ class RequestsRemoteDataSourceImpl implements RequestsRemoteDataSource {
         (json) => RequestModel.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      print('⚠️ API /requests не работает: $e.');
       rethrow;
     }
   }

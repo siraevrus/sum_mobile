@@ -72,10 +72,8 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         queryParams['low_stock'] = lowStock;
       }
       
-      print('🔵 Запрос к /stocks с параметрами: $queryParams');
       final response = await _dio.get('/stocks', queryParameters: queryParams);
       
-      print('📥 Stocks API response: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -89,11 +87,9 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       
       return [];
     } on DioException catch (e) {
-      print('⚠️ API /stocks не работает: ${e.response?.statusCode} - ${e.message}');
       // Обрабатываем ошибку
       throw ErrorHandler.handleError(e);
     } catch (e) {
-      print('⚠️ Ошибка парсинга stocks: $e');
       throw ErrorHandler.handleError(e);
     }
   }
@@ -101,14 +97,11 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   @override
   Future<StockModel> getStockById(String stockId) async {
     try {
-      print('🔵 Запрос к /stocks/$stockId');
       final response = await _dio.get('/stocks/$stockId');
       
-      print('📥 Stock by ID response: ${response.data}');
       
       return StockModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print('⚠️ API /stocks/$stockId не работает: ${e.response?.statusCode} - ${e.message}');
       // Обрабатываем ошибку
       throw ErrorHandler.handleError(e);
     }
@@ -139,12 +132,9 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         if (notes != null) 'notes': notes,
       };
       
-      print('🔵 Создание движения: $body');
       await _dio.post('/stock-movements', data: body);
       
-      print('✅ Движение создано успешно');
     } on DioException catch (e) {
-      print('⚠️ API /stock-movements не работает: ${e.response?.statusCode} - ${e.message}');
       throw Exception('API для движений товаров еще не реализовано');
     }
     */
@@ -170,12 +160,9 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
         if (notes != null) 'notes': notes,
       };
       
-      print('🔵 Корректировка остатков: stock=$stockId, body=$body');
       await _dio.patch('/stocks/$stockId/adjust', data: body);
       
-      print('✅ Остатки откорректированы успешно');
     } on DioException catch (e) {
-      print('⚠️ API /stocks/$stockId/adjust не работает: ${e.response?.statusCode} - ${e.message}');
       throw Exception('API для корректировки остатков еще не реализовано');
     }
     */

@@ -21,7 +21,6 @@ class LoginUseCase {
     required String email,
     required String password,
   }) async {
-    print('🔵 LoginUseCase: Начинаем логин для $email');
     
     try {
       final authRepository = await _ref.read(authRepositoryProvider.future);
@@ -30,10 +29,8 @@ class LoginUseCase {
         password: password,
       );
       
-      print('🟢 LoginUseCase: Логин успешен для $email');
       return result;
     } catch (error, stackTrace) {
-      print('🔴 LoginUseCase: Ошибка логина: $error');
       rethrow;
     }
   }
@@ -53,15 +50,12 @@ class LogoutUseCase {
   
   /// Выполнить выход из системы
   Future<void> call() async {
-    print('🔵 LogoutUseCase: Начинаем выход из системы');
     
     try {
       final authRepository = await _ref.read(authRepositoryProvider.future);
       await authRepository.logout();
       
-      print('🟢 LogoutUseCase: Выход успешен');
     } catch (error, stackTrace) {
-      print('🔴 LogoutUseCase: Ошибка выхода: $error');
       rethrow;
     }
   }

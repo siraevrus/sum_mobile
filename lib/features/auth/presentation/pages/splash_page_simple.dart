@@ -26,11 +26,9 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
     if (_initialized) return;
     _initialized = true;
     
-    print('🚀 SimpleSplashPage: Инициализация начата (Mounted: $mounted)');
     
     // Проверяем текущее состояние авторизации
     final currentState = ref.read(authProvider);
-    print('🚀 SimpleSplashPage: Текущее состояние: ${currentState.runtimeType}');
     
     // Если уже авторизован или выполняется загрузка - не запускаем проверку повторно  
     if (currentState.maybeWhen(
@@ -38,7 +36,6 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
       loading: () => true,
       orElse: () => false
     )) {
-      print('🚀 SimpleSplashPage: Уже авторизован или загружается, пропускаем проверку');
       return;
     }
     
@@ -46,15 +43,12 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
     await Future.delayed(const Duration(milliseconds: 800));
     
     if (!mounted) {
-      print('🚀 SimpleSplashPage: Виджет размонтирован, прерываем инициализацию');
       return;
     }
     
-    print('🚀 SimpleSplashPage: Запускаем проверку авторизации');
     try {
       ref.read(authProvider.notifier).checkAuthStatus();
     } catch (e) {
-      print('🔴 SimpleSplashPage: Ошибка при проверке статуса: $e');
     }
   }
 
@@ -65,24 +59,19 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
       body: Consumer(
         builder: (context, ref, child) {
           final authState = ref.watch(authProvider);
-          print('🎨 SplashPage: Отображаем состояние ${authState.runtimeType}');
           
           // Реагируем на изменения состояния для навигации
           authState.maybeWhen(
             authenticated: (user, token) {
-              print('🎨 SplashPage: Пользователь авторизован, перенаправляем на секцию по роли');
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!context.mounted) return;
                 final target = user.role == UserRole.admin ? '/dashboard' : '/inventory';
-                print('🚀 SplashPage: Переход на $target');
                 context.go(target);
               });
             },
             unauthenticated: () {
-              print('🎨 SplashPage: Пользователь не авторизован, перенаправляем на логин');
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (context.mounted) {
-                  print('🚀 SplashPage: Переход на /login');
                   context.go('/login');
                 }
               });

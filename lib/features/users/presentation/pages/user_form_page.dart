@@ -390,12 +390,10 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
     
     return companiesAsyncValue.when(
       data: (companies) {
-        print('🔵 UserFormPage: Загружено компаний: ${companies.length}');
         return DropdownButtonFormField<int>(
           dropdownColor: Colors.white,
           value: _selectedCompanyId,
           onChanged: (value) {
-            print('🔵 UserFormPage: Выбрана компания ID: $value');
             setState(() {
               _selectedCompanyId = value;
               // Сбрасываем выбранный склад при изменении компании
@@ -413,7 +411,6 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
           items: [
             const DropdownMenuItem(value: null, child: Text('Не выбрано')),
             ...companies.map((company) {
-              print('🔵 UserFormPage: Компания: ${company.name} (ID: ${company.id})');
               return DropdownMenuItem(
                 value: company.id,
                 child: Text(company.name),
@@ -437,8 +434,6 @@ class _UserFormPageState extends ConsumerState<UserFormPage> {
         ),
       ),
       error: (error, stack) {
-        print('🔴 UserFormPage: Ошибка загрузки компаний: $error');
-        print('🔴 UserFormPage: Stack trace: $stack');
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
