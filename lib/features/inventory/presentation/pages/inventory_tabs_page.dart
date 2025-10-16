@@ -232,8 +232,6 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
               // Информация о складе
               _buildInfoRow('Компания', warehouse.company),
               _buildInfoRow('Адрес', warehouse.address),
-              _buildInfoRow('Позиций', '${warehouse.positionsCount}'),
-              _buildInfoRow('Общий объем', '${warehouse.totalVolume.toStringAsFixed(3)} м³'),
             ],
           ),
         ),
