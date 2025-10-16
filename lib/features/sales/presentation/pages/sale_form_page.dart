@@ -46,6 +46,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   String _selectedCurrency = 'RUB';
   double _exchangeRate = 1.0;
   int _saleNumberCounter = 1;
+  double _selectedProductAvailableQuantity = 0; // Доступное количество выбранного товара
   
   // Reference data
   List<WarehouseModel> _warehouses = [];
@@ -324,7 +325,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             const SizedBox(height: 16),
             _buildProductDropdown(),
             const SizedBox(height: 16),
-            _buildTextField(_quantityController, 'Количество', isRequired: true, keyboardType: TextInputType.number),
+            _buildTextField(_quantityController, 'Количество', isRequired: true, keyboardType: TextInputType.number, validator: _validateQuantity),
             const SizedBox(height: 16),
             _buildTextField(_cashAmountController, 'Сумма (нал)', isRequired: true, keyboardType: TextInputType.number),
             const SizedBox(height: 16),
@@ -536,6 +537,18 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       },
       onChanged: _selectedWarehouseId == null ? null : (compositeKey) {
         print('Выбран товар с composite_product_key: $compositeKey');
+        // Находим выбранный товар и сохраняем его доступное количество
+        final selectedProduct = _warehouseProducts.firstWhere(
+          (product) => product['composite_product_key'] == compositeKey,
+          orElse: () => <String, dynamic>{},
+        );
+        
+        if (selectedProduct.isNotEmpty) {
+          _selectedProductAvailableQuantity = (selectedProduct['available_quantity'] as num?)?.toDouble() ?? 0.0;
+        } else {
+          _selectedProductAvailableQuantity = 0.0;
+        }
+        
         setState(() => _selectedCompositeProductKey = compositeKey);
       },
       validator: (value) {
@@ -933,5 +946,16 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       case 'cancelled': return 'Отменено';
       default: return status;
     }
+  }
+
+  String? _validateQuantity(String? value) {
+    final quantity = double.tryParse(value ?? '');
+    if (quantity == null || quantity <= 0) {
+      return 'Количество должно быть положительным числом';
+    }
+    if (quantity > _selectedProductAvailableQuantity) {
+      return 'Количество не может превышать доступное количество товара (${_selectedProductAvailableQuantity.toStringAsFixed(2)})';
+    }
+    return null;
   }
 }
