@@ -101,7 +101,7 @@ class CreateSaleRequest with _$CreateSaleRequest {
     @JsonKey(name: 'exchange_rate', toJson: _formatNumber) required double exchangeRate,
     @JsonKey(name: 'cash_amount', toJson: _formatNumber) required double cashAmount,
     @JsonKey(name: 'nocash_amount', toJson: _formatNumber) required double nocashAmount,
-    @JsonKey(name: 'total_price', toJson: _formatNumber) required double totalPrice,
+    @JsonKey(name: 'total_price', toJson: _formatNumberRequired) required double totalPrice,
     @JsonKey(name: 'reason_cancellation') String? reasonCancellation,
     String? notes,
     @JsonKey(name: 'sale_date') required String saleDate,
@@ -160,6 +160,16 @@ double _parseToDouble(dynamic value) {
 
 /// Форматирует число для отправки в API, убирая ненужные .0
 dynamic _formatNumber(double value) {
+  // Если число целое, возвращаем как int
+  if (value == value.toInt()) {
+    return value.toInt();
+  }
+  // Иначе возвращаем как double
+  return value;
+}
+
+/// Форматирует число, гарантируя что значение всегда будет отправлено (не null)
+Object _formatNumberRequired(double value) {
   // Если число целое, возвращаем как int
   if (value == value.toInt()) {
     return value.toInt();
