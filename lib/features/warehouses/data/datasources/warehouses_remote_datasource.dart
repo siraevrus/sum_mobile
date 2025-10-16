@@ -163,16 +163,19 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
         final data = response.data as Map<String, dynamic>;
         if (data.containsKey('data') && data['data'] is List) {
           final products = data['data'] as List;
-          // Преобразуем данные товаров в ожидаемый формат
+          // Преобразуем данные товаров в новый формат с composite_product_key
           return products.map((product) {
             if (product is Map<String, dynamic>) {
-              final productId = product['id'];
-              final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
               return {
-                'id': id,
+                'composite_product_key': product['composite_product_key'] ?? '',
                 'name': product['name'] ?? 'Без названия',
-                'quantity': product['available_quantity'] ?? product['quantity'] ?? 0,
-                'warehouse_id': id,
+                'available_quantity': product['available_quantity'] ?? product['quantity'] ?? 0,
+                'quantity': product['quantity'] ?? 0,
+                'sold_quantity': product['sold_quantity'] ?? 0,
+                'warehouse': product['warehouse'] ?? '',
+                'producer': product['producer'] ?? '',
+                'product_template_id': product['product_template_id'] ?? 0,
+                'total_volume': product['total_volume'] ?? 0,
               };
             }
             return <String, dynamic>{};

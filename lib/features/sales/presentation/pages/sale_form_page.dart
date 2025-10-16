@@ -31,6 +31,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   final _nocashAmountController = TextEditingController();
   final _totalPriceController = TextEditingController();
   final _exchangeRateController = TextEditingController();
+  final _notesController = TextEditingController();
   // Customer info controllers
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
@@ -41,7 +42,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   bool _isLoading = false;
   DateTime _saleDate = DateTime.now();
   int? _selectedWarehouseId;
-  int? _selectedProductId;
+  String? _selectedCompositeProductKey; // Изменили на composite_product_key
   String _selectedCurrency = 'RUB';
   double _exchangeRate = 1.0;
   int _saleNumberCounter = 1;
@@ -68,6 +69,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     _nocashAmountController.dispose();
     _totalPriceController.dispose();
     _exchangeRateController.dispose();
+    _notesController.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
     _customerEmailController.dispose();
@@ -84,6 +86,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       _nocashAmountController.text = sale.nocashAmount.toString();
       _totalPriceController.text = sale.totalPrice.toString();
       _exchangeRateController.text = sale.exchangeRate.toString();
+      _notesController.text = sale.notes ?? '';
       
       // Initialize customer info
       _customerNameController.text = sale.customerName ?? '';
@@ -102,7 +105,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       }
       
       _selectedWarehouseId = sale.warehouseId;
-      _selectedProductId = sale.productId;
+      // Для редактирования нужно будет получить composite_product_key из данных товара
       _selectedCurrency = sale.currency;
       _exchangeRate = sale.exchangeRate;
     } else {
@@ -113,7 +116,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       _cashAmountController.text = '';
       _nocashAmountController.text = '';
       _totalPriceController.text = '';
-      _exchangeRateController.text = '';
+      _exchangeRateController.text = '1.0';
+      _notesController.text = '';
       _customerNameController.text = '';
       _customerPhoneController.text = '';
       _customerEmailController.text = '';
@@ -160,7 +164,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       // Отладочная информация
       print('Загружено товаров: ${_warehouseProducts.length}');
       for (final product in _warehouseProducts) {
-        print('Товар: ${product['name']}, ID: ${product['id']}, тип ID: ${product['id'].runtimeType}');
+        print('Товар: ${product['name']}, composite_product_key: ${product['composite_product_key']}');
       }
       
       setState(() {});
@@ -331,6 +335,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             _buildCurrencyDropdown(),
             const SizedBox(height: 16),
             _buildTextField(_exchangeRateController, 'Курс валюты', isRequired: true, keyboardType: TextInputType.number),
+            const SizedBox(height: 16),
+            _buildTextField(_notesController, 'Примечания', maxLines: 3),
             const SizedBox(height: 32),
             
             // Customer information section
@@ -481,7 +487,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       onChanged: (warehouseId) {
         setState(() {
           _selectedWarehouseId = warehouseId;
-          _selectedProductId = null;
+          _selectedCompositeProductKey = null;
           _warehouseProducts.clear();
         });
         if (warehouseId != null) {
@@ -496,8 +502,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   }
   
   Widget _buildProductDropdown() {
-    return DropdownButtonFormField<int>(
-      value: _selectedProductId,
+    return DropdownButtonFormField<String>(
+      value: _selectedCompositeProductKey,
       decoration: InputDecoration(
         labelText: 'Товар *',
         border: const OutlineInputBorder(),
@@ -509,12 +515,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       ),
       isExpanded: true,
       items: _warehouseProducts.map((product) {
-        final productId = product['id'];
-        final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
+        final compositeKey = product['composite_product_key'] as String;
         return DropdownMenuItem(
-          value: id,
+          value: compositeKey,
           child: Text(
-            '${product['name']} (остаток: ${product['quantity']})',
+            '${product['name']} (остаток: ${product['available_quantity']})',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -522,21 +527,19 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       }).toList(),
       selectedItemBuilder: (BuildContext context) {
         return _warehouseProducts.map<Widget>((product) {
-          final productId = product['id'];
-          final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
           return Text(
-            '${product['name']} (остаток: ${product['quantity']})',
+            '${product['name']} (остаток: ${product['available_quantity']})',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           );
         }).toList();
       },
-      onChanged: _selectedWarehouseId == null ? null : (productId) {
-        print('Выбран товар с ID: $productId, тип: ${productId.runtimeType}');
-        setState(() => _selectedProductId = productId);
+      onChanged: _selectedWarehouseId == null ? null : (compositeKey) {
+        print('Выбран товар с composite_product_key: $compositeKey');
+        setState(() => _selectedCompositeProductKey = compositeKey);
       },
       validator: (value) {
-        if (value == null) return 'Выберите товар';
+        if (value == null || value.isEmpty) return 'Выберите товар';
         return null;
       },
     );
@@ -559,6 +562,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       onChanged: (value) => setState(() => _selectedCurrency = value ?? 'RUB'),
     );
   }
+
 
   
   Widget _buildDateField() {
@@ -655,29 +659,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
 
     try {
       if (_isEditing) {
-        // Логика обновления существующей продажи
-        final request = UpdateSaleRequest(
-          productId: _selectedProductId,
-          warehouseId: _selectedWarehouseId,
-          quantity: double.parse(_quantityController.text),
-          cashAmount: double.parse(_cashAmountController.text),
-          nocashAmount: double.parse(_nocashAmountController.text),
-          currency: _selectedCurrency,
-          exchangeRate: double.parse(_exchangeRateController.text),
-          saleDate: _saleDate.toIso8601String().split('T')[0],
-        );
-
-        try {
-          await ref.read(updateSaleProvider.notifier).updateSale(widget.sale!.id, request);
-          success = true;
-        } catch (updateError) {
-          
-          if (updateError.toString().contains('Future already completed')) {
-            success = true; // Считаем операцию успешной
-          } else {
-            throw updateError;
-          }
-        }
+        // TODO: Обновить логику редактирования под новое API
+        throw Exception('Редактирование продаж временно недоступно. Используйте создание новой продажи.');
       } else {
         // Логика создания новой продажи с обработкой дублирования номера
         try {
@@ -735,52 +718,30 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         
         final cashAmount = double.parse(_cashAmountController.text);
         final nocashAmount = double.parse(_nocashAmountController.text);
-        final totalPrice = cashAmount + nocashAmount;
         final quantity = double.parse(_quantityController.text);
-        final unitPrice = quantity > 0 ? totalPrice / quantity : 0.0;
-
-        // Фиксированный способ оплаты - поля cash_amount и nocash_amount просто цифры
-        String paymentMethod = 'cash';
 
         // Проверяем, что товар выбран
-        if (_selectedProductId == null || _selectedProductId == 0) {
+        if (_selectedCompositeProductKey == null || _selectedCompositeProductKey!.isEmpty) {
           throw Exception('Выберите товар для продажи');
         }
 
-        // Формируем composite_product_key на основе выбранного товара
-        String? compositeProductKey;
-        final selectedProduct = _warehouseProducts.firstWhere(
-          (product) {
-            final productId = product['id'];
-            final id = productId is int ? productId : int.tryParse(productId.toString()) ?? 0;
-            return id == _selectedProductId;
-          },
-          orElse: () => <String, dynamic>{},
-        );
-        
-        if (selectedProduct.isNotEmpty) {
-          // Формируем ключ в правильном формате: producer_id|warehouse_id|template_id|product_name
-          // Пока используем упрощенный формат, так как у нас нет всех данных
-          compositeProductKey = '${_selectedProductId}|${_selectedWarehouseId}|${selectedProduct['name']}';
-        }
+        // Используем уже готовый composite_product_key
+        final compositeProductKey = _selectedCompositeProductKey!;
 
         final request = CreateSaleRequest(
-          saleNumber: _saleNumberController.text,
-          productId: _selectedProductId!,
+          compositeProductKey: compositeProductKey,
           warehouseId: _selectedWarehouseId!,
           customerName: _customerNameController.text,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          cashAmount: cashAmount,
-          nocashAmount: nocashAmount,
-          currency: _selectedCurrency,
-          exchangeRate: double.parse(_exchangeRateController.text),
-          saleDate: _saleDate.toIso8601String().split('T')[0],
-          paymentMethod: paymentMethod,
           customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
           customerEmail: _customerEmailController.text.isEmpty ? null : _customerEmailController.text,
           customerAddress: _customerAddressController.text.isEmpty ? null : _customerAddressController.text,
-          compositeProductKey: compositeProductKey,
+          quantity: quantity,
+          currency: _selectedCurrency,
+          exchangeRate: double.parse(_exchangeRateController.text),
+          cashAmount: cashAmount,
+          nocashAmount: nocashAmount,
+          notes: _notesController.text.isEmpty ? null : _notesController.text,
+          saleDate: _saleDate.toIso8601String().split('T')[0],
         );
 
         

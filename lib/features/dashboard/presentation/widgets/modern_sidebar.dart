@@ -46,36 +46,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
       ),
       child: Column(
         children: [
-          // Заголовок приложения
-          Container(
-            padding: const EdgeInsets.all(24),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.warehouse,
-                  color: Colors.white,
-                  size: 32,
-                ),
-                SizedBox(width: 12),
-                Text(
-                  'Expert Wood',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const Divider(
-            color: Color(0xFF34495E),
-            thickness: 1,
-            height: 1,
-          ),
-          
-          // Информация о пользователе
+          // Информация о роли пользователя
           Container(
             padding: const EdgeInsets.all(20),
             child: Row(

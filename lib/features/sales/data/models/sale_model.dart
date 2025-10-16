@@ -87,23 +87,24 @@ class UserInfo with _$UserInfo {
 @freezed
 class CreateSaleRequest with _$CreateSaleRequest {
   const factory CreateSaleRequest({
-    @JsonKey(name: 'sale_number') String? saleNumber,
-    @JsonKey(name: 'product_id') required int productId,
+    // Убираем sale_number - генерируется автоматически на сервере
+    @JsonKey(name: 'composite_product_key') required String compositeProductKey,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     @JsonKey(name: 'customer_name') required String customerName,
-    required double quantity,
-    @JsonKey(name: 'unit_price') required double unitPrice,
-    @JsonKey(name: 'cash_amount') required double cashAmount,
-    @JsonKey(name: 'nocash_amount') required double nocashAmount,
-    required String currency,
-    @JsonKey(name: 'exchange_rate') required double exchangeRate,
-    @JsonKey(name: 'payment_method') required String paymentMethod,
-    @JsonKey(name: 'payment_status') @Default('paid') String paymentStatus,
-    @JsonKey(name: 'sale_date') required String saleDate,
     @JsonKey(name: 'customer_phone') String? customerPhone,
     @JsonKey(name: 'customer_email') String? customerEmail,
     @JsonKey(name: 'customer_address') String? customerAddress,
-    @JsonKey(name: 'composite_product_key') String? compositeProductKey,
+    @JsonKey(toJson: _formatNumber) required double quantity,
+    // Убрали unit_price, vat_rate, payment_method, invoice_number
+    @JsonKey(name: 'payment_status') @Default('paid') String paymentStatus,
+    required String currency,
+    @JsonKey(name: 'exchange_rate', toJson: _formatNumber) required double exchangeRate,
+    @JsonKey(name: 'cash_amount', toJson: _formatNumber) required double cashAmount,
+    @JsonKey(name: 'nocash_amount', toJson: _formatNumber) required double nocashAmount,
+    @JsonKey(name: 'reason_cancellation') String? reasonCancellation,
+    String? notes,
+    @JsonKey(name: 'sale_date') required String saleDate,
+    @JsonKey(name: 'is_active') @Default(true) bool isActive,
   }) = _CreateSaleRequest;
 
   factory CreateSaleRequest.fromJson(Map<String, dynamic> json) =>
@@ -154,4 +155,14 @@ double _parseToDouble(dynamic value) {
     return double.tryParse(value) ?? 0.0;
   }
   return 0.0;
+}
+
+/// Форматирует число для отправки в API, убирая ненужные .0
+dynamic _formatNumber(double value) {
+  // Если число целое, возвращаем как int
+  if (value == value.toInt()) {
+    return value.toInt();
+  }
+  // Иначе возвращаем как double
+  return value;
 }
