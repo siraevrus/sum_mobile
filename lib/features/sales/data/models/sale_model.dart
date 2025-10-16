@@ -101,6 +101,7 @@ class CreateSaleRequest with _$CreateSaleRequest {
     @JsonKey(name: 'exchange_rate', toJson: _formatNumber) required double exchangeRate,
     @JsonKey(name: 'cash_amount', toJson: _formatNumber) required double cashAmount,
     @JsonKey(name: 'nocash_amount', toJson: _formatNumber) required double nocashAmount,
+    @JsonKey(name: 'total_price', toJson: _formatNumber) required double totalPrice,
     @JsonKey(name: 'reason_cancellation') String? reasonCancellation,
     String? notes,
     @JsonKey(name: 'sale_date') required String saleDate,

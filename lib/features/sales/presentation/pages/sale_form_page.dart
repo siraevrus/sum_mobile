@@ -732,6 +732,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         final cashAmount = double.parse(_cashAmountController.text);
         final nocashAmount = double.parse(_nocashAmountController.text);
         final quantity = double.parse(_quantityController.text);
+        final totalPrice = cashAmount + nocashAmount; // Общая сумма
 
         // Проверяем, что товар выбран
         if (_selectedCompositeProductKey == null || _selectedCompositeProductKey!.isEmpty) {
@@ -755,6 +756,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           nocashAmount: nocashAmount,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
           saleDate: _saleDate.toIso8601String().split('T')[0],
+          totalPrice: totalPrice, // Добавляем total_price
         );
 
         
