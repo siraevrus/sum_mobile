@@ -59,11 +59,20 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   void initState() {
     super.initState();
     _initializeForm();
-      _loadData();
+    
+    // Добавляем слушатели для автоматического расчета суммы
+    _cashAmountController.addListener(_calculateTotalPrice);
+    _nocashAmountController.addListener(_calculateTotalPrice);
+    
+    _loadData();
   }
   
   @override
   void dispose() {
+    // Удаляем слушатели
+    _cashAmountController.removeListener(_calculateTotalPrice);
+    _nocashAmountController.removeListener(_calculateTotalPrice);
+    
     _saleNumberController.dispose();
     _quantityController.dispose();
     _cashAmountController.dispose();
