@@ -72,6 +72,7 @@ class UpdateWarehouseRequest with _$UpdateWarehouseRequest {
     String? name,
     String? address,
     @JsonKey(name: 'company_id') int? companyId,
+    @JsonKey(name: 'is_active') bool? isActive,
   }) = _UpdateWarehouseRequest;
 
   factory UpdateWarehouseRequest.fromJson(Map<String, dynamic> json) =>

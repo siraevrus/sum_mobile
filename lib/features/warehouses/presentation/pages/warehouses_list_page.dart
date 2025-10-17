@@ -332,8 +332,8 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Заголовок с меню
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
@@ -341,13 +341,11 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C3E50),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Троеточие справа вверху
                   PopupMenuButton<String>(
                     onSelected: (action) => _handleWarehouseAction(action, warehouse),
                     itemBuilder: (context) => [
@@ -357,54 +355,95 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
                           children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Редактировать')],
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: Colors.red))],
+                      if (!warehouse.isActive)
+                        const PopupMenuItem(
+                          value: 'restore',
+                          child: Row(
+                            children: [Icon(Icons.unarchive, size: 20, color: Colors.green), SizedBox(width: 8), Text('Восстановить', style: TextStyle(color: Colors.green))],
+                          ),
+                        )
+                      else
+                        const PopupMenuItem(
+                          value: 'archive',
+                          child: Row(
+                            children: [Icon(Icons.archive, size: 20, color: Colors.orange), SizedBox(width: 8), Text('Архивировать', style: TextStyle(color: Colors.orange))],
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
               ),
-              // Адрес
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16, color: Color(0xFF6C757D)),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      warehouse.address,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              const SizedBox(height: 12),
+              
+              // Информация о складе
+              _buildWarehouseInfoRow('Компания', warehouse.company?.name ?? 'Не указана'),
+              _buildWarehouseInfoRow('Адрес', warehouse.address),
+              _buildWarehouseInfoRow('Сотрудников', '${warehouse.actualEmployeesCount ?? 0}'),
+              
+              // Тег статуса архива
+              if (!warehouse.isActive) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade700.withOpacity(0.3)),
                   ),
-                ],
-              ),
-              // Компания
-              if (warehouse.company != null)
-                Row(
-                  children: [
-                    const Icon(Icons.business, size: 16, color: Color(0xFF6C757D)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        warehouse.company!.name!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.archive,
+                        size: 14,
+                        color: Colors.orange.shade700,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        "Архив",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              // Статистика
-              Text('Сотрудники: ${warehouse.actualEmployeesCount}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D)),
-              ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildWarehouseInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -462,14 +501,18 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           ),
         ).then((deleted) {
           if (deleted == true) {
-            // Если склад был удален, обновляем список
             setState(() {});
           }
         });
         break;
+      case 'archive':
+        _showArchiveConfirmDialog(warehouse);
+        break;
+      case 'restore':
+        _restoreWarehouse(warehouse);
+        break;
       case 'activate':
       case 'deactivate':
-        // TODO: Активировать/деактивировать склад
         break;
       case 'delete':
         _showDeleteConfirmDialog(warehouse);
@@ -574,6 +617,90 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка удаления: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showArchiveConfirmDialog(WarehouseModel warehouse) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Подтвердите архивирование'),
+        content: Text(
+          'Вы уверены, что хотите архивировать склад "${warehouse.name}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _archiveWarehouse(warehouse);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Архивировать', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _archiveWarehouse(WarehouseModel warehouse) async {
+    try {
+      final dataSource = ref.read(warehousesRemoteDataSourceProvider);
+      await dataSource.updateWarehouse(
+        warehouse.id,
+        UpdateWarehouseRequest(isActive: false),
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Склад "${warehouse.name}" архивирован'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка архивирования: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreWarehouse(WarehouseModel warehouse) async {
+    try {
+      final dataSource = ref.read(warehousesRemoteDataSourceProvider);
+      await dataSource.updateWarehouse(
+        warehouse.id,
+        UpdateWarehouseRequest(isActive: true),
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Склад "${warehouse.name}" восстановлен'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка восстановления: $e'),
             backgroundColor: Colors.red,
           ),
         );
