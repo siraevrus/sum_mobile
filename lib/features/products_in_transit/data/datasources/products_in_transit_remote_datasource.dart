@@ -115,8 +115,21 @@ class ProductsInTransitRemoteDataSourceImpl implements ProductsInTransitRemoteDa
     try {
       final response = await _dio.put('/products/$id', data: request.toJson());
       
-      
-      return ProductInTransitModel.fromJson(response.data['product']);
+      // Проверяем структуру ответа
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+
+        // Пробуем разные варианты структуры ответа
+        if (data.containsKey('product')) {
+          return ProductInTransitModel.fromJson(data['product']);
+        } else if (data.containsKey('data')) {
+          return ProductInTransitModel.fromJson(data['data']);
+        } else {
+          return ProductInTransitModel.fromJson(data);
+        }
+      } else {
+        return ProductInTransitModel.fromJson(response.data);
+      }
     } catch (e) {
       throw _handleError(e);
     }
