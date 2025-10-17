@@ -124,8 +124,6 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _selectedShippingDate = product.shippingDate != null ? DateTime.parse(product.shippingDate!) : null;
       _notesController.text = product.notes ?? '';
       
-      // Debug logging
-      print('DEBUG: _initializeForm - producerId: ${product.producerId}, warehouseId: ${product.warehouseId}, templateId: ${product.productTemplateId}');
     }
   }
 
@@ -229,12 +227,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           createdAt: entity.createdAt,
           updatedAt: entity.updatedAt,
         )).toList();
-        print('DEBUG: _loadData - Loaded ${_producers.length} producers. Selected producerId: $_selectedProducerId');
-        for (var producer in _producers) {
-          print('  - Producer: id=${producer.id}, name=${producer.name}');
-        }
       } else {
-        print('DEBUG: _loadData - Failed to load producers');
       }
 
       // Загружаем шаблоны товаров

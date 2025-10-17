@@ -42,7 +42,9 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
     try {
       
       final dio = ref.read(dioClientProvider);
-      final response = await dio.get('/products/${_currentProduct!.id}');
+      final response = await dio.get('/products/${_currentProduct!.id}', queryParameters: {
+        'include': 'template,warehouse,creator,producer'
+      });
       
       
       if (response.data is Map<String, dynamic>) {
