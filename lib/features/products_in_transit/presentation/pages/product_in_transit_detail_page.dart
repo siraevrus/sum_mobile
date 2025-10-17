@@ -131,8 +131,8 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
                 ),
               );
               
-              // Обновляем данные при возврате из редактирования
-              if (result == true || result == null) {
+              // Обновляем данные только при успешном сохранении
+              if (result == true) {
                 await _refreshProductData();
               }
             },
