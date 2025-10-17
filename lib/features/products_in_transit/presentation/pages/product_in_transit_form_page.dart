@@ -1275,7 +1275,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       final provider = ref.read(productsInTransitProvider.notifier);
       
       final attributes = <String, dynamic>{};
-      for (final entry in _attributeControllers.entries) {
+      // Use the correct attribute controllers from _products[0]
+      for (final entry in _products[0].attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
           attributes[entry.key] = entry.value.text;
         }
@@ -1327,7 +1328,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       final provider = ref.read(productsInTransitProvider.notifier);
       
       final attributes = <String, dynamic>{};
-      for (final entry in _attributeControllers.entries) {
+      // Use the correct attribute controllers from _products[0]
+      for (final entry in _products[0].attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
           attributes[entry.key] = entry.value.text;
         }
