@@ -179,13 +179,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
                 controller: _innController,
                 label: 'ИНН',
                 hint: '1234567890',
-                isRequired: true,
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'ИНН обязателен';
-                  }
-                  if (!_isValidINN(value)) {
+                  if (value != null && value.isNotEmpty && !_isValidINN(value)) {
                     return 'Некорректный ИНН';
                   }
                   return null;
@@ -196,13 +192,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
                 controller: _kppController,
                 label: 'КПП',
                 hint: '123456789',
-                isRequired: true,
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'КПП обязателен';
-                  }
-                  if (!_isValidKPP(value)) {
+                  if (value != null && value.isNotEmpty && !_isValidKPP(value)) {
                     return 'КПП должен содержать 9 цифр';
                   }
                   return null;
