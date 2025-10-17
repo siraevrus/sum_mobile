@@ -124,6 +124,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       _selectedShippingDate = product.shippingDate != null ? DateTime.parse(product.shippingDate!) : null;
       _notesController.text = product.notes ?? '';
       
+      // Debug logging
+      print('DEBUG: _initializeForm - producerId: ${product.producerId}, warehouseId: ${product.warehouseId}, templateId: ${product.productTemplateId}');
     }
   }
 
@@ -227,7 +229,12 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           createdAt: entity.createdAt,
           updatedAt: entity.updatedAt,
         )).toList();
+        print('DEBUG: _loadData - Loaded ${_producers.length} producers. Selected producerId: $_selectedProducerId');
+        for (var producer in _producers) {
+          print('  - Producer: id=${producer.id}, name=${producer.name}');
+        }
       } else {
+        print('DEBUG: _loadData - Failed to load producers');
       }
 
       // Загружаем шаблоны товаров
@@ -587,6 +594,12 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Выберите шаблон товара')),
+        // Always include the selected template even if not in the list
+        if (product.productTemplateId != null && !_productTemplates.any((t) => t.id == product.productTemplateId))
+          DropdownMenuItem(
+            value: product.productTemplateId,
+            child: Text('Шаблон #${product.productTemplateId}'),
+          ),
         ..._productTemplates.map((template) => DropdownMenuItem(
                 value: template.id,
                 child: Text(template.name),
@@ -675,6 +688,12 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Выберите склад')),
+        // Always include the selected warehouse even if not in the list
+        if (_selectedWarehouseId != null && !_warehouses.any((w) => w.id == _selectedWarehouseId))
+          DropdownMenuItem(
+            value: _selectedWarehouseId,
+            child: Text('Склад #$_selectedWarehouseId'),
+          ),
         ..._warehouses.map((warehouse) => DropdownMenuItem(
                 value: warehouse.id,
                 child: Text(warehouse.name),
@@ -705,6 +724,12 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             ),
             items: [
         const DropdownMenuItem(value: null, child: Text('Выберите производителя')),
+        // Always include the selected producer even if not in the list
+        if (_selectedProducerId != null && !_producers.any((p) => p.id == _selectedProducerId))
+          DropdownMenuItem(
+            value: _selectedProducerId,
+            child: Text('Производитель #$_selectedProducerId'),
+          ),
         ..._producers.map((producer) => DropdownMenuItem(
                   value: producer.id,
                   child: Text(producer.name),
