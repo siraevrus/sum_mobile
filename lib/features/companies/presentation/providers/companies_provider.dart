@@ -113,6 +113,26 @@ class CompaniesNotifier extends StateNotifier<AsyncValue<List<CompanyModel>>> {
     }
   }
 
+  Future<void> archiveCompany(int id) async {
+    try {
+      await _repository.archiveCompany(id);
+      // Перезагружаем список после архивирования
+      await loadCompanies();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> restoreCompany(int id) async {
+    try {
+      await _repository.restoreCompany(id);
+      // Перезагружаем список после восстановления
+      await loadCompanies();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
   Future<void> refresh() async {
     await loadCompanies();
   }
@@ -129,6 +149,26 @@ class CompanyDetailsNotifier extends StateNotifier<AsyncValue<CompanyModel>> {
     try {
       final company = await _repository.getCompanyById(_id);
       state = AsyncValue.data(company);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> archiveCompany() async {
+    try {
+      await _repository.archiveCompany(_id);
+      // Перезагружаем данные компании после архивирования
+      await loadCompany();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> restoreCompany() async {
+    try {
+      await _repository.restoreCompany(_id);
+      // Перезагружаем данные компании после восстановления
+      await loadCompany();
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

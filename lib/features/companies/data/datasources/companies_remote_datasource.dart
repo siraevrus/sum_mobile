@@ -123,11 +123,12 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
     }
   }
 
+  @override
   Future<void> archiveCompany(int id) async {
     try {
-      final response = await _dio.put('/companies/$id/archive');
+      final response = await _dio.post('/companies/$id/archive');
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return;
       } else if (response.statusCode == 404) {
         throw Exception('Company not found');
@@ -139,11 +140,12 @@ class CompaniesRemoteDataSourceImpl implements CompaniesRemoteDataSource {
     }
   }
 
+  @override
   Future<void> restoreCompany(int id) async {
     try {
-      final response = await _dio.put('/companies/$id/restore');
+      final response = await _dio.post('/companies/$id/restore');
       
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return;
       } else if (response.statusCode == 404) {
         throw Exception('Company not found');

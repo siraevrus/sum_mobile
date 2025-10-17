@@ -995,7 +995,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       ],
       onChanged: widget.isViewMode ? null : (value) {
         controller.text = value ?? '';
-        _onAttributeChanged();
+        _onProductAttributeChanged(controller);
       },
       validator: attribute.isRequired ? (value) {
         if (value == null || value.isEmpty) {

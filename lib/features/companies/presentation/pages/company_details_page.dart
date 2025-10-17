@@ -452,15 +452,25 @@ class CompanyDetailsPage extends ConsumerWidget {
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _deleteCompany(context, ref, company),
-            icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text('Удалить', style: TextStyle(color: Colors.red)),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-          ),
+          child: company.isArchived
+              ? OutlinedButton.icon(
+                  onPressed: () => _restoreCompany(context, ref, company),
+                  icon: const Icon(Icons.unarchive, color: Colors.green),
+                  label: const Text('Восстановить', style: TextStyle(color: Colors.green)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.green),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                )
+              : OutlinedButton.icon(
+                  onPressed: () => _archiveCompany(context, ref, company),
+                  icon: const Icon(Icons.archive, color: Colors.orange),
+                  label: const Text('Архивировать', style: TextStyle(color: Colors.orange)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.orange),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
         ),
       ],
     );
@@ -472,6 +482,115 @@ class CompanyDetailsPage extends ConsumerWidget {
         builder: (context) => CompanyFormPage(company: company),
       ),
     );
+  }
+  
+  void _archiveCompany(BuildContext context, WidgetRef ref, CompanyModel company) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Архивировать компанию'),
+        content: Text(
+          'Вы уверены, что хотите архивировать компанию "${company.name}"?\n\n'
+          'Архивированная компания будет скрыта из списка, но все данные сохранятся. '
+          'В будущем её можно будет восстановить.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _performArchive(context, ref, company);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: const Text('Архивировать', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Future<void> _performArchive(BuildContext context, WidgetRef ref, CompanyModel company) async {
+    try {
+      final notifier = ref.read(companyDetailsProvider(company.id).notifier);
+      await notifier.archiveCompany();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Компания "${company.name}" архивирована'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при архивировании: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _restoreCompany(BuildContext context, WidgetRef ref, CompanyModel company) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Восстановить компанию'),
+        content: Text(
+          'Вы уверены, что хотите восстановить компанию "${company.name}"?\n\n'
+          'Компания снова станет активной и будет отображаться в списке.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _performRestore(context, ref, company);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
+            child: const Text('Восстановить', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Future<void> _performRestore(BuildContext context, WidgetRef ref, CompanyModel company) async {
+    try {
+      final notifier = ref.read(companyDetailsProvider(company.id).notifier);
+      await notifier.restoreCompany();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Компания "${company.name}" восстановлена'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при восстановлении: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
   
   void _deleteCompany(BuildContext context, WidgetRef ref, CompanyModel company) {

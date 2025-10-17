@@ -89,6 +89,24 @@ class CompaniesRepositoryImpl implements CompaniesRepository {
   }
   
   @override
+  Future<void> archiveCompany(int id) async {
+    try {
+      await _remoteDataSource.archiveCompany(id);
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<void> restoreCompany(int id) async {
+    try {
+      await _remoteDataSource.restoreCompany(id);
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
+  @override
   Future<List<CompanyStatsModel>> getCompaniesStats() async {
     try {
       final stats = await _remoteDataSource.getCompaniesStats();

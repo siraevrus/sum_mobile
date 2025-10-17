@@ -24,6 +24,12 @@ abstract class CompaniesRepository {
   /// Удалить компанию
   Future<void> deleteCompany(int id);
   
+  /// Архивировать компанию
+  Future<void> archiveCompany(int id);
+  
+  /// Восстановить компанию
+  Future<void> restoreCompany(int id);
+  
   /// Получить статистику компаний
   Future<List<CompanyStatsModel>> getCompaniesStats();
   

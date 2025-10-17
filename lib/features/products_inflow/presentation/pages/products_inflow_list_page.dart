@@ -461,16 +461,14 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
             children: [
               // Заголовок с меню
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      product.name ?? 'Без названия',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildProductHeader(product.name ?? 'Без названия'),
+                      ],
                     ),
                   ),
                   PopupMenuButton<String>(
@@ -527,6 +525,52 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProductHeader(String fullName) {
+    // Разбиваем по двоеточию
+    if (fullName.contains(':')) {
+      final parts = fullName.split(':');
+      final productName = parts[0].trim();
+      final characteristics = parts.sublist(1).join(':').trim();
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$productName:',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            characteristics,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              height: 1.4,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      );
+    }
+    
+    // Если двоеточия нет, показываем как было
+    return Text(
+      fullName,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
