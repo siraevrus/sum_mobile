@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Упрощенный экран загрузки без циклов
 class SimpleSplashPage extends ConsumerStatefulWidget {
@@ -98,10 +99,10 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.warehouse,
-                    size: 64,
-                    color: AppColors.primary,
+                  child: SvgPicture.asset(
+                    'assets/logos/logo-expertwood.svg',
+                    width: 64,
+                    height: 64,
                   ),
                 ),
                 const SizedBox(height: 32),

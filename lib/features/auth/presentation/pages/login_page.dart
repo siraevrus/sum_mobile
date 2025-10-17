@@ -5,6 +5,7 @@ import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sum_warehouse/features/auth/presentation/widgets/login_form.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Экран авторизации
 class LoginPage extends ConsumerWidget {
@@ -53,10 +54,11 @@ class LoginPage extends ConsumerWidget {
                 const SizedBox(height: 60),
                 
                 // Логотип и заголовок
-                const Icon(
-                  Icons.warehouse,
-                  size: 80,
-                  color: Colors.white,
+                SvgPicture.asset(
+                  'assets/logos/logo-expertwood.svg',
+                  width: 80,
+                  height: 80,
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 24),
                 

@@ -1355,6 +1355,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
 
       final request = UpdateProductInTransitRequest(
         producerId: _selectedProducerId,
+        warehouseId: _selectedWarehouseId,
         quantity: _quantityController.text,
         name: _nameController.text,
         calculatedVolume: _calculatedVolumeController.text,

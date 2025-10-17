@@ -54,6 +54,7 @@ dependencies:
   # === Графики и анимации ===
   fl_chart: ^0.68.0
   lottie: ^3.1.2
+  flutter_svg: ^2.0.0
 
   cupertino_icons: ^1.0.8
 
@@ -80,10 +81,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
-  #   - assets/animations/
+  assets:
+    - assets/logos/
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
 
 # App icons configuration
 flutter_icons:

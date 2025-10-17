@@ -173,6 +173,7 @@ class UpdateProductInTransitRequest with _$UpdateProductInTransitRequest {
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     String? quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
+    @JsonKey(name: 'warehouse_id') int? warehouseId,
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'arrival_date') String? arrivalDate,
     @JsonKey(name: 'is_active') bool? isActive,

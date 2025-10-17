@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Экран загрузки при инициализации приложения
 class SplashPage extends ConsumerStatefulWidget {
@@ -104,10 +105,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.warehouse,
-                        size: 64,
-                        color: AppColors.primary,
+                      child: SvgPicture.asset(
+                        'assets/logos/logo-expertwood.svg',
+                        width: 64,
+                        height: 64,
                       ),
                     ),
                     const SizedBox(height: 32),
