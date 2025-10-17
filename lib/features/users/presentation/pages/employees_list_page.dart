@@ -233,7 +233,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
 
     _usersFuture ??= dataSource.getUsers(
       search: _searchQuery,
-      role: _roleFilter?.name,
+      role: _roleFilter != null ? _getRoleApiValue(_roleFilter!) : null,
       isBlocked: _isBlockedFilter,
     );
 
@@ -727,6 +727,20 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
     }
   }
 
+  /// Преобразовать роль в формат API (snake_case)
+  String _getRoleApiValue(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return 'admin';
+      case UserRole.operator:
+        return 'operator';
+      case UserRole.warehouseWorker:
+        return 'warehouse_worker';
+      case UserRole.salesManager:
+        return 'sales_manager';
+    }
+  }
+
   void _loadUsers() {
     final dataSource = ref.read(usersRemoteDataSourceProvider);
     // Immediately clear current list so UI reflects update in progress
@@ -738,7 +752,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
     dataSource
         .getUsers(
       search: _searchQuery,
-      role: _roleFilter?.name,
+      role: _roleFilter != null ? _getRoleApiValue(_roleFilter!) : null,
       isBlocked: _isBlockedFilter,
     )
         .then((resp) {
