@@ -353,9 +353,9 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
       MaterialPageRoute(
         builder: (context) => CompanyFormPage(company: company),
       ),
-    ).then((archived) {
-      if (archived == true) {
-        // Если компания была архивирована, обновляем список
+    ).then((result) {
+      // После редактирования или архивирования обновляем список
+      if (result != null) {
         ref.invalidate(companiesListProvider);
       }
     });
