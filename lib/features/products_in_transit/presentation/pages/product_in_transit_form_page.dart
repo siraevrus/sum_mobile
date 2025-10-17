@@ -1118,15 +1118,28 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       }
       
       final newAttributeControllers = <String, TextEditingController>{};
+      final attributes = <String, dynamic>{};
       
       // Создаем контроллеры для атрибутов
       for (final attribute in template.attributes) {
-        // Заполняем значение из существующих атрибутов товара при редактировании
-        final existingValue = _isEditing && widget.product != null
-          ? _products[index].attributes[attribute.variable]?.toString() ?? ''
-          : '';
+        // Ищем существующее значение атрибута
+        String existingValue = '';
+        
+        if (_isEditing && widget.product != null) {
+          // При редактировании пытаемся найти значение в исходных атрибутах
+          if (widget.product!.attributes is Map<String, dynamic>) {
+            final productAttributes = widget.product!.attributes as Map<String, dynamic>;
+            // Ищем значение по переменной атрибута
+            if (productAttributes.containsKey(attribute.variable)) {
+              existingValue = productAttributes[attribute.variable]?.toString() ?? '';
+            }
+          }
+        }
 
         newAttributeControllers[attribute.variable] = TextEditingController(text: existingValue);
+        if (existingValue.isNotEmpty) {
+          attributes[attribute.variable] = existingValue;
+        }
       }
       
         setState(() {
@@ -1135,7 +1148,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           quantity: _products[index].quantity,
           name: _products[index].name,
           calculatedVolume: _products[index].calculatedVolume,
-          attributes: _products[index].attributes,
+          attributes: attributes,  // Сохраняем найденные атрибуты
           template: template,
           attributeControllers: newAttributeControllers,
           quantityController: _products[index].quantityController,
