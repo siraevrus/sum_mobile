@@ -479,7 +479,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
               // Информация о товаре
               _buildInfoRow('Склад', stock.warehouse),
               _buildInfoRow('Производитель', stock.producer ?? 'Не указан'),
-              _buildInfoRow('Количество', '${stock.quantity.toStringAsFixed(0)} шт.'),
+              _buildInfoRow('Доступно', '${stock.availableQuantity.toStringAsFixed(0)} шт.'),
               _buildInfoRow('Объем', '${stock.totalVolume.toStringAsFixed(3)} м³'),
             ],
           ),
