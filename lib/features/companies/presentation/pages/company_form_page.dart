@@ -179,10 +179,15 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
                 controller: _innController,
                 label: 'ИНН',
                 hint: '1234567890',
+                isRequired: true,
                 keyboardType: TextInputType.number,
+                maxLength: 10,
                 validator: (value) {
-                  if (value != null && value.isNotEmpty && !_isValidINN(value)) {
-                    return 'Некорректный ИНН';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'ИНН обязателен';
+                  }
+                  if (!_isValidINN(value)) {
+                    return 'Некорректный ИНН (должно быть 10 цифр)';
                   }
                   return null;
                 },
@@ -291,6 +296,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
     TextInputType? keyboardType,
     int maxLines = 1,
     String? Function(String?)? validator,
+    int? maxLength,
   }) {
     return TextFormField(
       controller: controller,
@@ -306,6 +312,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       ),
       keyboardType: keyboardType,
       maxLines: maxLines,
+      maxLength: maxLength,
       validator: validator,
     );
   }
