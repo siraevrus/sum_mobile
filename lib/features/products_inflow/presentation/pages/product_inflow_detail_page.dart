@@ -8,6 +8,7 @@ import 'package:sum_warehouse/features/products_inflow/data/models/product_inflo
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
 import 'package:sum_warehouse/core/network/dio_client.dart';
+import 'dart:collection';
 
 /// Страница детального просмотра товара
 class ProductInflowDetailPage extends ConsumerStatefulWidget {
@@ -42,15 +43,27 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     try {
       
       final dio = ref.read(dioClientProvider);
-      final response = await dio.get('/products/${_currentProduct!.id}');
+      final response = await dio.get(
+        '/products/${_currentProduct!.id}',
+        queryParameters: {
+          'include': 'template,warehouse,creator,producer'
+        }
+      );
       
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
         
+        // Check if response has success wrapper
         if (data['success'] == true && data['data'] != null) {
           final productData = data['data'] as Map<String, dynamic>;
           _currentProduct = ProductInflowModel.fromJson(productData);
+        } else if (data['product'] != null) {
+          // Alternative format with 'product' key
+          _currentProduct = ProductInflowModel.fromJson(data['product'] as Map<String, dynamic>);
+        } else {
+          // Direct format without wrapper
+          _currentProduct = ProductInflowModel.fromJson(data);
         }
       }
       
@@ -178,11 +191,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
                 title: 'Характеристики товара',
                 children: _isLoadingAttributes 
                     ? [const Center(child: CircularProgressIndicator())]
-                    : (_product.attributes as Map).entries
-                        .map((entry) => _buildInfoRow(
-                            _getAttributeDisplayName(entry.key.toString()), 
-                            entry.value.toString()))
-                        .toList(),
+                    : _buildAttributesInOrder(),
               ),
 
             const SizedBox(height: 24),
@@ -673,5 +682,26 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         );
       }
     }
+  }
+
+  List<Widget> _buildAttributesInOrder() {
+    if (_product.attributes == null) {
+      return [];
+    }
+    
+    // Если attributes уже LinkedHashMap (из API с новым конвертером)
+    // он сохранит порядок без дополнительной сортировки
+    if (_product.attributes is! Map) {
+      return [];
+    }
+    
+    final attrs = _product.attributes as Map<String, dynamic>;
+    
+    // .entries сохранит порядок из LinkedHashMap
+    return attrs.entries
+        .map((entry) => _buildInfoRow(
+            _getAttributeDisplayName(entry.key), 
+            entry.value.toString()))
+        .toList();
   }
 }

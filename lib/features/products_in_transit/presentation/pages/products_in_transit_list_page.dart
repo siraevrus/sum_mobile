@@ -510,9 +510,10 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
               _buildInfoRow('Количество', product.quantity),
               _buildInfoRow('Объем', '${_formatVolume(product.calculatedVolume)} ${product.template?.unit ?? ''}'),
               _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
+              _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
+              _buildInfoRow('Номер транспорта', product.transportNumber ?? 'Не указан'),
               _buildInfoRow('Место отгрузки', product.shippingLocation ?? 'Не указано'),
               _buildInfoRow('Дата отгрузки', _formatDate(product.shippingDate)),
-              _buildInfoRow('Ожидаемая дата прибытия', _formatDate(product.expectedArrivalDate)),
               
               // Тег статуса коррекции
               if (product.correctionStatus != null) ...[

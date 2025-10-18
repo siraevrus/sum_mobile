@@ -1309,9 +1309,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         calculatedVolume: _calculatedVolumeController.text,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String(),
+        expectedArrivalDate: _selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null,
         shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
-        shippingDate: _selectedShippingDate?.toIso8601String(),
+        shippingDate: _selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       );
 
@@ -1361,9 +1361,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         calculatedVolume: _calculatedVolumeController.text,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
-        expectedArrivalDate: _selectedExpectedArrivalDate?.toIso8601String(),
+        expectedArrivalDate: _selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null,
         shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
-        shippingDate: _selectedShippingDate?.toIso8601String(),
+        shippingDate: _selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       );
 

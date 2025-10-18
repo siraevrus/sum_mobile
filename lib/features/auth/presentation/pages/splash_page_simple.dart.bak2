@@ -85,11 +85,25 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Логотип
-                SvgPicture.asset(
-                  "assets/logos/logo-expertwood.svg",
+                Container(
                   width: 120,
                   height: 120,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: SvgPicture.asset(
+                    'assets/logos/logo-expertwood.svg',
+                    width: 64,
+                    height: 64,
+                  ),
                 ),
                 const SizedBox(height: 32),
                 

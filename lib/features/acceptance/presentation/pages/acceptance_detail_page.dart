@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -99,10 +100,27 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
 
     try {
       final dio = ref.read(dioClientProvider);
-      final response = await dio.get('/products/${_currentProduct!.id}');
+      final response = await dio.get(
+        '/products/${_currentProduct!.id}',
+        queryParameters: {
+          'include': 'template,warehouse,creator,producer'
+        }
+      );
 
       if (response.data is Map<String, dynamic>) {
-        final updatedProduct = AcceptanceModel.fromJson(response.data);
+        final data = response.data as Map<String, dynamic>;
+        
+        // Check if response has success wrapper
+        AcceptanceModel? updatedProduct;
+        if (data['success'] == true && data['data'] != null) {
+          updatedProduct = AcceptanceModel.fromJson(data['data'] as Map<String, dynamic>);
+        } else if (data['product'] != null) {
+          // Alternative format with 'product' key
+          updatedProduct = AcceptanceModel.fromJson(data['product'] as Map<String, dynamic>);
+        } else {
+          // Direct format without wrapper
+          updatedProduct = AcceptanceModel.fromJson(data);
+        }
         
         if (mounted) {
           setState(() {
@@ -215,11 +233,7 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
                 title: 'Характеристики товара',
                 children: _isLoadingAttributes 
                     ? [const Center(child: CircularProgressIndicator())]
-                    : (_product.attributes as Map).entries
-                        .map((entry) => _buildInfoRow(
-                            _getAttributeDisplayName(entry.key.toString()), 
-                            entry.value.toString()))
-                        .toList(),
+                    : _buildAttributesInOrder(),
               ),
 
             const SizedBox(height: 24),
@@ -866,4 +880,25 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     }
   }
 
+
+  List<Widget> _buildAttributesInOrder() {
+    if (_product.attributes == null) {
+      return [];
+    }
+    
+    // Если attributes уже LinkedHashMap (из API с новым конвертером)
+    // он сохранит порядок без дополнительной сортировки
+    if (_product.attributes is! Map) {
+      return [];
+    }
+    
+    final attrs = _product.attributes as Map<String, dynamic>;
+    
+    // .entries сохранит порядок из LinkedHashMap
+    return attrs.entries
+        .map((entry) => _buildInfoRow(
+            _getAttributeDisplayName(entry.key), 
+            entry.value.toString()))
+        .toList();
+  }
 }

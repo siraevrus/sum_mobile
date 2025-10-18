@@ -242,6 +242,9 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
         _attributeControllers[attribute.variable]!.addListener(() => _onAttributeChanged());
       }
 
+      // Calculate name and volume after loading attributes
+      _calculateNameAndVolume();
+
       setState(() {});
     } catch (e) {
       _selectedTemplate = null;
@@ -666,6 +669,12 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
       ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Выберите склад')),
+        // Always include the selected warehouse even if not in the list
+        if (_selectedWarehouseId != null && !_warehouses.any((w) => w.id == _selectedWarehouseId))
+          DropdownMenuItem(
+            value: _selectedWarehouseId,
+            child: Text('Склад #$_selectedWarehouseId'),
+          ),
         ..._warehouses.map((warehouse) => DropdownMenuItem(
                 value: warehouse.id,
                 child: Text(warehouse.name),
@@ -1192,6 +1201,7 @@ class _AcceptanceFormPageState extends ConsumerState<AcceptanceFormPage> {
 
       final request = UpdateAcceptanceRequest(
         producerId: _selectedProducerId,
+        warehouseId: _selectedWarehouseId,
         quantity: _quantityController.text,
         name: _nameController.text,
         calculatedVolume: _calculatedVolumeController.text,

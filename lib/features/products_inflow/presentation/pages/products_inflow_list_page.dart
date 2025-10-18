@@ -514,6 +514,8 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               _buildInfoRow('Количество', product.quantity),
               _buildInfoRow('Объем', '${_formatVolume(product.calculatedVolume)} ${product.template?.unit ?? ''}'),
               _buildInfoRow('Склад', product.warehouse?.name ?? 'Не указан'),
+              _buildInfoRow('Производитель', product.producer?.name ?? 'Не указан'),
+              _buildInfoRow('Номер транспорта', product.transportNumber ?? 'Не указан'),
               _buildInfoRow('Дата поступления', product.arrivalDate != null ? _formatDate(product.arrivalDate!) : 'Не указана'),
               
               // Тег статуса коррекции

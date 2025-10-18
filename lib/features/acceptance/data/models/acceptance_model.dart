@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
+import 'dart:collection';
 
 part 'acceptance_model.freezed.dart';
 part 'acceptance_model.g.dart';
@@ -17,6 +18,17 @@ String _quantityFromJson(dynamic value) {
 }
 
 /// Модель товара для раздела "Приемка"
+/// Конвертер для attributes - сохраняет порядок JSON
+LinkedHashMap<String, dynamic> _attributesFromJson(dynamic value) {
+  if (value == null) {
+    return LinkedHashMap<String, dynamic>();
+  }
+  if (value is Map<String, dynamic>) {
+    return LinkedHashMap<String, dynamic>.from(value);
+  }
+  return LinkedHashMap<String, dynamic>();
+}
+
 @freezed
 class AcceptanceModel with _$AcceptanceModel {
   const factory AcceptanceModel({
@@ -26,7 +38,7 @@ class AcceptanceModel with _$AcceptanceModel {
     @JsonKey(name: 'created_by') required int createdBy,
     String? name,
     String? description,
-    dynamic attributes,
+    @JsonKey(fromJson: _attributesFromJson) LinkedHashMap<String, dynamic>? attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     @JsonKey(fromJson: _quantityFromJson) required String quantity,
     @JsonKey(name: 'sold_quantity') @Default(0) int soldQuantity,
@@ -114,7 +126,7 @@ class CreateAcceptanceRequest with _$CreateAcceptanceRequest {
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     String? name,
     String? description,
-    dynamic attributes,
+    @JsonKey(fromJson: _attributesFromJson) LinkedHashMap<String, dynamic>? attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     required String quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
@@ -138,10 +150,11 @@ class UpdateAcceptanceRequest with _$UpdateAcceptanceRequest {
   const factory UpdateAcceptanceRequest({
     String? name,
     String? description,
-    dynamic attributes,
+    @JsonKey(fromJson: _attributesFromJson) LinkedHashMap<String, dynamic>? attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     String? quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
+    @JsonKey(name: 'warehouse_id') int? warehouseId,
     @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'arrival_date') String? arrivalDate,
     @JsonKey(name: 'is_active') bool? isActive,

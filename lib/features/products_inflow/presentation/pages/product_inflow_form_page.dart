@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -178,6 +179,9 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         // Добавляем слушатель изменений
         _attributeControllers[attribute.variable]!.addListener(_onAttributeChanged);
       }
+      
+      // Calculate name and volume after loading attributes
+      _calculateNameAndVolume();
       
       setState(() {});
     } catch (e) {
@@ -493,6 +497,12 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
       ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Выберите склад')),
+        // Always include the selected warehouse even if not in the list
+        if (_selectedWarehouseId != null && !_warehouses.any((w) => w.id == _selectedWarehouseId))
+          DropdownMenuItem(
+            value: _selectedWarehouseId,
+            child: Text('Склад #$_selectedWarehouseId'),
+          ),
         ..._warehouses.map((warehouse) => DropdownMenuItem(
           value: warehouse.id,
           child: Text(warehouse.name),
@@ -724,8 +734,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Собираем атрибуты
-      final Map<String, dynamic> attributes = {};
+      // Собираем атрибуты в LinkedHashMap для сохранения порядка
+      final LinkedHashMap<String, dynamic> attributes = LinkedHashMap();
       for (final entry in _attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
           final attribute = _selectedTemplate!.attributes.firstWhere(
@@ -792,8 +802,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Собираем атрибуты
-      final Map<String, dynamic> attributes = {};
+      // Собираем атрибуты в LinkedHashMap для сохранения порядка
+      final LinkedHashMap<String, dynamic> attributes = LinkedHashMap();
       for (final entry in _attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
           final attribute = _selectedTemplate!.attributes.firstWhere(
@@ -823,6 +833,7 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
         quantity: _quantityController.text,
         calculatedVolume: _calculatedVolumeController.text.isEmpty ? null : _calculatedVolumeController.text,
         transportNumber: _transportNumberController.text.isEmpty ? null : _transportNumberController.text,
+        warehouseId: _selectedWarehouseId,
         producerId: _selectedProducerId,
         arrivalDate: _selectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedArrivalDate!) : null,
         attributes: attributes,

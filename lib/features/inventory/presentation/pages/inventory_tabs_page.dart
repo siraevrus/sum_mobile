@@ -358,6 +358,12 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
   }
 
   Widget _buildInfoRow(String label, String value) {
+    // Truncate address to 75 characters with ellipsis
+    String displayValue = value;
+    if (label == 'Адрес' && value.length > 75) {
+      displayValue = '${value.substring(0, 75)}...';
+    }
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -375,11 +381,13 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
           ),
           Expanded(
             child: Text(
-              value,
+              displayValue,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
