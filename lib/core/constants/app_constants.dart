@@ -1,6 +1,6 @@
 class AppConstants {
   static const String appName = 'Expert Wood';
-  static const String baseUrl = 'http://93.189.230.65/api';
+  static const String baseUrl = 'https://warehouse.expwood.ru/api';
   
   // Размеры
   static const double defaultPadding = 16.0;

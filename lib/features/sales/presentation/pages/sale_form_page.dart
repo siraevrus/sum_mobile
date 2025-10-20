@@ -126,7 +126,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       _cashAmountController.text = '';
       _nocashAmountController.text = '';
       _totalPriceController.text = '';
-      _exchangeRateController.text = '1.0';
+      _exchangeRateController.text = '';
       _notesController.text = '';
       _customerNameController.text = '';
       _customerPhoneController.text = '';

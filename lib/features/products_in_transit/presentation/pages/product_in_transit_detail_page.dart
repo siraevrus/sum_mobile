@@ -483,7 +483,7 @@ class _ProductInTransitDetailPageState extends ConsumerState<ProductInTransitDet
         if (!normalizedPath.startsWith('/storage/')) {
           normalizedPath = '/storage$normalizedPath';
         }
-        documentUrl = 'http://93.189.230.65$normalizedPath';
+        documentUrl = 'https://warehouse.expwood.ru$normalizedPath';
       }
 
 

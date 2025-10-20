@@ -996,7 +996,7 @@ curl -X GET "https://your-domain.com/api/sales/export?payment_status=paid&date_f
 ### Пример 1: Создание простой продажи
 
 ```bash
-curl -X POST "http://93.189.230.65/api/sales" \
+curl -X POST "https://warehouse.expwood.ru/api/sales" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1014,14 +1014,14 @@ curl -X POST "http://93.189.230.65/api/sales" \
 ### Пример 2: Поиск продаж клиента
 
 ```bash
-curl -X GET "http://93.189.230.65/api/sales?search=Иванов" \
+curl -X GET "https://warehouse.expwood.ru/api/sales?search=Иванов" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Пример 3: Получение оплаченных продаж за месяц
 
 ```bash
-curl -X GET "http://93.189.230.65/api/sales?payment_status=paid&date_from=2025-10-01&date_to=2025-10-31" \
+curl -X GET "https://warehouse.expwood.ru/api/sales?payment_status=paid&date_from=2025-10-01&date_to=2025-10-31" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -1029,20 +1029,20 @@ curl -X GET "http://93.189.230.65/api/sales?payment_status=paid&date_from=2025-1
 
 ```bash
 # 1. Создать продажу
-SALE_ID=$(curl -X POST "http://93.189.230.65/api/sales" \
+SALE_ID=$(curl -X POST "https://warehouse.expwood.ru/api/sales" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "product_id": 389, "warehouse_id": 13, ... }' | jq -r '.sale.id')
 
 # 2. Обработать продажу
-curl -X POST "http://93.189.230.65/api/sales/$SALE_ID/process" \
+curl -X POST "https://warehouse.expwood.ru/api/sales/$SALE_ID/process" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Пример 5: Экспорт продаж за период
 
 ```bash
-curl -X GET "http://93.189.230.65/api/sales/export?date_from=2025-10-01&date_to=2025-10-31" \
+curl -X GET "https://warehouse.expwood.ru/api/sales/export?date_from=2025-10-01&date_to=2025-10-31" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   > sales_export.json
 ```
@@ -1101,7 +1101,7 @@ available_quantity = quantity - sold_quantity
 ### 1. Проверка остатков перед продажей
 ```bash
 # Проверить остатки товара
-curl -X GET "http://93.189.230.65/api/products/389" \
+curl -X GET "https://warehouse.expwood.ru/api/products/389" \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Убедиться, что available_quantity >= quantity для продажи
@@ -1110,21 +1110,21 @@ curl -X GET "http://93.189.230.65/api/products/389" \
 ### 2. Использование пагинации
 ```bash
 # Запрашивайте данные порциями для больших списков
-curl -X GET "http://93.189.230.65/api/sales?per_page=50&page=1" \
+curl -X GET "https://warehouse.expwood.ru/api/sales?per_page=50&page=1" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 3. Фильтрация по датам
 ```bash
 # Используйте фильтры для оптимизации запросов
-curl -X GET "http://93.189.230.65/api/sales?date_from=2025-10-01&payment_status=paid" \
+curl -X GET "https://warehouse.expwood.ru/api/sales?date_from=2025-10-01&payment_status=paid" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 4. Обработка ошибок
 ```javascript
 try {
-  const response = await fetch('http://93.189.230.65/api/sales', {
+  const response = await fetch('https://warehouse.expwood.ru/api/sales', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
