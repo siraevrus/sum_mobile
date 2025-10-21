@@ -11,6 +11,7 @@ class SaleModel with _$SaleModel {
     @JsonKey(name: 'product_id') required int productId,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     @JsonKey(name: 'user_id') required int userId,
+    @JsonKey(name: 'producer_id') int? producerId,
     @JsonKey(name: 'sale_number') String? saleNumber,
     @JsonKey(name: 'customer_name') String? customerName,
     @JsonKey(name: 'customer_phone') String? customerPhone,
@@ -90,6 +91,7 @@ class CreateSaleRequest with _$CreateSaleRequest {
     // Убираем sale_number - генерируется автоматически на сервере
     @JsonKey(name: 'composite_product_key') required String compositeProductKey,
     @JsonKey(name: 'warehouse_id') required int warehouseId,
+    @JsonKey(name: 'producer_id') required int producerId,
     @JsonKey(name: 'customer_name') required String customerName,
     @JsonKey(name: 'customer_phone') String? customerPhone,
     @JsonKey(name: 'customer_email') String? customerEmail,
@@ -118,6 +120,7 @@ class UpdateSaleRequest with _$UpdateSaleRequest {
   const factory UpdateSaleRequest({
     @JsonKey(name: 'product_id') int? productId,
     @JsonKey(name: 'warehouse_id') int? warehouseId,
+    @JsonKey(name: 'producer_id') int? producerId,
     double? quantity,
     @JsonKey(name: 'cash_amount') double? cashAmount,
     @JsonKey(name: 'nocash_amount') double? nocashAmount,

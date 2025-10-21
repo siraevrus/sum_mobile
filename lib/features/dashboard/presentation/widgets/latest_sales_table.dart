@@ -134,6 +134,7 @@ class LatestSalesTable extends StatelessWidget {
     final formatter = NumberFormat.currency(
       symbol: currency,
       decimalDigits: 2,
+      customPattern: '0.00 \$',
     );
     return formatter.format(amount);
   }
@@ -302,6 +303,7 @@ class MobileLatestSalesCard extends StatelessWidget {
     final formatter = NumberFormat.currency(
       symbol: currency,
       decimalDigits: 2,
+      customPattern: '0.00 \$',
     );
     return formatter.format(amount);
   }

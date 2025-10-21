@@ -24,7 +24,11 @@ abstract class WarehousesRemoteDataSource {
   Future<WarehouseModel> updateWarehouse(int id, UpdateWarehouseRequest request);
   Future<void> deleteWarehouse(int id);
   Future<WarehouseStats> getWarehouseStats(int id);
-  Future<List<Map<String, dynamic>>> getWarehouseProducts(int id);
+  Future<List<Map<String, dynamic>>> getWarehouseProducts(int id, {
+    int page = 1,
+    int perPage = 15,
+    int? producerId,
+  });
   Future<List<Map<String, dynamic>>> getWarehouseEmployees(int id);
   Future<void> activateWarehouse(int id);
   Future<void> deactivateWarehouse(int id);
@@ -146,6 +150,7 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
   Future<List<Map<String, dynamic>>> getWarehouseProducts(int id, {
     int page = 1,
     int perPage = 15,
+    int? producerId,
   }) async {
     try {
       final queryParams = {
@@ -155,6 +160,11 @@ class WarehousesRemoteDataSourceImpl implements WarehousesRemoteDataSource {
         'page': page,
         'per_page': perPage,
       };
+      
+      // Добавляем фильтр по производителю, если указан
+      if (producerId != null) {
+        queryParams['producer_id'] = producerId.toString();
+      }
 
       final response = await _dio.get('/products',
         queryParameters: queryParams);

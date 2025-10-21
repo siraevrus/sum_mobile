@@ -413,10 +413,16 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
           onRefresh: () async {
             await ref.read(productsInflowProvider.notifier).refresh();
           },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: products.data.length + 1, // +1 для индикатора загрузки
-            itemBuilder: (context, index) {
+          child: SafeArea(
+            child: ListView.builder(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+              ),
+              itemCount: products.data.length + 1, // +1 для индикатора загрузки
+              itemBuilder: (context, index) {
               if (index == products.data.length) {
                 // Показать индикатор загрузки если есть следующая страница
                 final hasNextPage = products.pagination?.currentPage != null && 
@@ -441,6 +447,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               final product = products.data[index];
               return _buildProductCard(product);
             },
+            ),
           ),
         );
       },

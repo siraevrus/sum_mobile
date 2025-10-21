@@ -5,6 +5,8 @@ import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
+import 'package:sum_warehouse/shared/models/producer_model.dart';
+import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
 /// Страница создания/редактирования/просмотра продажи
 class SaleFormPage extends ConsumerStatefulWidget {
@@ -42,6 +44,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   bool _isLoading = false;
   DateTime _saleDate = DateTime.now();
   int? _selectedWarehouseId;
+  int? _selectedProducerId;
   String? _selectedCompositeProductKey; // Изменили на composite_product_key
   String _selectedCurrency = 'RUB';
   double _exchangeRate = 1.0;
@@ -50,6 +53,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   
   // Reference data
   List<WarehouseModel> _warehouses = [];
+  List<ProducerModel> _producers = [];
   List<Map<String, dynamic>> _warehouseProducts = [];
   
   bool get _isEditing => widget.sale != null;
@@ -147,6 +151,21 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       final warehousesResponse = await warehousesDataSource.getWarehouses(perPage: 100);
       _warehouses = warehousesResponse.data;
       
+      // Load producers
+      await ref.read(producersProvider.notifier).loadProducers();
+      final producersState = ref.read(producersProvider);
+      producersState.whenData((entities) {
+        // Convert ProducerEntity to ProducerModel
+        _producers = entities.map((entity) => ProducerModel(
+          id: entity.id,
+          name: entity.name,
+          region: entity.region,
+          productsCount: entity.productsCount,
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt,
+        )).toList();
+      });
+      
       if (_selectedWarehouseId != null) {
         await _loadWarehouseProducts(_selectedWarehouseId!);
       }
@@ -169,7 +188,30 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   Future<void> _loadWarehouseProducts(int warehouseId) async {
     try {
       final warehousesDataSource = ref.read(warehousesRemoteDataSourceProvider);
-      _warehouseProducts = await warehousesDataSource.getWarehouseProducts(warehouseId);
+      _warehouseProducts = await warehousesDataSource.getWarehouseProducts(
+        warehouseId,
+        producerId: _selectedProducerId,
+      );
+      
+      // Фильтруем товары по производителю на клиенте, если выбран производитель
+      if (_selectedProducerId != null) {
+        // Получаем имя выбранного производителя
+        final selectedProducer = _producers.firstWhere(
+          (p) => p.id == _selectedProducerId,
+          orElse: () => ProducerModel(
+            id: _selectedProducerId!,
+            name: '',
+            productsCount: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        
+        // Фильтруем товары - оставляем только товары выбранного производителя
+        _warehouseProducts = _warehouseProducts
+            .where((product) => product['producer'] == selectedProducer.name)
+            .toList();
+      }
       
       // Отладочная информация
       print('Загружено товаров: ${_warehouseProducts.length}');
@@ -329,6 +371,8 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
             _buildTextField(_saleNumberController, 'Номер продажи', enabled: false),
             const SizedBox(height: 16),
             _buildWarehouseDropdown(),
+            const SizedBox(height: 16),
+            _buildProducerDropdown(),
             const SizedBox(height: 16),
             _buildDateField(),
             const SizedBox(height: 16),
@@ -497,6 +541,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
       onChanged: (warehouseId) {
         setState(() {
           _selectedWarehouseId = warehouseId;
+          _selectedProducerId = null;
           _selectedCompositeProductKey = null;
           _warehouseProducts.clear();
         });
@@ -511,6 +556,39 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     );
   }
   
+  Widget _buildProducerDropdown() {
+    return DropdownButtonFormField<int>(
+      value: _selectedProducerId,
+      decoration: InputDecoration(
+        labelText: 'Производитель *',
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+        hintText: _selectedWarehouseId == null 
+          ? 'Сначала выберите склад'
+          : 'Выберите производителя',
+      ),
+      items: _producers.map((producer) => DropdownMenuItem(
+        value: producer.id,
+        child: Text(producer.name),
+      )).toList(),
+      onChanged: _selectedWarehouseId == null ? null : (producerId) {
+        setState(() {
+          _selectedProducerId = producerId;
+          _selectedCompositeProductKey = null;
+          _warehouseProducts.clear();
+        });
+        if (_selectedWarehouseId != null) {
+          _loadWarehouseProducts(_selectedWarehouseId!);
+        }
+      },
+      validator: (value) {
+        if (value == null) return 'Выберите производителя';
+        return null;
+      },
+    );
+  }
+
   Widget _buildProductDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedCompositeProductKey,
@@ -521,7 +599,9 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         fillColor: Colors.white,
         hintText: _selectedWarehouseId == null 
           ? 'Сначала выберите склад'
-          : 'Выберите товар',
+          : _selectedProducerId == null
+            ? 'Сначала выберите производителя'
+            : 'Выберите товар',
       ),
       isExpanded: true,
       items: _warehouseProducts.map((product) {
@@ -544,7 +624,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           );
         }).toList();
       },
-      onChanged: _selectedWarehouseId == null ? null : (compositeKey) {
+      onChanged: (_selectedWarehouseId == null || _selectedProducerId == null) ? null : (compositeKey) {
         print('Выбран товар с composite_product_key: $compositeKey');
         // Находим выбранный товар и сохраняем его доступное количество
         final selectedProduct = _warehouseProducts.firstWhere(
@@ -747,6 +827,11 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         if (_selectedCompositeProductKey == null || _selectedCompositeProductKey!.isEmpty) {
           throw Exception('Выберите товар для продажи');
         }
+        
+        // Проверяем, что производитель выбран
+        if (_selectedProducerId == null) {
+          throw Exception('Выберите производителя');
+        }
 
         // Используем уже готовый composite_product_key
         final compositeProductKey = _selectedCompositeProductKey!;
@@ -754,6 +839,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
         final request = CreateSaleRequest(
           compositeProductKey: compositeProductKey,
           warehouseId: _selectedWarehouseId!,
+          producerId: _selectedProducerId!,
           customerName: _customerNameController.text,
           customerPhone: _customerPhoneController.text.isEmpty ? null : _customerPhoneController.text,
           customerEmail: _customerEmailController.text.isEmpty ? null : _customerEmailController.text,
