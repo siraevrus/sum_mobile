@@ -107,7 +107,7 @@ class LatestSalesTable extends StatelessWidget {
                       ),
                       DataCell(
                         Text(
-                          '₽${sale.totalAmount.toStringAsFixed(2)}',
+                          _formatCurrency(sale.totalAmount, sale.currency),
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.green,
@@ -128,6 +128,14 @@ class LatestSalesTable extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatCurrency(double amount, String currency) {
+    final formatter = NumberFormat.currency(
+      symbol: currency,
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }
 
@@ -273,7 +281,7 @@ class MobileLatestSalesCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '₽${sale.totalAmount.toStringAsFixed(2)}',
+                      _formatCurrency(sale.totalAmount, sale.currency),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -288,5 +296,13 @@ class MobileLatestSalesCard extends StatelessWidget {
         ],
       ),
     );
+  }
+  
+  String _formatCurrency(double amount, String currency) {
+    final formatter = NumberFormat.currency(
+      symbol: currency,
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }

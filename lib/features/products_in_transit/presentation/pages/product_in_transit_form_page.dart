@@ -442,6 +442,14 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             _buildTextField(
               controller: _transportNumberController,
               label: 'Номер транспортного средства',
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  _transportNumberController.text = value.toUpperCase();
+                  _transportNumberController.selection = TextSelection.fromPosition(
+                    TextPosition(offset: _transportNumberController.text.length),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 16),
 
@@ -449,6 +457,14 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             _buildTextField(
               controller: _shippingLocationController,
                     label: 'Место отгрузки',
+                    onChanged: (value) {
+                      if (value.isNotEmpty && value[0] != value[0].toUpperCase()) {
+                        _shippingLocationController.text = value[0].toUpperCase() + value.substring(1);
+                        _shippingLocationController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: _shippingLocationController.text.length),
+                        );
+                      }
+                    },
             ),
                 ],
               ),

@@ -343,6 +343,14 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
                         _buildTextField(
                           controller: _transportNumberController,
                           label: 'Номер транспортного средства',
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              _transportNumberController.text = value.toUpperCase();
+                              _transportNumberController.selection = TextSelection.fromPosition(
+                                TextPosition(offset: _transportNumberController.text.length),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),

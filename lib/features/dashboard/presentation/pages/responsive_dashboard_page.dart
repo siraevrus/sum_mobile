@@ -16,6 +16,7 @@ import 'package:sum_warehouse/features/producers/presentation/pages/producers_li
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
 import 'package:sum_warehouse/features/acceptance/presentation/pages/acceptance_list_page.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
 class ResponsiveDashboardPage extends ConsumerWidget {
@@ -209,15 +210,16 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
             // Заголовок приложения
             Container(
               padding: const EdgeInsets.all(24),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.warehouse,
-                    color: Colors.white,
-                    size: 32,
+                  SvgPicture.asset(
+                    'assets/logos/logo-expertwood.svg',
+                    width: 32,
+                    height: 32,
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
+                  const SizedBox(width: 12),
+                  const Expanded(
                     child: Text(
                       'Expert Wood',
                       style: TextStyle(

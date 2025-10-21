@@ -56,7 +56,7 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: const Color(0xFFF8F1DF),
       body: Consumer(
         builder: (context, ref, child) {
           final authState = ref.watch(authProvider);
@@ -86,10 +86,9 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
               children: [
                 // Логотип
                 SvgPicture.asset(
-                  "assets/logos/logo-expertwood.svg",
+                  "assets/logos/logo-expertwood-green.svg",
                   width: 120,
                   height: 120,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 32),
                 
@@ -98,109 +97,30 @@ class _SimpleSplashPageState extends ConsumerState<SimpleSplashPage> {
                   'Expert Wood',
                   style: TextStyle(
                     fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF256437),
                   ),
                 ),
                 const SizedBox(height: 8),
                 
-                // Подзаголовок
+                // Описание
                 const Text(
                   'Система складского учета',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w300,
+                    color: Color(0xFF256437),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
                 
-                // Индикатор загрузки и статус
-                authState.maybeWhen(
-                  initial: () => Column(
-                    children: const [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Инициализация...',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  loading: () => Column(
-                    children: const [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Проверка авторизации...',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  authenticated: (user, token) => Column(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 32),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Добро пожаловать, ${user.name}!',
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  unauthenticated: () => Column(
-                    children: const [
-                      Icon(Icons.login, color: Colors.white, size: 32),
-                      SizedBox(height: 16),
-                      Text(
-                        'Переход на страницу входа...',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  error: (message) => Column(
-                    children: [
-                      const Icon(Icons.error, color: Colors.red, size: 32),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Ошибка: $message',
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  orElse: () => Column(
-                    children: const [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Загрузка...',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
-                    ],
+                // Сообщение о проверке авторизации
+                const Text(
+                  'Проверка авторизации...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF256437),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

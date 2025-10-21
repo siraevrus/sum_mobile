@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 
 /// Современное боковое меню в стиле веб-интерфейса
@@ -46,7 +47,39 @@ class _ModernSidebarState extends State<ModernSidebar> {
       ),
       child: Column(
         children: [
-          // Информация о роли пользователя
+          // Логотип компании
+          Container(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/logos/logo-expertwood.svg',
+                  width: 32,
+                  height: 32,
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Expert Wood',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(
+            color: Color(0xFF34495E),
+            thickness: 1,
+            height: 1,
+          ),
+
+          // Информация о роле пользователя
           Container(
             padding: const EdgeInsets.all(20),
             child: Row(

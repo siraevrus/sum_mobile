@@ -149,6 +149,7 @@ class LatestSale with _$LatestSale {
     required double quantity,
     @JsonKey(name: 'total_amount') required double totalAmount,
     @JsonKey(name: 'sale_date') required DateTime saleDate,
+    @Default('RUB') String currency,
   }) = _LatestSale;
 
   factory LatestSale.fromJson(Map<String, dynamic> json) {
@@ -159,6 +160,7 @@ class LatestSale with _$LatestSale {
       quantity: _parseDouble(json['quantity']),
       totalAmount: _parseDouble(json['total_amount']),
       saleDate: DateTime.parse(json['sale_date'] as String),
+      currency: json['currency'] as String? ?? 'RUB',
     );
   }
 }

@@ -50,6 +50,7 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         }
       );
       
+      print('🔍 [Product Inflow Detail] Refresh response data: ${response.data}');
       
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -57,18 +58,23 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         // Check if response has success wrapper
         if (data['success'] == true && data['data'] != null) {
           final productData = data['data'] as Map<String, dynamic>;
+          print('🔍 [Product Inflow Detail] Using success wrapper data with producer: ${productData['producer']}');
           _currentProduct = ProductInflowModel.fromJson(productData);
         } else if (data['product'] != null) {
           // Alternative format with 'product' key
+          print('🔍 [Product Inflow Detail] Using product key with producer: ${data['product']['producer']}');
           _currentProduct = ProductInflowModel.fromJson(data['product'] as Map<String, dynamic>);
         } else {
           // Direct format without wrapper
+          print('🔍 [Product Inflow Detail] Using direct format with producer: ${data['producer']}');
           _currentProduct = ProductInflowModel.fromJson(data);
         }
       }
       
+      print('🔍 [Product Inflow Detail] After refresh - producer: ${_currentProduct?.producer}');
       setState(() {});
     } catch (e) {
+      print('❌ [Product Inflow Detail] Error refreshing: $e');
     }
   }
 

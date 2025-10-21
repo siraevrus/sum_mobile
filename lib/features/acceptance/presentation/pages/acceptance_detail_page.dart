@@ -99,6 +99,7 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     if (_currentProduct == null) return;
 
     try {
+      
       final dio = ref.read(dioClientProvider);
       final response = await dio.get(
         '/products/${_currentProduct!.id}',
@@ -106,30 +107,25 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
           'include': 'template,warehouse,creator,producer'
         }
       );
-
+      
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
         
         // Check if response has success wrapper
-        AcceptanceModel? updatedProduct;
         if (data['success'] == true && data['data'] != null) {
-          updatedProduct = AcceptanceModel.fromJson(data['data'] as Map<String, dynamic>);
+          final productData = data['data'] as Map<String, dynamic>;
+          _currentProduct = AcceptanceModel.fromJson(productData);
         } else if (data['product'] != null) {
           // Alternative format with 'product' key
-          updatedProduct = AcceptanceModel.fromJson(data['product'] as Map<String, dynamic>);
+          _currentProduct = AcceptanceModel.fromJson(data['product'] as Map<String, dynamic>);
         } else {
           // Direct format without wrapper
-          updatedProduct = AcceptanceModel.fromJson(data);
-        }
-        
-        if (mounted) {
-          setState(() {
-            _currentProduct = updatedProduct;
-          });
+          _currentProduct = AcceptanceModel.fromJson(data);
         }
       }
+      
+      setState(() {});
     } catch (e) {
-      // Обработка ошибки обновления данных товара
     }
   }
 
