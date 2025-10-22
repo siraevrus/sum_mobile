@@ -254,7 +254,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
           itemCount: users.length,
           itemBuilder: (context, index) => _buildUserCard(users[index]),
         );

@@ -447,42 +447,8 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
         ),
       );
       
-      // Запрашиваем разрешения в зависимости от версии Android
-      bool hasPermission = false;
-      
-      if (await Permission.storage.isGranted) {
-        hasPermission = true;
-      } else {
-        // Для Android 13+ (API 33+) запрашиваем новые разрешения
-        if (await Permission.photos.isGranted || 
-            await Permission.videos.isGranted || 
-            await Permission.audio.isGranted) {
-          hasPermission = true;
-        } else {
-          // Запрашиваем разрешения
-          final status = await Permission.storage.request();
-          if (status == PermissionStatus.granted) {
-            hasPermission = true;
-          } else {
-            // Пробуем запросить новые разрешения для Android 13+
-            final photosStatus = await Permission.photos.request();
-            final videosStatus = await Permission.videos.request();
-            final audioStatus = await Permission.audio.request();
-            
-            if (photosStatus == PermissionStatus.granted || 
-                videosStatus == PermissionStatus.granted || 
-                audioStatus == PermissionStatus.granted) {
-              hasPermission = true;
-            }
-          }
-        }
-      }
-      
-      if (!hasPermission) {
-        Navigator.of(context).pop(); // Закрываем диалог загрузки
-        _showErrorDialog('Необходимо разрешение на доступ к хранилищу. Пожалуйста, предоставьте разрешение в настройках приложения.');
-        return;
-      }
+      // Для Android 10+ используем scoped storage - разрешения не нужны
+      // Файлы сохраняются в приложение-специфическую директорию
       
       // Скачиваем файл
       final dio = ref.read(dioClientProvider);

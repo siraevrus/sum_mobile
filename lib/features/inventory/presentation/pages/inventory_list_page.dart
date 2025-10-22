@@ -73,7 +73,7 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
                       child: stocks.isEmpty
                           ? _buildEmptyState()
                           : ListView.separated(
-                              padding: const EdgeInsets.all(16.0),
+                              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
                               itemCount: stocks.length,
                               separatorBuilder: (context, index) => const SizedBox(height: 12),
                               itemBuilder: (context, index) {

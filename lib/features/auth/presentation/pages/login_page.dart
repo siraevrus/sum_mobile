@@ -63,7 +63,7 @@ class LoginPage extends ConsumerWidget {
                 const SizedBox(height: 24),
                 
                 const Text(
-                  'Expert Wood',
+                  'Wood Warehouse',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,

@@ -261,7 +261,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
             setState(() {});
           },
           child: ListView.separated(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
             itemCount: warehouses.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) => _buildWarehouseCard(warehouses[index]),

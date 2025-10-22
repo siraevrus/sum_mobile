@@ -117,7 +117,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
           return ListView.builder(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
             itemCount: sales.length,
             itemBuilder: (context, index) => SaleCard(
               sale: sales[index],

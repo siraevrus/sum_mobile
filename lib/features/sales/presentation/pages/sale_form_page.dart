@@ -295,7 +295,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   Widget _buildViewMode() {
     final sale = widget.sale!;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -364,7 +364,7 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 100),
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
           children: [

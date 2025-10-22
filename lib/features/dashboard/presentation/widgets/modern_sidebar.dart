@@ -61,7 +61,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
-                    'Expert Wood',
+                    'Wood Warehouse',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

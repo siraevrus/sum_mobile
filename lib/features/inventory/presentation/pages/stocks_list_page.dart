@@ -197,7 +197,7 @@ class _StocksListPageState extends ConsumerState<StocksListPage> {
     }
     
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       itemCount: filteredStocks.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {

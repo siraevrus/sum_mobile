@@ -221,7 +221,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Expert Wood',
+                      'Wood Warehouse',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,

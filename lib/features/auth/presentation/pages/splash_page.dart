@@ -101,7 +101,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     
                     // Название приложения
                     const Text(
-                      'Expert Wood',
+                      'Wood Warehouse',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,

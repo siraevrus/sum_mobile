@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'Expert Wood';
+  static const String appName = 'Wood Warehouse';
   static const String baseUrl = 'https://warehouse.expwood.ru/api';
   
   // Размеры

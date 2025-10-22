@@ -401,11 +401,11 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
           },
           child: SafeArea(
             child: ListView.separated(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 16,
                 right: 16,
                 top: 16,
-                bottom: MediaQuery.of(context).padding.bottom + 16,
+                bottom: 100,
               ),
               itemCount: products.data.length + 1, // +1 для кнопки "Загрузить еще"
               separatorBuilder: (context, index) => const SizedBox(height: 12),

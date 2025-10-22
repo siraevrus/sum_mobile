@@ -1,7 +1,7 @@
 name: sum_warehouse
-description: "Expert Wood - Warehouse Management System"
+description: "Wood Warehouse - Warehouse Management System"
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.3+3
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

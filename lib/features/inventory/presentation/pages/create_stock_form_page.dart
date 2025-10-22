@@ -124,7 +124,7 @@ class _CreateStockFormPageState extends ConsumerState<CreateStockFormPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
               child: Form(
                 key: _formKey,
                 child: Column(

@@ -72,7 +72,7 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
                         icon: Icons.business,
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
                         itemCount: companies.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
