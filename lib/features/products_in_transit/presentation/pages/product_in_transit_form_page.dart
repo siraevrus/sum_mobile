@@ -1369,13 +1369,16 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
           attributes[entry.key] = entry.value.text;
         }
       }
+      
+      // Генерируем актуальное наименование из текущих атрибутов
+      final generatedName = _generateProductName(0);
 
       final request = UpdateProductInTransitRequest(
         producerId: _selectedProducerId,
         warehouseId: _selectedWarehouseId,
         productTemplateId: _selectedProductTemplateId,
         quantity: _quantityController.text,
-        name: _nameController.text,
+        name: generatedName,
         calculatedVolume: _calculatedVolumeController.text,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
@@ -1391,7 +1394,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       print('  - warehouseId: $_selectedWarehouseId');
       print('  - producerId: $_selectedProducerId');
       print('  - quantity: ${_quantityController.text}');
-      print('  - name: ${_nameController.text}');
+      print('  - name (generated): $generatedName');
       print('  - calculatedVolume: ${_calculatedVolumeController.text}');
       print('  - attributes: $attributes');
       print('  - transportNumber: ${_transportNumberController.text}');
