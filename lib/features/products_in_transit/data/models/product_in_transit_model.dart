@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sum_warehouse/shared/models/common_references.dart';
+import 'dart:collection';
 
 part 'product_in_transit_model.freezed.dart';
 part 'product_in_transit_model.g.dart';
@@ -14,6 +15,17 @@ String _quantityFromJson(dynamic value) {
     return value;
   }
   return '0';
+}
+
+/// Конвертер для сохранения порядка атрибутов
+LinkedHashMap<String, dynamic> _attributesFromJson(dynamic json) {
+  final result = LinkedHashMap<String, dynamic>();
+  if (json is Map<String, dynamic>) {
+    json.forEach((key, value) {
+      result[key] = value;
+    });
+  }
+  return result;
 }
 
 /// Модель товара для раздела "Товары в пути"
@@ -114,7 +126,7 @@ class CreateProductInTransitRequest with _$CreateProductInTransitRequest {
     @JsonKey(name: 'warehouse_id') required int warehouseId,
     String? name,
     String? description,
-    dynamic attributes,
+    @JsonKey(fromJson: _attributesFromJson) LinkedHashMap<String, dynamic>? attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     required String quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,
@@ -167,9 +179,10 @@ class ProductInTransitItem with _$ProductInTransitItem {
 @freezed
 class UpdateProductInTransitRequest with _$UpdateProductInTransitRequest {
   const factory UpdateProductInTransitRequest({
+    @JsonKey(name: 'product_template_id') int? productTemplateId,
     String? name,
     String? description,
-    dynamic attributes,
+    @JsonKey(fromJson: _attributesFromJson) LinkedHashMap<String, dynamic>? attributes,
     @JsonKey(name: 'calculated_volume') String? calculatedVolume,
     String? quantity,
     @JsonKey(name: 'transport_number') String? transportNumber,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'dart:collection';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/products_in_transit/data/datasources/products_in_transit_remote_datasource.dart';
 import 'package:sum_warehouse/features/products_in_transit/data/datasources/product_template_remote_datasource.dart';
@@ -1308,7 +1309,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       final provider = ref.read(productsInTransitProvider.notifier);
       
-      final attributes = <String, dynamic>{};
+      final LinkedHashMap<String, dynamic> attributes = LinkedHashMap();
       // Use the correct attribute controllers from _products[0]
       for (final entry in _products[0].attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
@@ -1361,7 +1362,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       final provider = ref.read(productsInTransitProvider.notifier);
       
-      final attributes = <String, dynamic>{};
+      final LinkedHashMap<String, dynamic> attributes = LinkedHashMap();
       // Use the correct attribute controllers from _products[0]
       for (final entry in _products[0].attributeControllers.entries) {
         if (entry.value.text.isNotEmpty) {
@@ -1372,6 +1373,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       final request = UpdateProductInTransitRequest(
         producerId: _selectedProducerId,
         warehouseId: _selectedWarehouseId,
+        productTemplateId: _selectedProductTemplateId,
         quantity: _quantityController.text,
         name: _nameController.text,
         calculatedVolume: _calculatedVolumeController.text,
@@ -1381,7 +1383,22 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
         shippingLocation: _shippingLocationController.text.isNotEmpty ? _shippingLocationController.text : null,
         shippingDate: _selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+        isActive: true,
       );
+      
+      print('🔍 [Product In Transit] Update request fields:');
+      print('  - productTemplateId: $_selectedProductTemplateId');
+      print('  - warehouseId: $_selectedWarehouseId');
+      print('  - producerId: $_selectedProducerId');
+      print('  - quantity: ${_quantityController.text}');
+      print('  - name: ${_nameController.text}');
+      print('  - calculatedVolume: ${_calculatedVolumeController.text}');
+      print('  - attributes: $attributes');
+      print('  - transportNumber: ${_transportNumberController.text}');
+      print('  - expectedArrivalDate: ${_selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null}');
+      print('  - shippingLocation: ${_shippingLocationController.text}');
+      print('  - shippingDate: ${_selectedShippingDate != null ? DateFormat('yyyy-MM-dd').format(_selectedShippingDate!) : null}');
+      print('  - notes: ${_notesController.text}');
 
       await provider.updateProduct(widget.product!.id!, request);
 
@@ -1493,7 +1510,7 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
             final product = _products[i];
             
             // Собираем атрибуты для товара
-            final attributes = <String, dynamic>{};
+            final LinkedHashMap<String, dynamic> attributes = LinkedHashMap();
             for (final entry in product.attributeControllers.entries) {
               if (entry.value.text.isNotEmpty) {
                 attributes[entry.key] = entry.value.text;
