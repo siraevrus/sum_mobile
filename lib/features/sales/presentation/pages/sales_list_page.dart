@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/sales/presentation/pages/sale_form_page.d
 import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/sales/presentation/widgets/sale_card.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
+import 'package:intl/intl.dart';
 
 /// Страница списка продаж
 class SalesListPage extends ConsumerStatefulWidget {
@@ -17,11 +18,34 @@ class SalesListPage extends ConsumerStatefulWidget {
 
 class _SalesListPageState extends ConsumerState<SalesListPage> {
   final ScrollController _scrollController = ScrollController();
-  String? _searchQuery;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
+  String? _selectedPaymentStatus;
+  bool _showFilters = false;
+
+  // Опции для статуса оплаты - только Оплачено и Отменено
+  final List<Map<String, String>> _paymentStatusOptions = [
+    {'value': '', 'label': 'Все статусы'},
+    {'value': 'paid', 'label': 'Оплачено'},
+    {'value': 'cancelled', 'label': 'Отменено'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -32,6 +56,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       body: Column(
         children: [
           _buildSearchSection(),
+          if (_showFilters) _buildFiltersSection(),
           Expanded(child: _buildSalesList()),
         ],
       ),
@@ -47,48 +72,228 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.white,
-      child: TextField(
-        onChanged: (value) {
-          setState(() => _searchQuery = value);
-          _performSearch();
-        },
-        decoration: InputDecoration(
-          hintText: 'Поиск продаж...',
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Поиск продаж...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _applyFilters();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+                _applyFilters();
+              },
+            ),
           ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
-        ),
+          const SizedBox(width: 12),
+          // Иконка фильтра
+          Container(
+            decoration: BoxDecoration(
+              color: _showFilters ? AppColors.primary : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _showFilters ? AppColors.primary : const Color(0xFFE0E0E0),
+              ),
+            ),
+            child: IconButton(
+              onPressed: () {
+                setState(() {
+                  _showFilters = !_showFilters;
+                });
+              },
+              icon: Icon(
+                _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                color: _showFilters ? Colors.white : Colors.grey.shade600,
+              ),
+              tooltip: 'Фильтр',
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  Widget _buildFiltersSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Фильтры',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              TextButton(
+                onPressed: _resetFilters,
+                child: const Text(
+                  'Сбросить',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Первая строка: Статус оплаты
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedPaymentStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Статус оплаты',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  items: _paymentStatusOptions.map((option) {
+                    return DropdownMenuItem<String>(
+                      value: option['value'],
+                      child: Text(option['label']!),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPaymentStatus = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Вторая строка фильтров: Дата от - Дата до
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _dateFrom ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _dateFrom = picked;
+                      });
+                      _applyFilters();
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Дата от',
+                      border: const OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    child: Text(
+                      _dateFrom != null
+                          ? '${_dateFrom!.day.toString().padLeft(2, '0')}.${_dateFrom!.month.toString().padLeft(2, '0')}.${_dateFrom!.year}'
+                          : 'Не выбрана',
+                      style: TextStyle(color: Colors.grey.shade800),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _dateTo ?? DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _dateTo = picked;
+                      });
+                      _applyFilters();
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Дата до',
+                      border: const OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    child: Text(
+                      _dateTo != null
+                          ? '${_dateTo!.day.toString().padLeft(2, '0')}.${_dateTo!.month.toString().padLeft(2, '0')}.${_dateTo!.year}'
+                          : 'Не выбрана',
+                      style: TextStyle(color: Colors.grey.shade800),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-  void _performSearch() {
-    // Обновляем фильтры с поисковым запросом
+  void _applyFilters() {
+    // Формируем параметры дат (yyyy-MM-dd)
+    String? dateFromStr = _dateFrom != null
+        ? '${_dateFrom!.year.toString().padLeft(4, '0')}-${_dateFrom!.month.toString().padLeft(2, '0')}-${_dateFrom!.day.toString().padLeft(2, '0')}'
+        : null;
+    String? dateToStr = _dateTo != null
+        ? '${_dateTo!.year.toString().padLeft(4, '0')}-${_dateTo!.month.toString().padLeft(2, '0')}-${_dateTo!.day.toString().padLeft(2, '0')}'
+        : null;
+
     final currentFilters = ref.read(salesFiltersNotifierProvider);
     final newFilters = SaleFilters(
-      search: _searchQuery?.isEmpty == true ? null : _searchQuery,
+      search: _searchQuery.isNotEmpty ? _searchQuery : null,
       warehouseId: currentFilters.warehouseId,
-      paymentStatus: currentFilters.paymentStatus,
-      dateFrom: currentFilters.dateFrom,
-      dateTo: currentFilters.dateTo,
+      paymentStatus: _selectedPaymentStatus?.isEmpty == true ? null : _selectedPaymentStatus,
+      dateFrom: dateFromStr,
+      dateTo: dateToStr,
     );
     ref.read(salesFiltersNotifierProvider.notifier).updateFilters(newFilters);
   }
 
-  void _clearSearch() {
-    final currentFilters = ref.read(salesFiltersNotifierProvider);
-    final newFilters = SaleFilters(
-      search: null,
-      warehouseId: currentFilters.warehouseId,
-      paymentStatus: currentFilters.paymentStatus,
-      dateFrom: currentFilters.dateFrom,
-      dateTo: currentFilters.dateTo,
-    );
-    ref.read(salesFiltersNotifierProvider.notifier).updateFilters(newFilters);
+  void _resetFilters() {
+    setState(() {
+      _searchController.clear();
+      _dateFrom = null;
+      _dateTo = null;
+      _selectedPaymentStatus = null;
+    });
+    ref.read(salesFiltersNotifierProvider.notifier).clearFilters();
   }
 
   Widget _buildSalesList() {

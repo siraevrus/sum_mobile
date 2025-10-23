@@ -161,8 +161,8 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     section: 'products-inflow',
                     isSelected: widget.selectedSection == 'products-inflow',
                   ),
-                // Товары в пути - админ и оператор
-                if (_hasAccess(['admin', 'operator']))
+                // Товары в пути - админ, оператор, работник склада, менеджер по продажам
+                if (_hasAccess(['admin', 'operator', 'warehouse_worker', 'sales_manager']))
                   _buildMenuItem(
                     icon: Icons.local_shipping,
                     title: 'Товары в пути',

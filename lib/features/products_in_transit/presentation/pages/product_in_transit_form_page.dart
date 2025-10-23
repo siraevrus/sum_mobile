@@ -1372,14 +1372,20 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       
       // Генерируем актуальное наименование из текущих атрибутов
       final generatedName = _generateProductName(0);
+      
+      // Получаем актуальное количество из products[0].quantityController
+      final actualQuantity = _products[0].quantityController.text;
+      
+      // Получаем актуальный объем
+      final actualVolume = _calculateProductVolume(0);
 
       final request = UpdateProductInTransitRequest(
         producerId: _selectedProducerId,
         warehouseId: _selectedWarehouseId,
         productTemplateId: _selectedProductTemplateId,
-        quantity: _quantityController.text,
+        quantity: actualQuantity,
         name: generatedName,
-        calculatedVolume: _calculatedVolumeController.text,
+        calculatedVolume: actualVolume,
         attributes: attributes,
         transportNumber: _transportNumberController.text.isNotEmpty ? _transportNumberController.text : null,
         expectedArrivalDate: _selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null,
@@ -1393,9 +1399,9 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
       print('  - productTemplateId: $_selectedProductTemplateId');
       print('  - warehouseId: $_selectedWarehouseId');
       print('  - producerId: $_selectedProducerId');
-      print('  - quantity: ${_quantityController.text}');
+      print('  - quantity (actual): $actualQuantity');
       print('  - name (generated): $generatedName');
-      print('  - calculatedVolume: ${_calculatedVolumeController.text}');
+      print('  - calculatedVolume (actual): $actualVolume');
       print('  - attributes: $attributes');
       print('  - transportNumber: ${_transportNumberController.text}');
       print('  - expectedArrivalDate: ${_selectedExpectedArrivalDate != null ? DateFormat('yyyy-MM-dd').format(_selectedExpectedArrivalDate!) : null}');

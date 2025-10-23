@@ -318,8 +318,8 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                             title: 'Поступление товаров',
                             section: 'products-inflow',
                           ),
-                        // Товары в пути - админ и оператор
-                        if (_hasAccess(widget.user, ['admin', 'operator']))
+                        // Товары в пути - админ, оператор, работник склада, менеджер по продажам
+                        if (_hasAccess(widget.user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
                           _buildDrawerMenuItem(
                             context,
                             icon: Icons.local_shipping,
