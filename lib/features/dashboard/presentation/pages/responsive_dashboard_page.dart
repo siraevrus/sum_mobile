@@ -203,7 +203,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF2C3E50),
+      backgroundColor: const Color(0xFF256437),
       child: SafeArea(
         child: Column(
           children: [
@@ -234,7 +234,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
             ),
             
             const Divider(
-              color: Color(0xFF34495E),
+              color: Color(0xFF2D7A45),
               thickness: 1,
               height: 1,
             ),
@@ -279,7 +279,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
             ),
             
             const Divider(
-              color: Color(0xFF34495E),
+              color: Color(0xFF2D7A45),
               thickness: 1,
               height: 1,
             ),
@@ -359,7 +359,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                     Column(
                       children: [
                         const Divider(
-                          color: Color(0xFF34495E),
+                          color: Color(0xFF2D7A45),
                           thickness: 1,
                           height: 1,
                         ),
@@ -451,7 +451,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: isExpanded ? const Color(0xFF23384D) : Colors.transparent,
+            color: isExpanded ? const Color(0xFF0C3B1B) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: ListTile(
@@ -490,7 +490,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
           child: isExpanded
               ? Container(
                   decoration: const BoxDecoration(
-                    color: Color(0xFF23384D),
+                    color: Color(0xFF0C3B1B),
                   ),
                   child: Column(children: children),
                 )
@@ -525,7 +525,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: const Color(0xFF34495E),
+        selectedTileColor: const Color(0xFF0C3B1B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -563,7 +563,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: const Color(0xFF34495E),
+        selectedTileColor: const Color(0xFF0C3B1B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

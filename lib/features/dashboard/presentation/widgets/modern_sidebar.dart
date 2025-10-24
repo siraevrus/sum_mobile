@@ -36,7 +36,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
     return Container(
       width: 280,
       decoration: const BoxDecoration(
-        color: Color(0xFF2C3E50),
+        color: Color(0xFF256437),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -74,7 +74,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
           ),
 
           const Divider(
-            color: Color(0xFF34495E),
+            color: Color(0xFF2D7A45),
             thickness: 1,
             height: 1,
           ),
@@ -86,7 +86,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFF3498DB),
+                  backgroundColor: const Color(0xFF38A169),
                   child: Text(
                     widget.currentUser.name.isNotEmpty
                         ? widget.currentUser.name[0].toUpperCase()
@@ -126,7 +126,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
           ),
           
           const Divider(
-            color: Color(0xFF34495E),
+            color: Color(0xFF2D7A45),
             thickness: 1,
             height: 1,
           ),
@@ -249,18 +249,18 @@ class _ModernSidebarState extends State<ModernSidebar> {
                 icon: const Icon(
                   Icons.logout,
                   size: 18,
-                  color: Color(0xFFE74C3C),
+                  color: Color(0xFF0C3B1B),
                 ),
                 label: const Text(
                   'Выйти',
                   style: TextStyle(
-                    color: Color(0xFFE74C3C),
+                    color: Color(0xFF0C3B1B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(
-                    color: Color(0xFFE74C3C),
+                    color: Color(0xFF0C3B1B),
                     width: 1.5,
                   ),
                   shape: RoundedRectangleBorder(
@@ -299,7 +299,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: const Color(0xFF34495E),
+        selectedTileColor: const Color(0xFF0C3B1B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -321,7 +321,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: isExpanded ? const Color(0xFF23384D) : Colors.transparent,
+            color: isExpanded ? const Color(0xFF1E5030) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: ListTile(
@@ -360,7 +360,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
           child: isExpanded
               ? Container(
                   decoration: const BoxDecoration(
-                    color: Color(0xFF23384D),
+                    color: Color(0xFF1E5030),
                   ),
                   child: Column(children: children),
                 )
@@ -393,7 +393,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: const Color(0xFF34495E),
+        selectedTileColor: const Color(0xFF0C3B1B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

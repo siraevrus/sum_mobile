@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/error/app_exceptions.dart';
 import '../../../../core/error/error_handler.dart';
-import '../../../../shared/models/inventory_models.dart' as old_models;
 import '../../../../shared/models/product_model.dart';
 import '../../domain/entities/inventory_aggregation_entity.dart';
 
@@ -23,19 +22,19 @@ abstract class InventoryStocksRemoteDataSource {
   Future<List<InventoryProducerModel>> getProducers();
   
   /// Получить детальную информацию по производителю
-  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15});
+  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15, String? search});
 
   /// Получить список складов с агрегацией
   Future<List<InventoryWarehouseModel>> getWarehouses();
   
   /// Получить детальную информацию по складу
-  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15});
+  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15, String? search});
 
   /// Получить список компаний с агрегацией
   Future<List<InventoryCompanyModel>> getCompanies();
   
   /// Получить детальную информацию по компании
-  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15});
+  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15, String? search});
 }
 
 /// Implementation of inventory stocks remote data source
@@ -106,12 +105,16 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   @override
-  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15}) async {
+  Future<PaginatedStockDetails> getProducerDetails(int producerId, {int page = 1, int perPage = 15, String? search}) async {
     try {
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
       };
+      
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
       
       final response = await _dio.get('/stocks/by-producer/$producerId', queryParameters: queryParams);
       
@@ -144,12 +147,16 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   @override
-  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15}) async {
+  Future<PaginatedStockDetails> getWarehouseDetails(int warehouseId, {int page = 1, int perPage = 15, String? search}) async {
     try {
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
       };
+      
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
       
       final response = await _dio.get('/stocks/by-warehouse/$warehouseId', queryParameters: queryParams);
       
@@ -182,12 +189,16 @@ class InventoryStocksRemoteDataSourceImpl implements InventoryStocksRemoteDataSo
   }
 
   @override
-  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15}) async {
+  Future<PaginatedStockDetails> getCompanyDetails(int companyId, {int page = 1, int perPage = 15, String? search}) async {
     try {
       
       final queryParams = <String, dynamic>{
         'per_page': perPage,
       };
+      
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
       
       final response = await _dio.get('/stocks/by-company/$companyId', queryParameters: queryParams);
       

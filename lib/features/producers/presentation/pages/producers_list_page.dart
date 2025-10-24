@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/producers/domain/entities/producer_entity.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/pages/producer_form_page.dart';
@@ -29,7 +30,7 @@ class _ProducersListPageState extends ConsumerState<ProducersListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Производители'),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

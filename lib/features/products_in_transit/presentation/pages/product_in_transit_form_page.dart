@@ -388,6 +388,8 @@ class _ProductInTransitFormPageState extends ConsumerState<ProductInTransitFormP
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редактирование товара' : 'Создание товара'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),

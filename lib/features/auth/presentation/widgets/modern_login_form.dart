@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/auth/presentation/providers/auth_provider.dart';
 
 /// Современная форма входа в стиле веб-интерфейса
@@ -98,8 +99,8 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF007BFF),
+                    borderSide: BorderSide(
+                      color: AppColors.primary,
                       width: 2,
                     ),
                   ),
@@ -168,8 +169,8 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF007BFF),
+                    borderSide: BorderSide(
+                      color: AppColors.primary,
                       width: 2,
                     ),
                   ),
@@ -216,7 +217,7 @@ class _ModernLoginFormState extends ConsumerState<ModernLoginForm> {
             child: ElevatedButton(
               onPressed: isLoading ? null : _handleLogin,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF007BFF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

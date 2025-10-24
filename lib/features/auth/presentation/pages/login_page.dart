@@ -43,7 +43,7 @@ class LoginPage extends ConsumerWidget {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: const Color(0xFFFAF2E0),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -55,10 +55,9 @@ class LoginPage extends ConsumerWidget {
                 
                 // Логотип и заголовок
                 SvgPicture.asset(
-                  'assets/logos/logo-expertwood.svg',
+                  'assets/logos/logo-expertwood-green.svg',
                   width: 80,
                   height: 80,
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
                 const SizedBox(height: 24),
                 
@@ -67,7 +66,7 @@ class LoginPage extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFF256437),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -76,7 +75,7 @@ class LoginPage extends ConsumerWidget {
                   'Система складского учета',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white70,
+                    color: Color(0xFF256437),
                   ),
                 ),
                 const SizedBox(height: 60),

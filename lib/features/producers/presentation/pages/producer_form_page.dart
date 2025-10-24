@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/producers/domain/entities/producer_entity.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
 
@@ -44,7 +45,7 @@ class _ProducerFormPageState extends ConsumerState<ProducerFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Редактировать производителя' : 'Добавить производителя'),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/acceptance/data/models/acceptance_model.dart';
 import 'package:sum_warehouse/features/acceptance/data/datasources/acceptance_remote_datasource.dart';
 import 'package:sum_warehouse/features/acceptance/presentation/providers/acceptance_provider.dart';
@@ -188,6 +189,8 @@ class _AcceptanceDetailPageState extends ConsumerState<AcceptanceDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

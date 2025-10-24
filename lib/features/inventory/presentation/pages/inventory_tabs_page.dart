@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../shared/models/inventory_models.dart' as old_models;
-import '../../../../shared/models/product_model.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/inventory_stocks_provider.dart';
 import '../../domain/entities/inventory_aggregation_entity.dart';
@@ -412,13 +410,34 @@ class _InventoryStocksListPage extends ConsumerStatefulWidget {
 }
 
 class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+  
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
+    // Создаем параметры с учетом поискового запроса
+    final params = DetailsParams(
+      id: widget.filterId,
+      search: _searchQuery.isEmpty ? null : _searchQuery,
+    );
+    
     // Используем новые провайдеры деталей в зависимости от типа фильтра
     final AsyncValue<PaginatedStockDetails> detailsAsync = switch (widget.filterType) {
-      _FilterType.producer => ref.watch(producerDetailsProvider(widget.filterId)),
-      _FilterType.warehouse => ref.watch(warehouseDetailsProvider(widget.filterId)),
-      _FilterType.company => ref.watch(companyDetailsProvider(widget.filterId)),
+      _FilterType.producer => ref.watch(producerDetailsProvider(params)),
+      _FilterType.warehouse => ref.watch(warehouseDetailsProvider(params)),
+      _FilterType.company => ref.watch(companyDetailsProvider(params)),
     };
     
     return Scaffold(
@@ -427,30 +446,75 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: detailsAsync.when(
-        loading: () => const LoadingWidget(),
-        error: (error, stack) => _buildErrorState('Ошибка загрузки данных: $error'),
-        data: (details) {
-          if (details.data.isEmpty) {
-            return _buildEmptyState();
-          }
+      body: Column(
+        children: [
+          // Поле поиска
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: AppColors.surface,
+            child: TextField(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'Поиск по названию товара...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
           
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(producerDetailsProvider);
-              ref.invalidate(warehouseDetailsProvider);
-              ref.invalidate(companyDetailsProvider);
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: details.data.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                return _buildStockDetailCard(details.data[index]);
+          // Список остатков
+          Expanded(
+            child: detailsAsync.when(
+              loading: () => const LoadingWidget(),
+              error: (error, stack) => _buildErrorState('Ошибка загрузки данных: $error'),
+              data: (details) {
+                if (details.data.isEmpty) {
+                  return _buildEmptyState();
+                }
+                
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(producerDetailsProvider);
+                    ref.invalidate(warehouseDetailsProvider);
+                    ref.invalidate(companyDetailsProvider);
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+                    itemCount: details.data.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      return _buildStockDetailCard(details.data[index]);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

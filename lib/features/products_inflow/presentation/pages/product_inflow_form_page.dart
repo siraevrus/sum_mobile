@@ -297,6 +297,8 @@ class _ProductInflowFormPageState extends ConsumerState<ProductInflowFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Редактирование товара' : 'Создание товара'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         actions: widget.isViewMode ? null : [
           if (_isEditing)
             IconButton(

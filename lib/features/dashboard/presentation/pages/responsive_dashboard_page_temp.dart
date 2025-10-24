@@ -69,7 +69,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         Container(
           width: 280,
           decoration: const BoxDecoration(
-            color: Color(0xFF2C3E50),
+            color: Color(0xFF256437),
             border: Border(right: BorderSide(color: Color(0xFFE9ECEF))),
           ),
           child: Column(
@@ -78,7 +78,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFF34495E))),
+                  border: Border(bottom: BorderSide(color: Color(0xFF2D7A45))),
                 ),
                 child: Row(
                   children: [
@@ -210,7 +210,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFF34495E))),
+                  border: Border(top: BorderSide(color: Color(0xFF2D7A45))),
                 ),
                 child: Row(
                   children: [
@@ -367,7 +367,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
           ),
         ),
         selected: isSelected,
-        selectedTileColor: const Color(0xFF34495E),
+        selectedTileColor: const Color(0xFF0C3B1B),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

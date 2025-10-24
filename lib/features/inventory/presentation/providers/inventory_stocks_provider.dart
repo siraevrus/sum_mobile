@@ -131,38 +131,75 @@ class InventoryCompanies extends _$InventoryCompanies {
   }
 }
 
+/// Параметры для детальных запросов с поиском
+class DetailsParams {
+  final int id;
+  final String? search;
+  final int page;
+  final int perPage;
+  
+  const DetailsParams({
+    required this.id,
+    this.search,
+    this.page = 1,
+    this.perPage = 15,
+  });
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DetailsParams &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          search == other.search &&
+          page == other.page &&
+          perPage == other.perPage;
+
+  @override
+  int get hashCode => Object.hash(id, search, page, perPage);
+}
+
 /// Provider для деталей производителя
 @riverpod
 Future<PaginatedStockDetails> producerDetails(
   ProducerDetailsRef ref,
-  int producerId, {
-  int page = 1,
-  int perPage = 15,
-}) async {
+  DetailsParams params,
+) async {
   final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-  return await dataSource.getProducerDetails(producerId, page: page, perPage: perPage);
+  return await dataSource.getProducerDetails(
+    params.id,
+    page: params.page,
+    perPage: params.perPage,
+    search: params.search,
+  );
 }
 
 /// Provider для деталей склада
 @riverpod
 Future<PaginatedStockDetails> warehouseDetails(
   WarehouseDetailsRef ref,
-  int warehouseId, {
-  int page = 1,
-  int perPage = 15,
-}) async {
+  DetailsParams params,
+) async {
   final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-  return await dataSource.getWarehouseDetails(warehouseId, page: page, perPage: perPage);
+  return await dataSource.getWarehouseDetails(
+    params.id,
+    page: params.page,
+    perPage: params.perPage,
+    search: params.search,
+  );
 }
 
 /// Provider для деталей компании
 @riverpod
 Future<PaginatedStockDetails> companyDetails(
   CompanyDetailsRef ref,
-  int companyId, {
-  int page = 1,
-  int perPage = 15,
-}) async {
+  DetailsParams params,
+) async {
   final dataSource = ref.read(inventoryStocksRemoteDataSourceProvider);
-  return await dataSource.getCompanyDetails(companyId, page: page, perPage: perPage);
+  return await dataSource.getCompanyDetails(
+    params.id,
+    page: params.page,
+    perPage: params.perPage,
+    search: params.search,
+  );
 }

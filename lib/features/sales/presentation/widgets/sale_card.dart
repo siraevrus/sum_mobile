@@ -54,6 +54,7 @@ class SaleCard extends StatelessWidget {
               const SizedBox(height: 12),
               
               // Информация о продаже
+              _buildInfoRow('Покупатель', sale.customerName ?? 'Не указан'),
               _buildInfoRow('Товар', sale.product?.name ?? 'ID ${sale.productId}'),
               _buildInfoRow('Количество', sale.quantity.toInt().toString()),
               _buildInfoRow('Общая сумма', '${sale.totalPrice.toStringAsFixed(2)} ${sale.currency}'),

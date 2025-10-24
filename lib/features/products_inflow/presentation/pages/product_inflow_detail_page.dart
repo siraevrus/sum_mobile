@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
+import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/products_inflow/data/models/product_inflow_model.dart';
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/product_inflow_form_page.dart';
 import 'package:sum_warehouse/features/products_inflow/data/datasources/products_inflow_remote_datasource.dart';
@@ -139,6 +140,8 @@ class _ProductInflowDetailPageState extends ConsumerState<ProductInflowDetailPag
     return Scaffold(
       appBar: AppBar(
         title: Text(_product.name ?? 'Без названия'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             onPressed: () async {
