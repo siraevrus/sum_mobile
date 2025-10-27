@@ -57,5 +57,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Приложение использует доступ к фотографиям для загрузки изображений товаров и документов.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Приложение использует камеру для съемки фотографий товаров и документов.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Приложение использует доступ к контактам для управления информацией о клиентах.</string>
 </dict>
 </plist>
