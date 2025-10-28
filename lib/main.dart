@@ -13,18 +13,6 @@ void main() {
   );
 }
 
-void _setSystemUIStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarBrightness: Brightness.dark,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-}
-
 class SumWarehouseApp extends ConsumerWidget {
   const SumWarehouseApp({super.key});
 
@@ -32,32 +20,32 @@ class SumWarehouseApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     
-    // Устанавливаем стиль сразу при первом построении
-    _setSystemUIStyle();
-    
-    return MaterialApp.router(
-      title: 'Wood Warehouse',
-      theme: AppTheme.lightTheme,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      
-      builder: (context, child) {
-        // Переустанавливаем стиль при каждом построении
-        Future.microtask(() => _setSystemUIStyle());
-        return child ?? const SizedBox.shrink();
-      },
-      
-      // Локализация
-      locale: const Locale('ru'),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ru'),
-        Locale('en'),
-      ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: MaterialApp.router(
+        title: 'Wood Warehouse',
+        theme: AppTheme.lightTheme,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        
+        // Локализация
+        locale: const Locale('ru'),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ru'),
+          Locale('en'),
+        ],
+      ),
     );
   }
 }
