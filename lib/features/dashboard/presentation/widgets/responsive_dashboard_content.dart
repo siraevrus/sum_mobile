@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/dashboard_stats_cards.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/providers/admin_stats_provider.dart';
@@ -167,24 +168,30 @@ class MobileStatsCards extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Компании',
-                  value: _formatNumber(stats.companiesActive),
-                  subtitle: 'Активные',
-                  icon: Icons.business_outlined,
-                  iconColor: AppColors.primary,
-                  backgroundColor: const Color(0xFFF4ECFF),
+                child: GestureDetector(
+                  onTap: () => context.go('/companies'),
+                  child: _MobileStatsCard(
+                    title: 'Компании',
+                    value: _formatNumber(stats.companiesActive),
+                    subtitle: 'Активные',
+                    icon: Icons.business_outlined,
+                    iconColor: AppColors.primary,
+                    backgroundColor: const Color(0xFFF4ECFF),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Сотрудники',
-                  value: _formatNumber(stats.employeesActive),
-                  subtitle: 'Активные',
-                  icon: Icons.people_outlined,
-                  iconColor: const Color(0xFF3498DB),
-                  backgroundColor: const Color(0xFFEBF3FD),
+                child: GestureDetector(
+                  onTap: () => context.go('/warehouses'),
+                  child: _MobileStatsCard(
+                    title: 'Сотрудники',
+                    value: _formatNumber(stats.employeesActive),
+                    subtitle: 'Активные',
+                    icon: Icons.people_outlined,
+                    iconColor: const Color(0xFF3498DB),
+                    backgroundColor: const Color(0xFFEBF3FD),
+                  ),
                 ),
               ),
             ],
@@ -195,24 +202,30 @@ class MobileStatsCards extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Склады',
-                  value: _formatNumber(stats.warehousesActive),
-                  subtitle: 'Активные',
-                  icon: Icons.warehouse_outlined,
-                  iconColor: const Color(0xFF2ECC71),
-                  backgroundColor: const Color(0xFFE8F5E8),
+                child: GestureDetector(
+                  onTap: () => context.go('/warehouses'),
+                  child: _MobileStatsCard(
+                    title: 'Склады',
+                    value: _formatNumber(stats.warehousesActive),
+                    subtitle: 'Активные',
+                    icon: Icons.warehouse_outlined,
+                    iconColor: const Color(0xFF2ECC71),
+                    backgroundColor: const Color(0xFFE8F5E8),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Товары',
-                  value: _formatNumber(stats.productsTotal),
-                  subtitle: 'Всего',
-                  icon: Icons.inventory_2_outlined,
-                  iconColor: const Color(0xFF8E44AD),
-                  backgroundColor: const Color(0xFFF4ECFF),
+                child: GestureDetector(
+                  onTap: () => context.go('/products-inflow'),
+                  child: _MobileStatsCard(
+                    title: 'Товары',
+                    value: _formatNumber(stats.productsTotal),
+                    subtitle: 'Всего',
+                    icon: Icons.inventory_2_outlined,
+                    iconColor: const Color(0xFF8E44AD),
+                    backgroundColor: const Color(0xFFF4ECFF),
+                  ),
                 ),
               ),
             ],
@@ -223,24 +236,30 @@ class MobileStatsCards extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Товары в пути',
-                  value: _formatNumber(stats.productsInTransit),
-                  subtitle: 'В доставке',
-                  icon: Icons.local_shipping_outlined,
-                  iconColor: const Color(0xFF16A085),
-                  backgroundColor: const Color(0xFFE8F6F3),
+                child: GestureDetector(
+                  onTap: () => context.go('/products-in-transit'),
+                  child: _MobileStatsCard(
+                    title: 'Товары в пути',
+                    value: _formatNumber(stats.productsInTransit),
+                    subtitle: 'В доставке',
+                    icon: Icons.local_shipping_outlined,
+                    iconColor: const Color(0xFF16A085),
+                    backgroundColor: const Color(0xFFE8F6F3),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _MobileStatsCard(
-                  title: 'Запросы',
-                  value: _formatNumber(stats.requestsPending),
-                  subtitle: 'Ожидают',
-                  icon: Icons.assignment_outlined,
-                  iconColor: const Color(0xFFF39C12),
-                  backgroundColor: const Color(0xFFFEF5E7),
+                child: GestureDetector(
+                  onTap: () => context.go('/requests'),
+                  child: _MobileStatsCard(
+                    title: 'Запросы',
+                    value: _formatNumber(stats.requestsPending),
+                    subtitle: 'Ожидают',
+                    icon: Icons.assignment_outlined,
+                    iconColor: const Color(0xFFF39C12),
+                    backgroundColor: const Color(0xFFFEF5E7),
+                  ),
                 ),
               ),
             ],
