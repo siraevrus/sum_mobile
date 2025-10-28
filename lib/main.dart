@@ -6,9 +6,22 @@ import 'package:sum_warehouse/core/router/app_router.dart';
 import 'package:sum_warehouse/core/theme/app_theme.dart';
 
 void main() {
+  // Устанавливаем черный статус-бар для iOS один раз при старте
+  _setSystemUIStyle();
+  
   runApp(
     const ProviderScope(
       child: SumWarehouseApp(),
+    ),
+  );
+}
+
+void _setSystemUIStyle() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
 }
@@ -20,24 +33,14 @@ class SumWarehouseApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     
-    // Запускаем предзагрузку данных при старте приложения
-    
-      return MaterialApp.router(
-        title: 'Wood Warehouse',
+    return MaterialApp.router(
+      title: 'Wood Warehouse',
       theme: AppTheme.lightTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       
       builder: (context, child) {
-        // Устанавливаем черный статус-бар для iOS на всех экранах
-        SystemChrome.setSystemUIOverlayStyle(
-          const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarBrightness: Brightness.dark,
-            statusBarIconBrightness: Brightness.light,
-          ),
-        );
-        return child ?? const SizedBox.shrink();
+        return _SystemUIWrapper(child: child ?? const SizedBox.shrink());
       },
       
       // Локализация
@@ -52,5 +55,42 @@ class SumWarehouseApp extends ConsumerWidget {
         Locale('en'),
       ],
     );
+  }
+}
+
+/// Обертка для поддержания статус-бара при переходах между экранами
+class _SystemUIWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _SystemUIWrapper({required this.child});
+
+  @override
+  State<_SystemUIWrapper> createState() => _SystemUIWrapperState();
+}
+
+class _SystemUIWrapperState extends State<_SystemUIWrapper> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Восстанавливаем стиль статус-бара когда приложение возобновляется
+      _setSystemUIStyle();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
