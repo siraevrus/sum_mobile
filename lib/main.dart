@@ -6,14 +6,6 @@ import 'package:sum_warehouse/core/router/app_router.dart';
 import 'package:sum_warehouse/core/theme/app_theme.dart';
 
 void main() {
-  // Устанавливаем черный статус-бар для iOS
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarBrightness: Brightness.dark,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
   runApp(
     const ProviderScope(
       child: SumWarehouseApp(),
@@ -35,6 +27,18 @@ class SumWarehouseApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      
+      builder: (context, child) {
+        // Устанавливаем черный статус-бар для iOS на всех экранах
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarBrightness: Brightness.dark,
+            statusBarIconBrightness: Brightness.light,
+          ),
+        );
+        return child ?? const SizedBox.shrink();
+      },
       
       // Локализация
       locale: const Locale('ru'),
