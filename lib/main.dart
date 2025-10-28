@@ -33,7 +33,6 @@ class SumWarehouseApp extends ConsumerWidget {
       return MaterialApp.router(
         title: 'Wood Warehouse',
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       

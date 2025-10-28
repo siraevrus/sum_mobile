@@ -53,5 +53,7 @@
 	<string>Приложение использует доступ к контактам для управления информацией о клиентах.</string>
 	<key>NSPhotoLibraryAddOnlyUsageDescription</key>
 	<string>Приложение использует доступ для сохранения изображений в фотобиблиотеку.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
