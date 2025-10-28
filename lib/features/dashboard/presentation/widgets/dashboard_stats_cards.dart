@@ -65,7 +65,7 @@ class DashboardStatsCards extends ConsumerWidget {
           const SizedBox(width: 16),
           Expanded(
             child: GestureDetector(
-              onTap: () => context.go('/warehouses'),
+              onTap: () => context.go('/employees'),
               child: _StatsCard(
                 title: 'Сотрудники',
                 value: _formatNumber(stats.employeesActive),

@@ -183,7 +183,7 @@ class MobileStatsCards extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => context.go('/warehouses'),
+                  onTap: () => context.go('/employees'),
                   child: _MobileStatsCard(
                     title: 'Сотрудники',
                     value: _formatNumber(stats.employeesActive),
