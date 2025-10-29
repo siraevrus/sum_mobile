@@ -19,6 +19,11 @@ class AppTheme {
         centerTitle: true,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarBrightness: Brightness.light, // для iOS - темные иконки
+          statusBarIconBrightness: Brightness.dark, // для Android - темные иконки
+        ),
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
