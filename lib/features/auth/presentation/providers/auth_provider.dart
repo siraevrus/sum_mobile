@@ -179,7 +179,9 @@ class Auth extends _$Auth {
   /// Очистить ошибку
   void clearError() {
     state.whenOrNull(
-      error: (_) => state = const AuthState.unauthenticated(),
+      error: (_) {
+        state = const AuthState.unauthenticated();
+      },
     );
   }
   

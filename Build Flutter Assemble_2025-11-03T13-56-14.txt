@@ -1,0 +1,18 @@
+
+Showing Recent Issues
+
+Build target Flutter Assemble of project Runner with configuration Debug
+error: Unable to load contents of file list: '/Users/ruslansiraev/sum_mobile-1/macos/Flutter/ephemeral/FlutterInputs.xcfilelist' (in target 'Flutter Assemble' from project 'Runner')
+error: Unable to load contents of file list: '/Users/ruslansiraev/sum_mobile-1/macos/Flutter/ephemeral/FlutterOutputs.xcfilelist' (in target 'Flutter Assemble' from project 'Runner')
+warning: Run script build phase 'Run Script' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'Flutter Assemble' from project 'Runner')
+
+
+Unable to load contents of file list: '/Users/ruslansiraev/sum_mobile-1/macos/Flutter/ephemeral/FlutterInputs.xcfilelist'
+
+Unable to load contents of file list: '/Users/ruslansiraev/sum_mobile-1/macos/Flutter/ephemeral/FlutterOutputs.xcfilelist'
+
+Run script build phase 'Run Script' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase.
+
+
+
+Build failed    03.11.2025, 13:56    0.1 seconds

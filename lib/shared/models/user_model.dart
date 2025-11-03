@@ -160,15 +160,15 @@ extension UserFiltersX on UserFilters {
   Map<String, dynamic> toQueryParams() {
     final params = <String, dynamic>{};
     
-    if (role != null) params['role'] = role;
-    if (companyId != null) params['company_id'] = companyId;
-    if (warehouseId != null) params['warehouse_id'] = warehouseId;
-    if (isBlocked != null) params['is_blocked'] = isBlocked! ? 1 : 0;
-    if (search != null && search!.isNotEmpty) params['search'] = search;
-    if (sort != null) params['sort'] = sort;
-    if (order != null) params['order'] = order;
-    params['per_page'] = perPage;
-    params['page'] = page;
+    if (this.role != null) params['role'] = this.role;
+    if (this.companyId != null) params['company_id'] = this.companyId;
+    if (this.warehouseId != null) params['warehouse_id'] = this.warehouseId;
+    if (this.isBlocked != null) params['is_blocked'] = this.isBlocked! ? 1 : 0;
+    if (this.search != null && this.search!.isNotEmpty) params['search'] = this.search;
+    if (this.sort != null) params['sort'] = this.sort;
+    if (this.order != null) params['order'] = this.order;
+    params['per_page'] = this.perPage;
+    params['page'] = this.page;
     
     return params;
   }

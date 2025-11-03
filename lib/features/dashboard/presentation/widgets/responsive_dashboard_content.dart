@@ -23,9 +23,12 @@ class ResponsiveDashboardContent extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 768;
+        final isTablet = constraints.maxWidth >= 768 && constraints.maxWidth < 1200;
         
         if (isMobile) {
           return _buildMobileLayout(ref);
+        } else if (isTablet) {
+          return _buildTabletLayout(ref);
         } else {
           return _buildDesktopLayout(ref);
         }
@@ -66,6 +69,42 @@ class ResponsiveDashboardContent extends ConsumerWidget {
             
             // Популярные товары - скрыто
             // PopularProductsCard(onShowAllPressed: onShowAllProductsPressed),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Планшет (iPad) версия дашборда - используем MobileStatsCards
+  Widget _buildTabletLayout(WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () => _refreshDashboardData(ref),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Карточки статистики для iPad - используем MobileStatsCards
+            const MobileStatsCards(),
+            const SizedBox(height: 24),
+            
+            // Последние продажи
+            Consumer(
+              builder: (context, ref, child) {
+                final dashboardStats = ref.watch(dashboardStatsNoCachingProvider);
+                return dashboardStats.when(
+                  loading: () => const LoadingWidget(message: 'Загружаем продажи...'),
+                  error: (error, stack) => const SizedBox.shrink(),
+                  data: (stats) => MobileLatestSalesCard(latestSales: stats.latestSales),
+                );
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Дашборд выручки
+            const RevenueDashboard(),
           ],
         ),
       ),

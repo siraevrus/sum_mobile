@@ -47,92 +47,88 @@ class DashboardStatsCards extends ConsumerWidget {
           ),
         ),
       ),
-      data: (stats) => Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/companies'),
-              child: _StatsCard(
-                title: 'Компании',
-                value: _formatNumber(stats.companiesActive),
-                subtitle: 'Активные',
-                icon: Icons.business_outlined,
-                iconColor: AppColors.primary,
-                backgroundColor: const Color(0xFFF4ECFF),
+      data: (stats) => LayoutBuilder(
+        builder: (context, constraints) {
+          // На очень больших экранах (iPad) показываем по 3 карточки в строке
+          final crossAxisCount = constraints.maxWidth > 1200 ? 3 : 6;
+          
+          return GridView.count(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.2,
+            children: [
+              GestureDetector(
+                onTap: () => context.go('/companies'),
+                child: _StatsCard(
+                  title: 'Компании',
+                  value: _formatNumber(stats.companiesActive),
+                  subtitle: 'Активные',
+                  icon: Icons.business_outlined,
+                  iconColor: AppColors.primary,
+                  backgroundColor: const Color(0xFFF4ECFF),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/employees'),
-              child: _StatsCard(
-                title: 'Сотрудники',
-                value: _formatNumber(stats.employeesActive),
-                subtitle: 'Активные',
-                icon: Icons.people_outlined,
-                iconColor: const Color(0xFF3498DB),
-                backgroundColor: const Color(0xFFEBF3FD),
+              GestureDetector(
+                onTap: () => context.go('/employees'),
+                child: _StatsCard(
+                  title: 'Сотрудники',
+                  value: _formatNumber(stats.employeesActive),
+                  subtitle: 'Активные',
+                  icon: Icons.people_outlined,
+                  iconColor: const Color(0xFF3498DB),
+                  backgroundColor: const Color(0xFFEBF3FD),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/warehouses'),
-              child: _StatsCard(
-                title: 'Склады',
-                value: _formatNumber(stats.warehousesActive),
-                subtitle: 'Активные',
-                icon: Icons.warehouse_outlined,
-                iconColor: const Color(0xFF2ECC71),
-                backgroundColor: const Color(0xFFE8F5E8),
+              GestureDetector(
+                onTap: () => context.go('/warehouses'),
+                child: _StatsCard(
+                  title: 'Склады',
+                  value: _formatNumber(stats.warehousesActive),
+                  subtitle: 'Активные',
+                  icon: Icons.warehouse_outlined,
+                  iconColor: const Color(0xFF2ECC71),
+                  backgroundColor: const Color(0xFFE8F5E8),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/products-inflow'),
-              child: _StatsCard(
-                title: 'Товары',
-                value: _formatNumber(stats.productsTotal),
-                subtitle: 'Всего товаров',
-                icon: Icons.inventory_2_outlined,
-                iconColor: const Color(0xFF8E44AD),
-                backgroundColor: const Color(0xFFF4ECFF),
+              GestureDetector(
+                onTap: () => context.go('/products-inflow'),
+                child: _StatsCard(
+                  title: 'Товары',
+                  value: _formatNumber(stats.productsTotal),
+                  subtitle: 'Всего товаров',
+                  icon: Icons.inventory_2_outlined,
+                  iconColor: const Color(0xFF8E44AD),
+                  backgroundColor: const Color(0xFFF4ECFF),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/products-in-transit'),
-              child: _StatsCard(
-                title: 'Товары в пути',
-                value: _formatNumber(stats.productsInTransit),
-                subtitle: 'В доставке',
-                icon: Icons.local_shipping_outlined,
-                iconColor: const Color(0xFF16A085),
-                backgroundColor: const Color(0xFFE8F6F3),
+              GestureDetector(
+                onTap: () => context.go('/products-in-transit'),
+                child: _StatsCard(
+                  title: 'Товары в пути',
+                  value: _formatNumber(stats.productsInTransit),
+                  subtitle: 'В доставке',
+                  icon: Icons.local_shipping_outlined,
+                  iconColor: const Color(0xFF16A085),
+                  backgroundColor: const Color(0xFFE8F6F3),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/requests'),
-              child: _StatsCard(
-                title: 'Запросы',
-                value: _formatNumber(stats.requestsPending),
-                subtitle: 'Ожидают рассмотрения',
-                icon: Icons.assignment_outlined,
-                iconColor: const Color(0xFFF39C12),
-                backgroundColor: const Color(0xFFFEF5E7),
+              GestureDetector(
+                onTap: () => context.go('/requests'),
+                child: _StatsCard(
+                  title: 'Запросы',
+                  value: _formatNumber(stats.requestsPending),
+                  subtitle: 'Ожидают рассмотрения',
+                  icon: Icons.assignment_outlined,
+                  iconColor: const Color(0xFFF39C12),
+                  backgroundColor: const Color(0xFFFEF5E7),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -182,29 +178,14 @@ class _StatsCardState extends State<_StatsCard> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..translate(0, _isHovered ? -4 : 0),
-        decoration: BoxDecoration(
-          color: Colors.white,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isHovered = true),
+      onTapUp: (_) => setState(() => _isHovered = false),
+      onTapCancel: () => setState(() => _isHovered = false),
+      child: Card(
+        elevation: _isHovered ? 8 : 2,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.15 : 0.1),
-              offset: Offset(0, _isHovered ? 8 : 2),
-              blurRadius: _isHovered ? 16 : 8,
-              spreadRadius: 0,
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.08 : 0.06),
-              offset: const Offset(0, 1),
-              blurRadius: 3,
-              spreadRadius: 0,
-            ),
-          ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
