@@ -166,6 +166,7 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: _selectedWarehouseId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Склад',
                     border: const OutlineInputBorder(),
@@ -173,11 +174,22 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
                     fillColor: Colors.grey.shade50,
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Все склады')),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'Все склады',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                     ...ref.watch(warehousesProvider).when(
                       data: (warehouses) => warehouses.map((warehouse) => DropdownMenuItem(
                         value: warehouse.id,
-                        child: Text(warehouse.name),
+                        child: Text(
+                          warehouse.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       )).toList(),
                       loading: () => [],
                       error: (e, st) => [],
@@ -195,6 +207,7 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: _selectedProducerId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Производитель',
                     border: const OutlineInputBorder(),
@@ -202,23 +215,34 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
                     fillColor: Colors.grey.shade50,
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Все производители')),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'Все производители',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                     ...ref.watch(producersProvider).when(
                       data: (producers) => producers.map((producer) => DropdownMenuItem(
-                          value: producer.id,
-                          child: Text(producer.name),
+                        value: producer.id,
+                        child: Text(
+                          producer.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       )).toList(),
                       loading: () => [],
                       error: (e, st) => [],
                     ),
                   ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedProducerId = value;
-                      });
-                      _applyFilters();
-                    },
-                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedProducerId = value;
+                    });
+                    _applyFilters();
+                  },
+                ),
               ),
             ],
           ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 
 /// Современное боковое меню в стиле веб-интерфейса
-class ModernSidebar extends StatefulWidget {
+class ModernSidebar extends ConsumerStatefulWidget {
   final UserEntity currentUser;
   final String selectedSection;
   final Function(String) onSectionSelected;
@@ -18,10 +20,10 @@ class ModernSidebar extends StatefulWidget {
   });
 
   @override
-  State<ModernSidebar> createState() => _ModernSidebarState();
+  ConsumerState<ModernSidebar> createState() => _ModernSidebarState();
 }
 
-class _ModernSidebarState extends State<ModernSidebar> {
+class _ModernSidebarState extends ConsumerState<ModernSidebar> {
   bool _infoExpanded = false;
 
   @override
@@ -160,6 +162,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     title: 'Поступление товаров',
                     section: 'products-inflow',
                     isSelected: widget.selectedSection == 'products-inflow',
+                    counterSection: 'receipts',
                   ),
                 // Товары в пути - админ, оператор, работник склада, менеджер по продажам
                 if (_hasAccess(['admin', 'operator', 'warehouse_worker', 'sales_manager']))
@@ -168,6 +171,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     title: 'Товары в пути',
                     section: 'products-in-transit',
                     isSelected: widget.selectedSection == 'products-in-transit',
+                    counterSection: 'products_in_transit',
                   ),
                 // Приемка - только админ
                 if (_hasAccess(['admin']))
@@ -201,6 +205,7 @@ class _ModernSidebarState extends State<ModernSidebar> {
                     title: 'Реализация',
                     section: 'sales',
                     isSelected: widget.selectedSection == 'sales',
+                    counterSection: 'sales',
                   ),
                 
                 // Раздел "Инфо" с подменю в конце списка - только админ
@@ -281,7 +286,50 @@ class _ModernSidebarState extends State<ModernSidebar> {
     required String title,
     required String section,
     required bool isSelected,
+    String? counterSection,
   }) {
+    // Показываем счетчики только для администратора
+    final isAdmin = _hasAccess(['admin']);
+    
+    // Получаем счетчик синхронно для отображения
+    int? displayCounter;
+    if (isAdmin && counterSection != null) {
+      final countersAsync = ref.watch(appCountersProvider);
+      displayCounter = countersAsync.maybeWhen(
+        data: (counters) {
+          switch (counterSection) {
+            case 'receipts':
+              return counters.receipts;
+            case 'products_in_transit':
+              return counters.productsInTransit;
+            case 'sales':
+              return counters.sales;
+            default:
+              return null;
+          }
+        },
+        // Показываем последние загруженные значения даже во время загрузки
+        loading: () {
+          // Получаем последнее загруженное значение из провайдера
+          final lastValue = ref.read(appCountersProvider.notifier).getLastLoadedValue();
+          if (lastValue != null) {
+            switch (counterSection) {
+              case 'receipts':
+                return lastValue.receipts;
+              case 'products_in_transit':
+                return lastValue.productsInTransit;
+              case 'sales':
+                return lastValue.sales;
+              default:
+                return null;
+            }
+          }
+          return null;
+        },
+        orElse: () => null,
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: ListTile(
@@ -290,13 +338,31 @@ class _ModernSidebarState extends State<ModernSidebar> {
           color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
           size: 20,
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ),
+            if (isAdmin && displayCounter != null && displayCounter! > 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '($displayCounter)',
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
         ),
         selected: isSelected,
         selectedTileColor: const Color(0xFF0C3B1B),

@@ -4,6 +4,7 @@ import 'package:sum_warehouse/features/auth/data/repositories/auth_repository_im
 import 'package:sum_warehouse/features/auth/data/models/user_model.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
 import 'package:sum_warehouse/features/auth/domain/usecases/login_usecase.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 
 part 'auth_provider.g.dart';
 
@@ -56,6 +57,10 @@ class Auth extends _$Auth {
           
           if (!userEntity.isBlocked) {
           state = AuthState.authenticated(user: userEntity, token: token);
+          // Предзагружаем счетчики для администратора сразу после авторизации
+          if (userEntity.role == UserRole.admin) {
+            ref.read(appCountersProvider.future).catchError((_) {});
+          }
           _isProcessing = false;
           return;
           } else {
@@ -129,6 +134,11 @@ class Auth extends _$Auth {
       await localDataSource.saveUserData(userModel.toJson());
       
       state = AuthState.authenticated(user: user, token: token);
+      
+      // Предзагружаем счетчики для администратора сразу после логина
+      if (user.role == UserRole.admin) {
+        ref.read(appCountersProvider.future).catchError((_) {});
+      }
     } catch (e) {
       
       String errorMessage = 'Произошла ошибка при входе';

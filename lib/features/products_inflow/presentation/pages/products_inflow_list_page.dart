@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/products_inflow/presentation/pages/produc
 import 'package:sum_warehouse/features/products_inflow/presentation/providers/products_inflow_provider.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 // Удалены импорты компаний/пользователей и dio, т.к. фильтры убраны
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
@@ -37,6 +38,8 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
     // Инициализируем загрузку товаров
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(productsInflowProvider.notifier).loadProducts();
+      // Отмечаем просмотр раздела для обнуления счетчика
+      ref.read(appCountersProvider.notifier).markSectionViewed('receipts');
     });
   }
 
@@ -172,6 +175,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: _selectedWarehouseId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Склад',
                     border: const OutlineInputBorder(),
@@ -179,11 +183,22 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     fillColor: Colors.grey.shade50,
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Все склады')),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'Все склады',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                     ...ref.watch(warehousesProvider).when(
                       data: (warehouses) => warehouses.map((warehouse) => DropdownMenuItem(
                         value: warehouse.id,
-                        child: Text(warehouse.name),
+                        child: Text(
+                          warehouse.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       )).toList(),
                       loading: () => [],
                       error: (e, st) => [],
@@ -201,6 +216,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
               Expanded(
                 child: DropdownButtonFormField<int>(
                   value: _selectedProducerId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Производитель',
                     border: const OutlineInputBorder(),
@@ -208,11 +224,22 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
                     fillColor: Colors.grey.shade50,
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Все производители')),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        'Все производители',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
                     ...ref.watch(producersProvider).when(
                       data: (producers) => producers.map((producer) => DropdownMenuItem(
                         value: producer.id,
-                        child: Text(producer.name),
+                        child: Text(
+                          producer.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       )).toList(),
                       loading: () => [],
                       error: (e, st) => [],

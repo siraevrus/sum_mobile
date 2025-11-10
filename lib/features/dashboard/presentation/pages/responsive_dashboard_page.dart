@@ -16,6 +16,7 @@ import 'package:sum_warehouse/features/producers/presentation/pages/producers_li
 import 'package:sum_warehouse/features/products_inflow/presentation/pages/products_inflow_list_page.dart';
 import 'package:sum_warehouse/features/products_in_transit/presentation/pages/products_in_transit_list_page.dart';
 import 'package:sum_warehouse/features/acceptance/presentation/pages/acceptance_list_page.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Адаптивный дашборд для мобильных и десктопных устройств
@@ -49,7 +50,15 @@ class ResponsiveDashboardPage extends ConsumerWidget {
         });
         return const SizedBox.shrink();
       },
-      authenticated: (user, _) => _buildResponsiveDashboard(context, user, ref),
+      authenticated: (user, _) {
+        // Предзагружаем счетчики для администратора при входе в дашборд
+        if (user.role == UserRole.admin) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(appCountersProvider.future).catchError((_) {});
+          });
+        }
+        return _buildResponsiveDashboard(context, user, ref);
+      },
       error: (error) => Scaffold(
         body: Center(
           child: Column(
@@ -175,7 +184,7 @@ class ResponsiveDashboardPage extends ConsumerWidget {
 }
 
 /// Stateful виджет для мобильного меню с поддержкой expandable разделов
-class _MobileDrawerMenu extends StatefulWidget {
+class _MobileDrawerMenu extends ConsumerStatefulWidget {
   final UserEntity user;
   final String selectedSection;
   final VoidCallback onLogout;
@@ -187,10 +196,10 @@ class _MobileDrawerMenu extends StatefulWidget {
   });
 
   @override
-  State<_MobileDrawerMenu> createState() => _MobileDrawerMenuState();
+  ConsumerState<_MobileDrawerMenu> createState() => _MobileDrawerMenuState();
 }
 
-class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
+class _MobileDrawerMenuState extends ConsumerState<_MobileDrawerMenu> {
   bool _infoExpanded = false;
 
   @override
@@ -317,6 +326,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                             icon: Icons.input,
                             title: 'Поступление товаров',
                             section: 'products-inflow',
+                            counterSection: 'receipts',
                           ),
                         // Товары в пути - админ, оператор, работник склада, менеджер по продажам
                         if (_hasAccess(widget.user, ['admin', 'operator', 'warehouse_worker', 'sales_manager']))
@@ -325,6 +335,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                             icon: Icons.local_shipping,
                             title: 'Товары в пути',
                             section: 'products-in-transit',
+                            counterSection: 'products_in_transit',
                           ),
                         // Приемка - только админ
                         if (_hasAccess(widget.user, ['admin']))
@@ -349,6 +360,7 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
                             icon: Icons.point_of_sale,
                             title: 'Реализация',
                             section: 'sales',
+                            counterSection: 'sales',
                           ),
                       ],
                     ),
@@ -543,8 +555,49 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
     required IconData icon,
     required String title,
     required String section,
+    String? counterSection,
   }) {
     final isSelected = widget.selectedSection == section;
+    final isAdmin = _hasAccess(widget.user, ['admin']);
+    
+    // Получаем счетчик для администратора
+    int? displayCounter;
+    if (isAdmin && counterSection != null) {
+      final countersAsync = ref.watch(appCountersProvider);
+      displayCounter = countersAsync.maybeWhen(
+        data: (counters) {
+          switch (counterSection) {
+            case 'receipts':
+              return counters.receipts;
+            case 'products_in_transit':
+              return counters.productsInTransit;
+            case 'sales':
+              return counters.sales;
+            default:
+              return null;
+          }
+        },
+        // Показываем последние загруженные значения даже во время загрузки
+        loading: () {
+          // Получаем последнее загруженное значение из провайдера
+          final lastValue = ref.read(appCountersProvider.notifier).getLastLoadedValue();
+          if (lastValue != null) {
+            switch (counterSection) {
+              case 'receipts':
+                return lastValue.receipts;
+              case 'products_in_transit':
+                return lastValue.productsInTransit;
+              case 'sales':
+                return lastValue.sales;
+              default:
+                return null;
+            }
+          }
+          return null;
+        },
+        orElse: () => null,
+      );
+    }
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -554,13 +607,31 @@ class _MobileDrawerMenuState extends State<_MobileDrawerMenu> {
           color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
           size: 20,
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ),
+            if (isAdmin && displayCounter != null && displayCounter! > 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '($displayCounter)',
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
         ),
         selected: isSelected,
         selectedTileColor: const Color(0xFF0C3B1B),

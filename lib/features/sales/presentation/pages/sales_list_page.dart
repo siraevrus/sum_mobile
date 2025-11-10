@@ -5,6 +5,7 @@ import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 import 'package:sum_warehouse/features/sales/presentation/pages/sale_form_page.dart';
 import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/sales/presentation/widgets/sale_card.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:intl/intl.dart';
 
@@ -39,6 +40,10 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
       setState(() {
         _searchQuery = _searchController.text;
       });
+    });
+    // Отмечаем просмотр раздела для обнуления счетчика
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markSectionViewed('sales');
     });
   }
 
