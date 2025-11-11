@@ -27,14 +27,13 @@ class ProductsInTransitRemoteDataSourceImpl implements ProductsInTransitRemoteDa
     try {
       final queryParams = filters?.toQueryParams() ?? {'page': 1, 'per_page': 15};
       
-      // Добавляем статус for_receipt по умолчанию для раздела "Товары в пути"
-      if (!queryParams.containsKey('status')) {
-        queryParams['status'] = 'for_receipt';
-      }
+      // Используем эндпоинт /products-in-transit для получения товаров в пути
+      // Убираем фильтр по статусу, так как эндпоинт уже возвращает только товары в пути
+      queryParams.remove('status');
       
       // include не нужен — API уже возвращает связанные объекты
       
-      final response = await _dio.get('/products', queryParameters: queryParams);
+      final response = await _dio.get('/products-in-transit', queryParameters: queryParams);
       
       
       return PaginatedResponse<ProductInTransitModel>.fromJson(

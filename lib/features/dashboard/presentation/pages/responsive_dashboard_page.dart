@@ -622,12 +622,26 @@ class _MobileDrawerMenuState extends ConsumerState<_MobileDrawerMenu> {
             if (isAdmin && displayCounter != null && displayCounter! > 0)
               Padding(
                 padding: const EdgeInsets.only(left: 8),
-                child: Text(
-                  '($displayCounter)',
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFFBDC3C7),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  child: Center(
+                    child: Text(
+                      displayCounter.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),
