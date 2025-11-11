@@ -44,6 +44,8 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
     // Отмечаем просмотр раздела для обнуления счетчика
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appCountersProvider.notifier).markSectionViewed('sales');
+      // Отмечаем открытие приложения при открытии раздела
+      ref.read(appCountersProvider.notifier).markAppOpened();
     });
   }
 
@@ -306,6 +308,7 @@ class _SalesListPageState extends ConsumerState<SalesListPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
+        await ref.read(appCountersProvider.notifier).markAppOpened();
         ref.invalidate(salesListProvider);
       },
       child: salesAsync.when(

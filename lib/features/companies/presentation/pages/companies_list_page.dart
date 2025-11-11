@@ -5,6 +5,7 @@ import 'package:sum_warehouse/features/companies/presentation/pages/company_form
 import 'package:sum_warehouse/features/companies/presentation/pages/company_details_page.dart';
 import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Экран списка компаний
@@ -19,6 +20,15 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
   final _searchController = TextEditingController();
   bool _showArchived = false;
   
+  @override
+  void initState() {
+    super.initState();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -52,6 +62,7 @@ class _CompaniesListPageState extends ConsumerState<CompaniesListPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
+                await ref.read(appCountersProvider.notifier).markAppOpened();
                 ref.invalidate(companiesListProvider((
                   search: _searchController.text.isNotEmpty ? _searchController.text : null,
                   showArchived: _showArchived,

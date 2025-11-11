@@ -4,6 +4,7 @@ import 'package:sum_warehouse/features/requests/data/datasources/requests_remote
 import 'package:sum_warehouse/features/requests/domain/entities/request_entity.dart';
 import 'package:sum_warehouse/features/requests/presentation/pages/request_form_page.dart';
 import 'package:sum_warehouse/shared/models/request_model.dart' as models;
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 
@@ -17,6 +18,15 @@ class RequestsListPage extends ConsumerStatefulWidget {
 
 class _RequestsListPageState extends ConsumerState<RequestsListPage> {
   String? _statusFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +161,7 @@ class _RequestsListPageState extends ConsumerState<RequestsListPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
+        await ref.read(appCountersProvider.notifier).markAppOpened();
         setState(() {});
       },
       child: FutureBuilder(

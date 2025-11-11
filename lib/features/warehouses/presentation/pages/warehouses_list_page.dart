@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/companies/data/datasources/companies_remo
 import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 
@@ -27,6 +28,10 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
   void initState() {
     super.initState();
     _loadCompanies();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
   }
 
   Future<void> _loadCompanies() async {
@@ -239,6 +244,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         if (snapshot.hasError) {
           return RefreshIndicator(
             onRefresh: () async {
+              await ref.read(appCountersProvider.notifier).markAppOpened();
               setState(() {});
             },
             child: _buildErrorState(),
@@ -250,6 +256,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
         if (warehouses.isEmpty) {
           return RefreshIndicator(
             onRefresh: () async {
+              await ref.read(appCountersProvider.notifier).markAppOpened();
               setState(() {});
             },
             child: _buildEmptyState(),
@@ -258,6 +265,7 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
 
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             setState(() {});
           },
           child: ListView.separated(

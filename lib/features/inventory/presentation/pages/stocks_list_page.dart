@@ -8,6 +8,7 @@ import 'package:sum_warehouse/shared/models/warehouse_model.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/create_stock_form_page.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/stock_details_page.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Экран списка остатков (новая реализация в соответствии с API)
@@ -31,6 +32,10 @@ class _StocksListPageState extends ConsumerState<StocksListPage> {
   void initState() {
     super.initState();
     _loadStocks();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
   }
   
   @override
@@ -111,7 +116,10 @@ class _StocksListPageState extends ConsumerState<StocksListPage> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: RefreshIndicator(
-        onRefresh: _loadStocks,
+        onRefresh: () async {
+          await ref.read(appCountersProvider.notifier).markAppOpened();
+          await _loadStocks();
+        },
         child: Column(
           children: [
             // Поиск + кнопка фильтра

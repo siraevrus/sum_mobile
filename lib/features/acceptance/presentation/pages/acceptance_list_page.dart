@@ -5,6 +5,7 @@ import 'package:sum_warehouse/features/acceptance/presentation/pages/acceptance_
 import 'package:sum_warehouse/features/acceptance/presentation/providers/acceptance_provider.dart';
 import 'package:sum_warehouse/features/warehouses/presentation/providers/warehouses_provider.dart';
 import 'package:sum_warehouse/features/producers/presentation/providers/producers_provider.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 
@@ -34,6 +35,10 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
       setState(() {
         _searchQuery = _searchController.text;
       });
+    });
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
     });
   }
 
@@ -421,6 +426,7 @@ class _AcceptanceListPageState extends ConsumerState<AcceptanceListPage> {
 
     return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(acceptanceNotifierProvider.notifier).refresh();
           },
           child: SafeArea(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../features/app/presentation/providers/app_counters_provider.dart';
 import '../providers/inventory_stocks_provider.dart';
 import '../../domain/entities/inventory_aggregation_entity.dart';
 
@@ -21,6 +22,10 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
   }
   
   @override
@@ -91,6 +96,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
         
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(inventoryProducersProvider.notifier).refresh();
           },
           child: ListView.separated(
@@ -121,6 +127,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
         
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(inventoryWarehousesProvider.notifier).refresh();
           },
           child: ListView.separated(
@@ -151,6 +158,7 @@ class _InventoryTabsPageState extends ConsumerState<InventoryTabsPage>
         
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(inventoryCompaniesProvider.notifier).refresh();
           },
           child: ListView.separated(
@@ -498,6 +506,7 @@ class _InventoryStocksListPageState extends ConsumerState<_InventoryStocksListPa
                 
                 return RefreshIndicator(
                   onRefresh: () async {
+                    await ref.read(appCountersProvider.notifier).markAppOpened();
                     ref.invalidate(producerDetailsProvider);
                     ref.invalidate(warehouseDetailsProvider);
                     ref.invalidate(companyDetailsProvider);

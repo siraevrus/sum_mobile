@@ -43,6 +43,8 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
     // Отмечаем просмотр раздела для обнуления счетчика
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appCountersProvider.notifier).markSectionViewed('products_in_transit');
+      // Отмечаем открытие приложения при открытии раздела
+      ref.read(appCountersProvider.notifier).markAppOpened();
     });
   }
 
@@ -435,6 +437,7 @@ class _ProductsInTransitListPageState extends ConsumerState<ProductsInTransitLis
 
     return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(productsInTransitProvider.notifier).refresh();
           },
           child: SafeArea(

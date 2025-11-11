@@ -40,6 +40,8 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
       ref.read(productsInflowProvider.notifier).loadProducts();
       // Отмечаем просмотр раздела для обнуления счетчика
       ref.read(appCountersProvider.notifier).markSectionViewed('receipts');
+      // Отмечаем открытие приложения при открытии раздела
+      ref.read(appCountersProvider.notifier).markAppOpened();
     });
   }
 
@@ -438,6 +440,7 @@ class _ProductsInflowListPageState extends ConsumerState<ProductsInflowListPage>
 
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             await ref.read(productsInflowProvider.notifier).refresh();
           },
           child: SafeArea(

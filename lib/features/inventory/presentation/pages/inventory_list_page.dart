@@ -4,6 +4,7 @@ import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/shared/models/stock_model.dart';
 import 'package:sum_warehouse/features/inventory/presentation/providers/inventory_provider.dart';
 import 'package:sum_warehouse/features/inventory/presentation/pages/stock_movement_form_page.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Экран списка остатков товаров
@@ -21,6 +22,15 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
   bool? _filterLowStock;
   StockStatus? _filterStatus;
   
+  @override
+  void initState() {
+    super.initState();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -61,6 +71,7 @@ class _InventoryListPageState extends ConsumerState<InventoryListPage> {
               error: (error, stack) => _buildErrorState(error.toString()),
               data: (stocks) => RefreshIndicator(
                 onRefresh: () async {
+                  await ref.read(appCountersProvider.notifier).markAppOpened();
                   await ref.read(stocksListProvider.notifier).refresh();
                 },
                 child: Column(

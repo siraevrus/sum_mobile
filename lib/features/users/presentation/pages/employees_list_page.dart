@@ -4,6 +4,7 @@ import 'package:sum_warehouse/features/users/data/datasources/users_remote_datas
 import 'package:sum_warehouse/features/users/presentation/pages/user_form_page.dart';
 import 'package:sum_warehouse/shared/models/user_management_model.dart';
 import 'package:sum_warehouse/features/auth/domain/entities/user_entity.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
 import 'package:sum_warehouse/shared/models/api_response_model.dart';
@@ -21,6 +22,15 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
   UserRole? _roleFilter;
   bool? _isBlockedFilter;
   Future? _usersFuture; // cached future to control reloads
+
+  @override
+  void initState() {
+    super.initState();
+    // Отмечаем открытие приложения при открытии раздела
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(appCountersProvider.notifier).markAppOpened();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,6 +257,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
         if (snapshot.hasError) {
           return RefreshIndicator(
             onRefresh: () async {
+              await ref.read(appCountersProvider.notifier).markAppOpened();
               _loadUsers();
             },
             child: _buildErrorState(),
@@ -258,6 +269,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
         if (users.isEmpty) {
           return RefreshIndicator(
             onRefresh: () async {
+              await ref.read(appCountersProvider.notifier).markAppOpened();
               _loadUsers();
             },
             child: _buildEmptyState(),
@@ -266,6 +278,7 @@ class _EmployeesListPageState extends ConsumerState<EmployeesListPage> {
 
         return RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             _loadUsers();
           },
           child: ListView.builder(

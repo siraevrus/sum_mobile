@@ -7,6 +7,7 @@ import 'package:sum_warehouse/shared/widgets/metric_card.dart';
 import 'package:sum_warehouse/shared/widgets/quick_action_card.dart';
 import 'package:sum_warehouse/shared/widgets/charts/activity_chart.dart';
 import 'package:sum_warehouse/features/products/presentation/pages/product_templates_list_page.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 
 /// Инфопанель администратора со статистикой
 class AdminDashboardPage extends ConsumerStatefulWidget {
@@ -646,6 +647,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   
   /// Обновить все данные
   Future<void> _refreshData() async {
+    await ref.read(appCountersProvider.notifier).markAppOpened();
     await Future.wait([
       ref.refresh(dashboardStatsNoCachingProvider.future), // Используем новый провайдер
       ref.refresh(dashboardStatsProvider.future),

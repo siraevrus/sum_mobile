@@ -8,6 +8,7 @@ import 'package:sum_warehouse/features/dashboard/presentation/providers/dashboar
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/latest_sales_table.dart';
 import 'package:sum_warehouse/features/dashboard/presentation/widgets/revenue_dashboard.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 
 /// Адаптивное содержимое дашборда
 class ResponsiveDashboardContent extends ConsumerWidget {
@@ -152,6 +153,7 @@ class ResponsiveDashboardContent extends ConsumerWidget {
 
   /// Обновление данных дашборда
   Future<void> _refreshDashboardData(WidgetRef ref) async {
+    await ref.read(appCountersProvider.notifier).markAppOpened();
     await Future.wait([
       ref.refresh(dashboardStatsNoCachingProvider.future),
       ref.refresh(dashboardStatsProvider.future),

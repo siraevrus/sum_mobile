@@ -6,6 +6,7 @@ import 'package:sum_warehouse/features/warehouses/presentation/pages/warehouse_f
 import 'package:sum_warehouse/features/companies/presentation/providers/companies_provider.dart';
 import 'package:sum_warehouse/shared/models/company_model.dart';
 import 'package:sum_warehouse/shared/models/warehouse_model.dart';
+import 'package:sum_warehouse/features/app/presentation/providers/app_counters_provider.dart';
 import 'package:sum_warehouse/shared/widgets/loading_widget.dart';
 
 /// Экран детальной информации о компании
@@ -46,6 +47,7 @@ class CompanyDetailsPage extends ConsumerWidget {
         ),
         data: (company) => RefreshIndicator(
           onRefresh: () async {
+            await ref.read(appCountersProvider.notifier).markAppOpened();
             ref.invalidate(companyDetailsProvider(companyId));
             ref.invalidate(companyWarehousesProvider(companyId));
           },
