@@ -38,7 +38,8 @@ android {
 
     buildTypes {
         release {
-            // signingConfig = signingConfigs.getByName("release")
+            // Временно используем debug подпись для тестирования
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             isShrinkResources = false
         }

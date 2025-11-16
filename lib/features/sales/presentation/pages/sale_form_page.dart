@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sum_warehouse/core/theme/app_colors.dart';
+import 'package:sum_warehouse/core/error/app_exceptions.dart';
 import 'package:sum_warehouse/features/sales/data/models/sale_model.dart';
 import 'package:sum_warehouse/features/sales/presentation/providers/sales_providers.dart';
 import 'package:sum_warehouse/features/warehouses/data/datasources/warehouses_remote_datasource.dart';
@@ -728,8 +729,9 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
   }
 
   Widget? _buildViewModeBottomBar() {
-    if (widget.sale?.paymentStatus == 'cancelled') {
-      return null; // Не показываем кнопку для отмененных продаж
+    // Показываем кнопку только для обработанных продаж (payment_status = 'paid')
+    if (widget.sale?.paymentStatus != 'paid') {
+      return null;
     }
 
     return Container(
@@ -950,12 +952,65 @@ class _SaleFormPageState extends ConsumerState<SaleFormPage> {
           // Возвращаемся на главный экран "Реализация" с флагом обновления
           Navigator.of(context).pop(true);
         }
-      } catch (e) {
-      if (mounted) {
+      } on AuthException catch (e) {
+        // Обработка ошибок 403 (Доступ запрещен)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Ошибка отмены продажи: $e'),
+              content: Text(e.message),
               backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } on ServerException catch (e) {
+        // Обработка ошибок 404 (Продажа не найдена) и 500 (Внутренняя ошибка сервера)
+        String errorMessage = e.message;
+        if (e.statusCode == 404) {
+          errorMessage = 'Продажа не найдена';
+        } else if (e.statusCode == 500) {
+          errorMessage = 'Ошибка при отмене продажи. Попробуйте позже';
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } on NetworkException catch (e) {
+        // Обработка сетевых ошибок
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } on AppException catch (e) {
+        // Обработка других AppException
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } catch (e) {
+        // Обработка неизвестных ошибок
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка отмены продажи: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
             ),
           );
         }
